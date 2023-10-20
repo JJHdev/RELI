@@ -1,0 +1,672 @@
+
+package business.com.cmm.web;
+
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import business.com.CommConst;
+import business.com.cmm.service.LoginVO;
+import business.com.cmm.service.RandomVO;
+import business.com.relief.service.IdntfcService;
+import business.com.relief.service.IdntfcVO;
+import business.sys.code.service.CodeService;
+import business.sys.code.service.CodeVO;
+import business.sys.log.service.AccessControlService;
+import business.sys.sms.service.SmsService;
+import business.sys.sms.service.SmsVO;
+import business.sys.user.service.UserInfoService;
+import business.sys.user.service.UserInfoVO;
+import common.base.BaseController;
+import common.user.UserInfo;
+import common.util.CommUtils;
+import egovframework.com.utl.slm.EgovHttpSessionBindingListener;
+
+/**
+ * [컨트롤러클래스] - 로그인(관리자)
+ *      1. 로그인/로그아웃
+ *      2. 중복로그인 방지
+ *      3. 5회 비밀번호 실패시 잠김
+ *      4. 분기별로 비밀번호 변경안내 및 변경
+ *      5. 로그인 이력 남기기
+ *
+ * @class   : LoginController
+ * @author  : ntarget
+ * @since   : 2020.08.28
+ * @version : 1.0
+ *
+ *   수정일     수정자             수정내용
+ *  --------   --------    ---------------------------
+ *
+ */
+
+@Controller
+@SuppressWarnings({"unchecked","rawtypes"})
+public class LoginController extends BaseController {
+
+    protected static final String FORM_USERNAME         = "username";
+    protected static final String FORM_PASSWORD         = "password";
+    protected static final String LOGIN_URL             = "/com/cmm/login.do";
+    protected static final String LOGIN_SUCC_URL        = "/com/cmm/loginSucc.do";
+    protected static final String LOGIN_PAGE            = "com/cmm/login";
+    protected static final String LOGIN_SUCC_PAGE       = "com/cmm/loginSucc";
+    protected static final String LOGOUT_PAGE           = "com/cmm/logout";
+    protected static final String INDEX_PAGE            = "/main/main.do";
+
+    protected static final String ERROR_FLAG_E1         = "E1";     // 사용자 정보가 없음.
+    protected static final String ERROR_FLAG_E2         = "E2";     // 패스워드 틀림.
+    protected static final String ERROR_FLAG_E3         = "E3";     // 사용하지 않는 아이디
+    //protected static final String ERROR_FLAG_E4         = "E4";     // 승인되지 않은 아이디
+    protected static final String ERROR_FLAG_E5         = "E5";     // 접속불가능IP
+    protected static final String ERROR_FLAG_E6         = "E6";     // ???
+    protected static final String ERROR_FLAG_E7         = "E7";     // 로그인 5회이상 실패
+
+    @Autowired
+    private UserInfoService userInfoService;
+
+    @Autowired
+    private AccessControlService accessControlService;
+
+    @Autowired
+    private IdntfcService idntfcService;
+
+    @Autowired
+    private SmsService smsService;
+
+    @Autowired
+    private CodeService codeService;
+
+    /**
+     * 로그인화면 이동
+     * 2022.01.06 LSH 시스템분리에 의한 수정
+     */
+    @RequestMapping("/com/cmm/login.do")
+    public String login(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+
+    	String mode     = CommConst.SYSTEM_CODE_USER; // USR
+    	String act      = request.getParameter("act"); // MAIN / LOGIN 
+    	String idntfcId = request.getParameter("idntfcId");
+    	
+    	if (CommUtils.isEmpty(act))
+    		act = CommConst.ACT_LOGIN;
+    	model.addAttribute("mode", mode);
+    	model.addAttribute("act" , act);
+    	model.addAttribute("idntfcId", idntfcId);
+    	
+        logger.info("로그인 화면 이동");
+
+        // 2021.10.07 LSH
+        // 로그인화면 SecurityInterceptor에서 제외되어 있으므로 
+        // 다음의 항목을 Attribute로 정의해야 화면에서 사용이 가능하다.
+        request.setAttribute("contextPath", request.getContextPath());
+        request.setAttribute("sysCd"      , CommConst.SYSTEM_CODE_USER);
+        request.setAttribute("ver"        , CommUtils.getCurrDateTime2());
+
+        return LOGIN_PAGE;
+    }
+
+    /**
+     * 로그인 성공시 이동화면
+     * 2022.01.06 LSH 시스템분리에 의한 수정
+     */
+    @RequestMapping("/com/cmm/loginSucc.do")
+    public String loginSucc(HttpServletRequest request, ModelMap model) throws Exception {
+
+        logger.info("로그인 성공화면 이동");
+
+//    	String accessUrl = (String)request.getSession().getAttribute( CommConst.SESS_ACCESS_URL );
+//    	if (CommUtils.isEmpty(accessUrl)) {
+        	// 성공시 메인페이지로 이동한다.
+        	return "redirect:"+"/"+CommUtils.toLower(CommConst.SYSTEM_CODE_USER) + INDEX_PAGE;
+//    	}
+//    	if (accessUrl.startsWith(request.getContextPath())) {
+//    		accessUrl = accessUrl.substring(request.getContextPath().length());
+//    	}
+//        // 2021.08.27 접근했던 URL로 이동 처리한다.
+//    	return "redirect:"+accessUrl;
+    }
+
+    /**
+     * 로그인 인증 처리
+     */
+    @RequestMapping("/com/cmm/loginCheck.do")
+    @ResponseBody
+    public Map loginCheck(HttpServletRequest request, HttpServletResponse response, ModelMap model)
+            throws Exception {
+
+        String failFlag     = "";
+        String userId       = CommUtils.nvlTrim(request.getParameter(FORM_USERNAME));
+        String password     = CommUtils.nvlTrim(request.getParameter(FORM_PASSWORD));
+        String sysCd        = CommConst.SYSTEM_CODE_USER;
+
+        // User 객체 설정
+        Map userMap = new HashMap();
+        userMap.put("userId",  userId);
+        userMap.put("sysCd",   sysCd);
+        UserInfo user       = (UserInfo)userInfoService.getUserInfo(userMap);
+
+        // 로그인 검증.
+        if (user == null) {
+            failFlag = ERROR_FLAG_E1;   // 사용자정보가 없음.
+        } else {
+        	userMap.put("userNo", user.getUserNo());
+        	
+        	// 2021.09.29 LSH 암호화 처리방식 변경 
+        	// (D'Amo의 단방향 암호화 SHA256 함수 사용)
+            // 비밀번호 암호화 (전자정부프레임워크 암호화 사용시)
+        	boolean equalPassword = userInfoService.existUserPswd(userId, password);
+
+            if ("N".equalsIgnoreCase(CommUtils.nvlTrim(user.getUseYn()))) {
+                failFlag = ERROR_FLAG_E3;   // 사용하지 않는 아이디입니다.
+            }
+            //else if ("N".equalsIgnoreCase(CommUtils.nvlTrim(user.getEnabled()))) {
+            //    failFlag = ERROR_FLAG_E4;   // 승인되지 않은 아이디
+            //}
+            else if (!CommUtils.isEmpty(user.getUseIp()) &&
+                     CommUtils.nvlTrim(user.getUseIp()).indexOf(request.getRemoteAddr()) < 0 ) {
+                failFlag = ERROR_FLAG_E5;   // 접속불가능 IP
+            }
+            else if (Integer.valueOf(CommUtils.nvlTrim(user.getPswdErrCnt(), "0")) >= 5 ) {
+                failFlag = ERROR_FLAG_E7;   // 로그인 5회이상 실패
+            }
+            else if (!equalPassword) {
+                failFlag = ERROR_FLAG_E2;   // 패스워드 틀림 (일반)
+
+                updtPswdErrCnt(userMap, user);
+            }
+
+        }
+
+        // 로그인처리 이력 저장
+        regiLoginLog(request, userMap, failFlag);
+
+        // 로그인 성공
+        if (CommUtils.nvlTrim(failFlag).equals("")) {
+            // 중복로그인처리(기존로그인사용자 해제)
+            loginExpired(request, user);
+
+            clearSessionInformation(request);
+            BeanUtils.copyProperties(user, userInfo);
+
+            userInfo.setIpAddr(request.getRemoteAddr());
+
+            // 로그인 시간 저장, ERR CNT 0
+            userInfoService.updtLoginTime(userMap);
+        }
+
+        Map returnMap = new HashMap();
+        returnMap.put("failFlag",   failFlag);
+        // 2022.02.17 LSH 로그인성공시에만 사용자정보가 담기도록 수정
+        // 2022.02.17 LSH 화면에 필요한 사용자정보만 담도록 수정
+        if (CommUtils.nvlTrim(failFlag).equals("")) {
+        	Map userRet = new HashMap();
+        	userRet.put("roleId"      , user.getRoleId());
+        	userRet.put("diffDays"    , user.getDiffDays());
+        	userRet.put("diffNextDays", user.getDiffNextDays());
+            returnMap.put("user",  userRet);
+        }
+
+        return returnMap;
+    }
+
+    /**
+     * 로그인 이력 저장
+     */
+    private void regiLoginLog(HttpServletRequest request, Map userMap, String failFlag) {
+
+        Map logMap = new HashMap();
+        logMap.put("userNo",    CommUtils.nvlTrim((String)userMap.get("userNo"), "guest"));
+        logMap.put("ipAddr",    request.getRemoteAddr());
+        logMap.put("srvrNm",    CommConst.SERVER_NAME+"_"+request.getLocalName()+"_"+request.getLocale().toString());
+        logMap.put("sysCd",     CommUtils.nvlTrim((String)userMap.get("sysCd")));
+
+        if (!CommUtils.nvlTrim(failFlag).equals("")) {
+            logMap.put("lgnStusCd", failFlag);
+        } else {
+            logMap.put("lgnStusCd", "O");
+        }
+        accessControlService.regiLoginLog(logMap);
+    }
+
+    /**
+     * 로그아웃 처리.
+     * 2022.01.06 LSH 시스템분리에 의한 수정
+     */
+    @RequestMapping("/com/cmm/logout.do")
+    public String logout(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+    	
+        clearSessionInformation(request);
+        request.getSession().invalidate();
+
+        logger.info("로그아웃 화면 이동");
+
+        // 사용자 메인페이지로 이동한다.
+    	return "redirect:" + "/" + CommUtils.toLower(CommConst.SYSTEM_CODE_USER) + INDEX_PAGE;
+    }
+
+    /**
+     * 중복로그인 처리
+     */
+    private void loginExpired(HttpServletRequest request, UserInfo user) throws Exception {
+        EgovHttpSessionBindingListener listener = new EgovHttpSessionBindingListener();
+        request.getSession().setAttribute(user.getUserId(), listener);
+
+        // 세션중복로그인 설정.
+        //request.getSession().setAttribute("SESS.EXPIRED",   "1");
+    }
+
+    /**
+     * 로그인 실패 회수 관리
+     */
+    private void updtPswdErrCnt(Map userMap, UserInfo user) throws Exception {
+
+        userMap.put("pswdErrCnt", CommUtils.strToInt(user.getPswdErrCnt(), 0) + 1);
+
+        // 패스워드 오류 카운터
+        userInfoService.updtPswdErrCnt(userMap);
+    }
+
+    // Session Remove
+    private void clearSessionInformation(HttpServletRequest request) {
+        request.getSession().removeAttribute(CommConst.SESS_PAGE_INFO);
+        request.getSession().removeAttribute(CommConst.SESS_MENU_INFO);
+    }
+
+    /**
+     * 2021.11.08 LSH
+     * 
+     * mode = 'REGNO' : 식별아이디 주민등록번호 인증처리 
+     *                : userNm, identId, userRrno1, userRrno2
+     * mode = 'PHONE' : 식별아이디 휴대전화번호 인증처리
+     *                : userNm, brdt, sxdst, mbtelNo, smsNo
+     * mode = 'SMS'   : 식별아이디 휴대전화번호 SMS요청
+     *                : userNm, brdt, sxdst, mbtelNo
+     */
+    @RequestMapping("/com/cmm/certify.do")
+    @ResponseBody
+    public Map certify(HttpServletRequest request
+    		, HttpServletResponse response
+    		, @ModelAttribute LoginVO loginVO
+    		, ModelMap model) throws Exception {
+    	
+    	String mode = loginVO.getMode();
+    	
+    	if ("REGNO".equals(mode)) {
+    		IdntfcVO param = IdntfcVO.builder()
+    				.sufrerNm(loginVO.getUserNm())
+    				.idntfcId(loginVO.getIdentId())
+    				.sufrerRrno(loginVO.getUserRrno1()+loginVO.getUserRrno2())
+    				.build();
+    		// 주민등록번호 기준 인증 확인
+    		if (idntfcService.checkIdntfcByRrno(param)) {
+    			// 2021.12.17 LSH 인증완료여부 세션저장 (보안처리용)
+    			request.getSession().setAttribute(CommConst.SESS_AUTHENTICATION, CommConst.YES);
+    			return getSuccess();
+    		}
+    		else {
+    			return getFailure("일치하는 정보를 찾을 수 없습니다.");
+    		}
+    	}
+    	// SMS 인증 요청
+    	else if ("SMS".equals(mode)) {
+    		IdntfcVO param = IdntfcVO.builder()
+    				.sufrerNm(loginVO.getUserNm())
+    				.sufrerBrdt(loginVO.getBrdt())
+    				.sufrerSxdst(loginVO.getSxdst())
+    				.sufrerMbtelNo(loginVO.getMbtelNo())
+    				.build();
+    		// 휴대전화번호 기준 인증 확인
+    		if (idntfcService.checkIdntfcByMbtelNo(param)) {
+
+    			// SMS 전송 처리 및 랜덤문자 세션 처리
+    			
+    			// 인증번호 유효시간 (5분)
+    			Calendar expired = CommUtils.getCurCalendar();
+    			expired.add(Calendar.MINUTE, CommConst.SMS_CERTIFY_MINUTES);
+    			RandomVO randomVO = RandomVO.builder()
+    					.smsNo(CommConst.getSmsRandomNo())
+    					.expired(expired)
+    					.build();
+    			
+    	    	// SMS 업무메세지 공통코드 조회
+    			String trsmCn = _getSmsCodeCn(CommConst.CODE_SMSMSG_RANDOM);
+	    		trsmCn = CommUtils.replace(trsmCn, "{smsNo}", randomVO.getSmsNo());
+
+	    		// SMS 인증문자 전송
+	    		_sendSms(loginVO.getMbtelNo(), loginVO.getUserNm(), trsmCn);
+    			
+	    		// 2022.01.07 LSH 주석처리함
+    			// SMS인증 테스트를 위해 임의로 콘솔에 찍는다.
+    			// logger.info("인증문자전송 : "+trsmCn);
+    			// 세션에 담는다.
+    			request.getSession().setAttribute(CommConst.SESS_RANDOM_NO, randomVO);
+    			return getSuccess();
+    		}
+    		else {
+    			return getFailure("일치하는 정보를 찾을 수 없습니다.");
+    		}
+    	}
+    	// 휴대전화번호 인증 및 SMS번호 확인
+    	else if ("PHONE".equals(mode)) {
+    		
+    		RandomVO randomVO = (RandomVO)request.getSession().getAttribute(CommConst.SESS_RANDOM_NO);
+    		if (randomVO == null) {
+    			return getFailure("인증문자 전송이 실행되지 않았습니다.");
+    		}
+    		// 유효시간이 지난 경우
+    		if (CommUtils.getCurCalendar().after(randomVO.getExpired())) {
+    			// 세션에서 제거
+    			request.getSession().removeAttribute(CommConst.SESS_RANDOM_NO);
+    			return getFailure("인증번호 입력시간이 초과되었습니다. 인증을 재요청하세요.");
+    		}
+    		// 인증번호가 일치하지 않는 경우
+    		if (!CommUtils.isEqual(loginVO.getSmsNo(), randomVO.getSmsNo())) {
+    			return getFailure("입력하신 인증번호가 일치하지 않습니다.");
+    		}
+			// 2021.12.17 LSH 인증완료여부 세션저장 (보안처리용)
+			request.getSession().setAttribute(CommConst.SESS_AUTHENTICATION, CommConst.YES);
+			// 인증문자 세션에서 제거
+			request.getSession().removeAttribute(CommConst.SESS_RANDOM_NO);
+   			return getSuccess();
+    	}
+        return getFailure();
+    }
+
+    /**
+     * 2021.11.08 LSH
+     * 식별아이디 인증 처리
+     */
+    @RequestMapping("/com/cmm/loginCertify.do")
+    @ResponseBody
+    public Map loginCertify(HttpServletRequest request
+    		, @ModelAttribute LoginVO loginVO
+    		, ModelMap model)
+            throws Exception {
+
+        String identId  = loginVO.getIdentId();
+        String identNm  = loginVO.getIdentNm();
+        
+		// 2021.12.17 LSH 인증완료여부 확인 (보안처리용)
+        if (!CommConst.YES.equals(request.getSession().getAttribute(CommConst.SESS_AUTHENTICATION)))
+        	return getFailure("인증이 완료되지 않았습니다.");
+        if (!"Y".equals(loginVO.getCnfrmYn()))
+        	return getFailure("인증이 완료되지 않았습니다.");
+        if (!"Y".equals(loginVO.getSmsYn()) && 
+        	"PHONE".equals(loginVO.getCertType()))
+        	return getFailure("SMS 인증이 완료되지 않았습니다.");
+        // 입력정보가 맞는지 확인
+        if (!idntfcService.existIdntfc(IdntfcVO.builder()
+	    				.sufrerNm(identNm)
+	    				.idntfcId(identId)
+	    				.build()))
+        	return getFailure("일치하는 정보가 없습니다.");
+        
+        // User 객체 설정
+        UserInfo user = new UserInfo();
+        user.setUserNm(identNm);
+        user.setUserId(identId);
+        user.setRoleId(CommConst.ROLE_IDNTFC);
+
+        // 인증 성공
+        // 중복로그인처리(기존로그인사용자 해제)
+        loginExpired(request, user);
+        clearSessionInformation(request);
+        BeanUtils.copyProperties(user, userInfo);
+        userInfo.setIpAddr(request.getRemoteAddr());
+
+		// 2021.12.17 LSH 인증완료여부 세션제거 (보안처리용)
+		request.getSession().removeAttribute(CommConst.SESS_AUTHENTICATION);
+        
+        return getSuccess();
+    }
+    
+	/**
+	 * 2022.10.04 ntarget 세션타임아웃 시간을 연장한다. (Egov) 
+	 * Cookie에 COOK.LATEST.TIME, COOK.EXPIRE.TIME 기록하도록 한다.
+	 * @return result - String
+	 * @exception Exception
+	 */
+    @RequestMapping("/com/cmm/refreshSessionTimeout.do")
+    @ResponseBody
+    public Map refreshSessionTimeout(@ModelAttribute LoginVO loginVO) throws Exception {
+    	logger.info("세션타임아웃 시간 연장");
+        return getSuccess();
+    }    
+    
+    /**
+     * 2021.12.13 LSH 관리자인증 처리
+     * TODO. 현재는 사용자ID로 체크하나 나중에 사번체크로 변경해야함
+     */
+    @RequestMapping("/com/cmm/certifyAdmin.do")
+    @ResponseBody
+    public Map certifyAdmin(@ModelAttribute LoginVO loginVO) throws Exception {
+    	// 관리자번호
+    	String adminNo = loginVO.getAdminNo();
+    	// 관리자번호 일치여부 확인
+    	boolean result = userInfoService.existAdminNo(adminNo);
+    	
+    	// 관리자번호가 일치하면
+    	if (result) {
+   			return getSuccess();
+    	}
+    	// 일치하지 않으면
+        return getFailure();
+    }
+
+    /**
+     * 2021.12.17 LSH 아이디찾기
+     * 1) 이름,생년월일,휴대전화번호로 해당 아이디 찾기를 수행한다.
+     * 2) 일치하는 사용자가 있으면 해당 SMS로 사용자ID가 발송된다.
+     */
+    @RequestMapping("/com/cmm/findId.do")
+    @ResponseBody
+    public Map findId(@ModelAttribute LoginVO loginVO) throws Exception {
+    	
+    	Map paramMap = new HashMap();
+    	paramMap.put("userNm" , loginVO.getUserNm());
+    	paramMap.put("brdt"   , loginVO.getBrdt());
+    	paramMap.put("mbtelNo", loginVO.getMbtelNo());
+    	
+    	// 일치하는 사용자 아이디 찾기
+    	String userId = userInfoService.findUserId(paramMap);
+    	
+    	// 일치하는 사용자가 없으면
+    	if (CommUtils.isEmpty(userId)) {
+        	// 일치하는 사용자를 찾을 수 없습니다.
+    		return getFailure(message.getMessage("error.user.notExist"));
+    	}
+    	// 사용자ID를 휴대전화로 SMS 전송한다.
+
+    	// SMS 업무메세지 공통코드 조회
+		String trsmCn = _getSmsCodeCn(CommConst.CODE_SMSMSG_USERID);
+		trsmCn = CommUtils.replace(trsmCn, "{userId}", userId);
+    	
+		// SMS 사용자ID 전송
+		_sendSms(loginVO.getMbtelNo(), loginVO.getUserNm(), trsmCn);
+		
+		Map result = getSuccess();
+		result.put("Message", message.getMessage("success.user.findId"));
+		return result;
+    	//return getSuccess(userId);
+    }
+    
+    /**
+     * 2021.12.17 LSH 비밀번호찾기
+     * 1) 아이디,이름,생년월일,휴대전화번호로 해당 사용자번호 찾기를 수행한다.
+     * 2) 일치하는 사용자가 있으면 휴대전화인증을 수행한다.
+     * 
+     * mode = SMS  : SMS 인증번호 전송
+     * mode = CERT : SMS 인증번호 확인
+     */
+    @RequestMapping("/com/cmm/findPswd.do")
+    @ResponseBody
+    public Map findPswd(HttpServletRequest request
+    		, @ModelAttribute UserInfoVO userInfoVO
+    		, @ModelAttribute LoginVO loginVO) throws Exception {
+    	
+    	String mode = loginVO.getMode();
+    	
+    	// SMS 인증 요청
+    	if ("SMS".equals(mode)) {
+        	Map paramMap = new HashMap();
+        	paramMap.put("userId" , loginVO.getUserId());
+        	paramMap.put("userNm" , loginVO.getUserNm());
+        	paramMap.put("brdt"   , loginVO.getBrdt());
+        	paramMap.put("mbtelNo", loginVO.getMbtelNo());
+        	
+        	// 일치하는 사용자 번호 찾기
+        	String userNo = userInfoService.validateUserNo(paramMap);
+        	
+        	// 일치하는 사용자가 없으면
+        	if (CommUtils.isEmpty(userNo)) {
+            	// 일치하는 사용자를 찾을 수 없습니다.
+        		return getFailure(message.getMessage("error.user.notExist"));
+        	}
+        	
+    		if (!CommUtils.isEqual(userInfoVO.getUserNo(),userNo)) {
+    	        return getFailure("사용자를 확인할 수 없습니다.");
+    	     }
+        	
+			// SMS 전송 처리 및 랜덤문자 세션 처리
+			// 인증번호 유효시간 (5분)
+			Calendar expired = CommUtils.getCurCalendar();
+			expired.add(Calendar.MINUTE, CommConst.SMS_CERTIFY_MINUTES);
+			RandomVO randomVO = RandomVO.builder()
+					.smsNo(CommConst.getSmsRandomNo())
+					.expired(expired)
+					.build();
+			
+	    	// SMS 업무메세지 공통코드 조회
+			String trsmCn = _getSmsCodeCn(CommConst.CODE_SMSMSG_PSWD);
+    		trsmCn = CommUtils.replace(trsmCn, "{smsNo}", randomVO.getSmsNo());
+
+    		// SMS 인증문자 전송
+    		_sendSms(loginVO.getMbtelNo(), loginVO.getUserNm(), trsmCn);
+			
+    		// 2022.01.07 LSH 주석처리함
+			// SMS인증 테스트를 위해 임의로 콘솔에 찍는다.
+			// logger.info("인증문자전송 : "+trsmCn);
+			// 세션에 담는다.
+			request.getSession().setAttribute(CommConst.SESS_PSWD_RANDOM_NO, randomVO);
+
+			Map result = getSuccess();
+			// 사용자번호
+			result.put("userNo", userNo);
+			// 사용자의 휴대전화번호로 인증번호가 전송되었습니다.<br>전송된 인증번호를 입력하세요.
+			result.put("Message", message.getMessage("success.user.smsSent"));
+			return result;
+    	}
+    	// SMS인증 확인
+    	else if ("CERT".equals(mode)) {
+    		
+    		RandomVO randomVO = (RandomVO)request.getSession().getAttribute(CommConst.SESS_PSWD_RANDOM_NO);
+    		if (randomVO == null) {
+    			return getFailure("인증문자 전송이 실행되지 않았습니다.");
+    		}
+    		// 유효시간이 지난 경우
+    		if (CommUtils.getCurCalendar().after(randomVO.getExpired())) {
+    			// 세션에서 제거
+    			request.getSession().removeAttribute(CommConst.SESS_PSWD_RANDOM_NO);
+    			return getFailure("인증번호 입력시간이 초과되었습니다. 인증을 재요청하세요.");
+    		}
+    		// 인증번호가 일치하지 않는 경우
+    		if (!CommUtils.isEqual(loginVO.getSmsNo(), randomVO.getSmsNo())) {
+    			return getFailure("입력하신 인증번호가 일치하지 않습니다.");
+    		}
+			// 2021.12.17 LSH 인증완료여부 세션저장 (보안처리용)
+			request.getSession().setAttribute(CommConst.SESS_PSWD_AUTHENTICATION, loginVO.getUserNo());
+			// 인증문자 세션에서 제거
+			request.getSession().removeAttribute(CommConst.SESS_PSWD_RANDOM_NO);
+
+			Map result = getSuccess();
+			// 휴대전화 인증이 완료되었습니다.<br>사용자 비밀번호를 재설정하세요.
+			result.put("Message", message.getMessage("success.user.authentication"));
+        	return result;
+    	}
+    	// 처리할 내용이 없습니다.
+        return getFailure(message.getMessage("error.user.notProcess"));    	
+    }
+    
+    /**
+     * 2021.12.17 LSH 비밀번호찾기 - 비밀번호 변경처리
+     * SMS 인증이 완료되었을 경우에만 비밀번호 변경이 가능하다.
+     */
+    @RequestMapping("/com/cmm/savePswd.do")
+    @ResponseBody
+    public Map savePswd(HttpServletRequest request
+			, @ModelAttribute UserInfoVO userInfoVO
+    		, @ModelAttribute LoginVO loginVO) throws Exception {
+    	
+    	String pswd   = loginVO.getPswd();
+    	String userNo = loginVO.getUserNo();
+    	
+		// 2021.12.17 LSH 인증완료여부 확인 (보안처리용)
+        if (!CommUtils.isEqual(userNo, (String)request.getSession().getAttribute(CommConst.SESS_PSWD_AUTHENTICATION)))
+        	return getFailure(message.getMessage("error.user.notCertify"));
+    	if (CommUtils.isEmpty(userNo))
+    		return getFailure("사용자를 확인할 수 없습니다.");
+    	if (CommUtils.isEmpty(pswd))
+    		return getFailure("비밀번호를 확인할 수 없습니다.");
+		if (!CommUtils.isEqual(userInfoVO.getUserNo(),userNo)) {
+	        return getFailure("사용자를 확인할 수 없습니다.");
+	     }
+    	
+    	
+    	Map paramMap = new HashMap();
+    	paramMap.put("userNo" , userNo);
+    	paramMap.put("pswd"   , pswd);
+    	
+    	// 비밀번호 변경처리
+    	userInfoService.updtUserPswd(paramMap);
+
+		Map result = getSuccess();
+    	// 비밀번호 변경이 완료되었습니다.
+		result.put("Message", message.getMessage("success.user.changePswd"));
+    	return result;
+    }
+    
+    // 2021.12.17 SMS 문자 발송
+    private void _sendSms(String rcvrNo, String rcvrNm, String trsmCn) throws Exception {
+
+		// SMS 전송
+		SmsVO smsVO = SmsVO.builder()
+				.rcvrNo    (rcvrNo)
+				.rcvrNm    (rcvrNm)
+				.trnsterNo (CommConst.SMS_TRANSFER_NO)
+				.trnsterNm (CommConst.SMS_TRANSFER_NM)
+				.smsSeCd   (CommConst.SMS_SYSTEM_CODE)
+				.lngtSeCd  (CommConst.getSmsLengthCode(trsmCn))
+				.trsmCn    (trsmCn)
+				.trsmStusCd("0") // 미전송
+				.build();
+		// SMS 발송
+		smsService.sendSms(smsVO);
+    }
+    
+    // 2021.12.17 SMS 공통코드 업무메세지 내용 가져오기
+    private String _getSmsCodeCn(String cdId) throws Exception {
+    	// 업무메세지 공통코드 조회
+    	CodeVO codeVO = CodeVO.builder()
+    			.upCdId(CommConst.CODE_SMSMSG)
+    			.cdId  (cdId)
+    			.build();
+    	codeVO = codeService.viewCode(codeVO);
+    	
+    	if (codeVO != null && 
+    		codeVO.getCdCn() != null) {
+    		return codeVO.getCdCn();
+    	}
+    	return "";
+    }
+}

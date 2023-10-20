@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="SprtAply">
+
+<sql id="Sql-Column">
+        A.SN                                 	AS "sn",
+        A.APLY_NO                               AS "aplyNo",
+        A.LWST_SPRT_AMT                         AS "lwstSprtAmt",
+      	FN_GET_CODENM (
+						'CT008', 
+						A.LWST_SPRT_CD
+					)                           AS "lwstSprtCd",,
+        A.RGTR_NO                               AS "rgtrNo",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')      AS "regDate",
+        A.MDFR_NO                               AS "mdfrNo",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')      AS "mdfDate"
+    </sql>
+
+	<select id ="regiSprtList" parameterType= "business.com.support.service.LwstVO">
+		INSERT
+			INTO TB_LWST_SPRT
+		(	SN	,
+			APLY_NO,
+			LWST_SPRT_AMT,
+			LWST_SPRT_CD,
+			RGTR_NO,
+			REG_YMD
+		)
+		VALUES
+		(
+			SEQ_LWST_SPRT.NEXTVAL,
+			#{aplyNo},
+			FN_FMT_DATA('NUM', #{lwstSprtAmt}),
+			#{lwstSprtCd},
+			#{rgtrNo},
+			TO_CHAR(SYSDATE,'YYYY-MM-DD')
+		)
+	</select>
+	
+    <update id="udtSprtList" parameterType="business.com.support.service.LwstVO">
+        UPDATE TB_LWST_SPRT 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(lwstSprtAmt)"  > LWST_SPRT_AMT = FN_FMT_DATA('NUM', #{lwstSprtAmt}),</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(lwstSprtCd)"> LWST_SPRT_CD = #{lwstSprtCd},</if>
+               MDFCN_YMD   = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+         WHERE SN = #{sn}
+    </update>
+    
+    <delete id="delSprtList" parameterType="business.com.support.service.LwstVO">
+        DELETE 
+          FROM TB_LWST_SPRT 
+         WHERE SN = #{sn}
+    </delete> 
+    
+    <delete id="delSprtListAplyNo" parameterType="business.com.support.service.LwstVO">
+        DELETE 
+          FROM TB_LWST_SPRT 
+         WHERE APLY_NO = #{aplyNo}
+    </delete> 
+    
+    <select id ="listSprtList" resultType="java.util.HashMap" parameterType="business.com.support.service.LwstVO">
+    	SELECT <include refid="Sql-Column"/>
+    		FROM TB_LWST_SPRT A
+    	WHERE APLY_NO = #{aplyNo}
+    </select>
+    
+    <select id ="viewSprtList" resultType="java.util.HashMap" parameterType="business.com.support.service.LwstVO">
+    	SELECT <include refid="Sql-Column"/>
+    		FROM TB_LWST_SPRT A
+    	WHERE SN = #{sn}		
+    </select>
+    
+    <select id ="listLwstSprtAply" resultType="java.util.HashMap" parameterType="business.com.support.service.LwstVO">
+    	SELECT
+			A.INCDNT_MNG_NO AS "incdntMngNo"
+		,	A.APLY_NO AS "aplyNo"
+		,	C.INCDNT_NO AS "incdntNo"
+		,	B.LWST_SPRT_CD AS "lwstSprtCd"
+		,	B.LWST_SPRT_AMT AS "lwstSprtAmt"
+		,	FN_GET_CODENM (
+						'CT032', 
+						B.LWST_SPRT_CD
+					)                           AS "lwstSprtNm"
+		,	B.RGTR_NO AS "rgtrNo"
+		,	(SELECT USER_NM
+        		  FROM TB_USER
+       		  WHERE USER_NO = B.RGTR_NO)        AS "rgtrNm"
+		FROM 
+			TB_LWST_APLY A , TB_LWST_SPRT B, TB_LWST_INCDNT C
+		WHERE
+			A.APLY_NO = #{aplyNo}
+		AND
+			 A.APLY_NO = B.APLY_NO
+		AND 
+			C.INCDNT_MNG_NO = A.INCDNT_MNG_NO;
+    </select>
+	
+
+</mapper>

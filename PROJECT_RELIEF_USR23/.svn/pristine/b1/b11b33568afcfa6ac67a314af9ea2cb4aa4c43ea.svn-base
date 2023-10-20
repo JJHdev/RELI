@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="McpDtls">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(bizAreaCd)">
+            AND A.BIZ_AREA_CD = #{bizAreaCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizOder)">
+            AND A.BIZ_ODER = #{bizOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnOder)">
+            AND A.EXMN_ODER = #{exmnOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo)">
+            AND A.APLY_NO = #{aplyNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(rcperSeCd)">
+            AND A.RCPER_SE_CD = #{rcperSeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(dissClCd)">
+            AND A.DISS_CL_CD = #{dissClCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sckwndCd)">
+            AND A.SCKWND_CD = #{sckwndCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(rcognStusCd)">
+            AND A.RCOGN_STUS_CD = #{rcognStusCd}
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.SN                                          AS "sn",
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+        (SELECT BIZ_AREA
+           FROM TB_BIZ_MNG
+          WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+            AND USE_YN      = 'Y')                    AS "bizAreaNm",
+        A.BIZ_ODER                                    AS "bizOder",
+        A.EXMN_ODER                                   AS "exmnOder",
+        A.APLY_NO                                     AS "aplyNo",
+        (SELECT C.IDNTFC_ID
+           FROM TB_RELIEF B,
+                TB_IDNTFC C
+          WHERE B.SUFRER_NO = C.SUFRER_NO
+            AND B.APLY_NO   = A.APLY_NO)              AS "idntfcId",
+        A.RCPER_INST_NM                               AS "rcperInstNm",
+        A.RCPER_SE_CD                                 AS "rcperSeCd",
+        FN_GET_CODENM('CT015', A.RCPER_SE_CD)         AS "rcperSeNm",
+        A.DISS_CL_CD                                  AS "dissClCd",
+        (SELECT SCKWND_NM
+           FROM TB_SCKWND_CODE
+          WHERE SCKWND_CD = A.DISS_CL_CD
+            AND USE_YN    = 'Y')                      AS "dissClNm",
+        A.SCKWND_CD                                   AS "sckwndCd",
+        A.SCKWND_NM                                   AS "sckwndNm",
+        A.SELF_ALOTM                                  AS "selfAlotm",
+        A.RCOGN_STUS_CD                               AS "rcognStusCd",
+        FN_GET_CODENM('CT018', A.RCOGN_STUS_CD)       AS "rcognStusNm",
+        A.RESN                                        AS "resn",
+        FN_FMT_STRTODATE(A.RCPER_PSTG_YMD,'.')        AS "rcperPstgYmd",
+        FN_FMT_STRTODATE(A.RCPER_END_YMD ,'.')        AS "rcperEndYmd",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 의료비내역 목록조회 -->
+    <select id="listMcpDtls" resultType="java.util.HashMap" parameterType="business.com.exmn.service.McpDtlsVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_MCP_DTLS A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.SN
+    </select>
+    <select id="listMcpDtlsCount" resultType="int" parameterType="business.com.exmn.service.McpDtlsVO">
+        SELECT COUNT(1) 
+          FROM TB_MCP_DTLS A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 본조사 의료비산정결과 집계 목록조회 -->
+    <select id="listMcpDtlsSummary" resultType="java.util.HashMap" parameterType="business.com.exmn.service.McpDtlsVO">
+        SELECT A.DISS_CL_CD                         AS "dissClCd"
+              ,(SELECT SCKWND_NM
+                  FROM TB_SCKWND_CODE
+                 WHERE SCKWND_CD = A.DISS_CL_CD
+                   AND USE_YN    = 'Y')             AS "dissClNm" 
+              ,A.SCKWND_CD                          AS "sckwndCd"
+              ,A.SCKWND_NM                          AS "sckwndNm"
+              ,(SELECT COUNT(*)
+                  FROM TB_MCP_DTLS
+                 WHERE BIZ_AREA_CD   = #{bizAreaCd}
+                   AND BIZ_ODER      = #{bizOder}
+                   AND EXMN_ODER     = #{exmnOder}
+                   AND APLY_NO       = #{aplyNo}
+                   AND RCOGN_STUS_CD = '01'
+                   AND SCKWND_CD     = A.SCKWND_CD) AS "mcpTotCnt"
+              ,(SELECT SUM(SELF_ALOTM)
+                  FROM TB_MCP_DTLS
+                 WHERE BIZ_AREA_CD   = #{bizAreaCd}
+                   AND BIZ_ODER      = #{bizOder}
+                   AND EXMN_ODER     = #{exmnOder}
+                   AND APLY_NO       = #{aplyNo}
+                   AND RCOGN_STUS_CD = '01'
+                   AND SCKWND_CD     = A.SCKWND_CD) AS "mcpTotAmt"
+              ,A.MCP_YEAR                           AS "mcpYear"
+              ,A.MCP_CNT                            AS "mcpCnt"
+              ,A.MCP_AMT                            AS "mcpAmt"
+          FROM (SELECT SUBSTR(RCPER_PSTG_YMD, 1, 4) AS MCP_YEAR
+                      ,DISS_CL_CD                   AS DISS_CL_CD
+                      ,SCKWND_CD                    AS SCKWND_CD
+                      ,SCKWND_NM                    AS SCKWND_NM
+                      ,COUNT(*)                     AS MCP_CNT
+                      ,SUM(SELF_ALOTM)              AS MCP_AMT
+                  FROM TB_MCP_DTLS
+                 WHERE BIZ_AREA_CD                  = #{bizAreaCd}
+                   AND BIZ_ODER                     = #{bizOder}
+                   AND EXMN_ODER                    = #{exmnOder}
+                   AND APLY_NO                      = #{aplyNo}
+                   AND RCOGN_STUS_CD                = '01' <!-- 인정상태인 것만 -->
+                 GROUP BY
+                       SUBSTR(RCPER_PSTG_YMD, 1, 4)
+                      ,DISS_CL_CD
+                      ,SCKWND_CD
+                      ,SCKWND_NM
+               ) A
+         ORDER BY 
+               A.DISS_CL_CD
+              ,A.SCKWND_CD
+              ,A.MCP_YEAR
+    </select>    
+
+    <!-- 본조사 의료비산정결과 집계 합계 -->
+    <select id="listMcpDtlsSummaryTotal" resultType="java.util.HashMap" parameterType="business.com.exmn.service.McpDtlsVO">
+        SELECT 'TOTAL'                      AS "dissClCd"
+              ,'합 계'                      AS "dissClNm"
+              ,COUNT(*)                     AS "mcpTotCnt"
+              ,SUM(SELF_ALOTM)              AS "mcpTotAmt"
+              ,COUNT(*)                     AS "mcpCnt"
+              ,SUM(SELF_ALOTM)              AS "mcpAmt"
+          FROM TB_MCP_DTLS
+         WHERE BIZ_AREA_CD                  = #{bizAreaCd}
+           AND BIZ_ODER                     = #{bizOder}
+           AND EXMN_ODER                    = #{exmnOder}
+           AND APLY_NO                      = #{aplyNo}
+           AND RCOGN_STUS_CD                = '01' <!-- 인정상태인 것만 -->
+    </select>    
+
+    <!-- 의료비내역 상세조회 -->
+    <select id="viewMcpDtls" resultType="business.com.exmn.service.McpDtlsVO" parameterType="business.com.exmn.service.McpDtlsVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_MCP_DTLS A
+         WHERE SN = #{sn}
+    </select>
+
+    <!-- 의료비내역 등록 -->
+    <insert id="regiMcpDtls" parameterType="business.com.exmn.service.McpDtlsVO">
+        <selectKey keyProperty="sn" resultType="string" order="BEFORE">
+            SELECT SEQ_MCP_DTLS.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_MCP_DTLS
+             ( SN,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               RCPER_INST_NM,
+               RCPER_SE_CD,
+               DISS_CL_CD,
+               SCKWND_CD,
+               SCKWND_NM,
+               SELF_ALOTM,
+               RCOGN_STUS_CD,
+               RESN,
+               RCPER_PSTG_YMD,
+               RCPER_END_YMD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{sn},
+               #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{aplyNo},
+               #{rcperInstNm},
+               #{rcperSeCd},
+               (SELECT DISS_CL_CD
+                  FROM TB_SCKWND_CODE
+                 WHERE SCKWND_CD = #{sckwndCd}
+                   AND USE_YN    = 'Y'
+               ),
+               #{sckwndCd},
+               #{sckwndNm},
+               FN_FMT_DATA('NUM2', #{selfAlotm}),
+               #{rcognStusCd},
+               #{resn},
+               FN_FMT_STRTODATE(#{rcperPstgYmd}, ''),
+               FN_FMT_STRTODATE(#{rcperEndYmd }, ''),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 의료비내역 이력저장 -->
+    <insert id="regiMcpDtlsHst" parameterType="business.com.exmn.service.McpDtlsVO">
+        INSERT 
+          INTO TB_MCP_DTLS_HST
+             ( HST_NO,
+               LOG_TY,
+               HST_YMD,
+               SN,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               RCPER_INST_NM,
+               RCPER_SE_CD,
+               DISS_CL_CD,
+               SCKWND_CD,
+               SCKWND_NM,
+               SELF_ALOTM,
+               RCOGN_STUS_CD,
+               RESN,
+               RCPER_PSTG_YMD,
+               RCPER_END_YMD,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+             )
+        SELECT SEQ_MCP_DTLS_HST.NEXTVAL,
+               #{logTy},
+               SYSDATE,
+               SN,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               RCPER_INST_NM,
+               RCPER_SE_CD,
+               DISS_CL_CD,
+               SCKWND_CD,
+               SCKWND_NM,
+               SELF_ALOTM,
+               RCOGN_STUS_CD,
+               RESN,
+               RCPER_PSTG_YMD,
+               RCPER_END_YMD,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+          FROM TB_MCP_DTLS
+         WHERE SN = #{sn}
+    </insert>
+
+    <!-- 의료비내역 수정 -->
+    <update id="updtMcpDtls" parameterType="business.com.exmn.service.McpDtlsVO">
+        UPDATE TB_MCP_DTLS 
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(bizAreaCd   )"> BIZ_AREA_CD    = #{bizAreaCd   },</if>
+	  	<if test="@common.util.CommUtils@isNotEmpty(bizOder     )"> BIZ_ODER       = #{bizOder     },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(exmnOder    )"> EXMN_ODER      = #{exmnOder    },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplyNo      )"> APLY_NO        = #{aplyNo      },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(rcperInstNm )"> RCPER_INST_NM  = #{rcperInstNm },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(rcperSeCd   )"> RCPER_SE_CD    = #{rcperSeCd   },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dissClCd    )"> DISS_CL_CD     = #{dissClCd    },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(sckwndCd    )"> SCKWND_CD      = #{sckwndCd    },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(sckwndNm    )"> SCKWND_NM      = #{sckwndNm    },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(selfAlotm   )"> SELF_ALOTM     = FN_FMT_DATA('NUM2', #{selfAlotm}),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(rcognStusCd )"> RCOGN_STUS_CD  = #{rcognStusCd },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(resn        )"> RESN           = #{resn        },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(rcperPstgYmd)"> RCPER_PSTG_YMD = FN_FMT_STRTODATE(#{rcperPstgYmd},''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(rcperEndYmd )"> RCPER_END_YMD  = FN_FMT_STRTODATE(#{rcperEndYmd },''),</if>  
+               MDFCN_YMD = SYSDATE
+         WHERE SN        = #{sn}
+    </update>
+
+    <!-- 의료비내역 삭제 -->
+    <delete id="deltMcpDtls" parameterType="business.com.exmn.service.McpDtlsVO">
+        DELETE 
+          FROM TB_MCP_DTLS 
+         WHERE SN = #{sn}
+    </delete> 
+
+</mapper>

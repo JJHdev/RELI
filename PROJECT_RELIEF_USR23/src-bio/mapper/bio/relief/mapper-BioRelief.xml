@@ -1,0 +1,590 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BioRelief">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo)">
+            AND A.APLY_NO = #{aplyNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(prgreStusCd)">
+            AND A.PRGRE_STUS_CD = #{prgreStusCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyStdt)">
+            AND A.APLY_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchAplyStdt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyEndt)">
+            AND A.APLY_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchAplyEndt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRcptStdt)">
+            AND A.RCPT_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchRcptStdt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRcptEndt)">
+            AND A.RCPT_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchRcptEndt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchIdntfcId)">
+            AND EXISTS (
+                SELECT 1
+                  FROM TB_BIO_IDNTFC
+                 WHERE SUFRER_NO = A.SUFRER_NO
+                   AND IDNTFC_ID LIKE '%' || #{srchIdntfcId} || '%'
+                )
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplcntNm)">
+            AND A.APLCNT_NM LIKE '%' || #{srchAplcntNm} || '%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchSufrerNm)">
+            AND EXISTS (
+                SELECT 1
+                  FROM TB_BIO_IDNTFC
+                 WHERE SUFRER_NO = A.SUFRER_NO
+                   AND SUFRER_NM LIKE '%' || #{srchSufrerNm} || '%'
+                )
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyKnd)">
+        	AND REGEXP_LIKE (A.APLY_KND_CD, #{srchAplyKnd})
+        </if>
+        <if test="@common.util.CommUtils@isNotEmptyList(aplySeList)">
+        	AND A.APLY_SE_CD IN 
+		    <foreach item="item" collection="aplySeList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+        <if test="@common.util.CommUtils@isNotEmptyList(prgreStusList)">
+        	AND A.PRGRE_STUS_CD IN 
+		    <foreach item="item" collection="prgreStusList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.APLY_NO                                      AS "aplyNo",
+        A.SUFRER_NO                                    AS "sufrerNo",
+        (SELECT IDNTFC_ID
+           FROM TB_BIO_IDNTFC
+          WHERE SUFRER_NO = A.SUFRER_NO
+        )                                              AS "idntfcId",
+        (SELECT SUFRER_NM
+           FROM TB_BIO_IDNTFC
+          WHERE SUFRER_NO = A.SUFRER_NO
+        )                                              AS "sufrerNm",
+        (SELECT FN_FMT_DATA('NM', SUFRER_NM)
+           FROM TB_BIO_IDNTFC
+          WHERE SUFRER_NO = A.SUFRER_NO
+        )                                              AS "sufrerNmMask",
+        A.APLY_SE_CD                                   AS "aplySeCd",
+        FN_GET_CODENM('CT010', A.APLY_SE_CD)           AS "aplySeNm",
+        A.APLY_KND_CD                                  AS "aplyKndCd",
+        FN_MRG_CODENM('CT203', A.APLY_KND_CD)          AS "aplyKndNm",
+        A.APLY_RESN                                    AS "aplyResn",
+        A.APLCNT_NO                                    AS "aplcntNo",
+        A.APLCNT_NM                                    AS "aplcntNm",
+        FN_FMT_DATA('NM', A.APLCNT_NM)                 AS "aplcntNmMask",
+        FN_FMT_STRTODATE(A.APLCNT_BRDT,'-')            AS "aplcntBrdt",
+        SCP.DEC_B64('KEY1',A.APLCNT_RRNO)              AS "aplcntRrno",
+        A.APLCNT_TELNO                                 AS "aplcntTelno",
+        A.APLCNT_MBTEL_NO                              AS "aplcntMbtelNo",
+        A.APLCNT_EML_ADDR                              AS "aplcntEmlAddr",
+        A.APLCNT_ZIP                                   AS "aplcntZip",
+        A.APLCNT_ADDR                                  AS "aplcntAddr",
+        A.APLCNT_DADDR                                 AS "aplcntDaddr",
+        '['||A.APLCNT_ZIP||'] '
+        || A.APLCNT_ADDR 
+        || NVL(A.APLCNT_DADDR,'')                      AS "aplcntAddrAll",
+        A.SUFRER_REL_CD                                AS "sufrerRelCd",
+        FN_GET_CODENM('CT013', A.SUFRER_REL_CD)        AS "sufrerRelNm",
+        A.BANK_NM                                      AS "bankCd",
+        FN_GET_CODENM('CT035', A.BANK_NM)              AS "bankNm",
+        A.DPSTR_NM                                     AS "dpstrNm",
+        SCP.DEC_B64('KEY1',A.ACTNO)                    AS "actno",
+        A.DTH_YN                                       AS "dthYn",
+        FN_FMT_STRTODATE(A.DTH_YMD,'-')                AS "dthYmd",
+        A.DMGE_RCOGN_YN                                AS "dmgeRcognYn",
+        A.PRIORD_BRVFM_NM                              AS "priordBrvfmNm",
+        A.PRIORD_BRVFM_REL_CD                          AS "priordBrvfmRelCd",
+        FN_GET_CODENM('CT013', A.PRIORD_BRVFM_REL_CD)  AS "priordBrvfmRelNm",
+        A.ASGNR_NM                                     AS "asgnrNm",
+        A.ASGNR_REL_CD                                 AS "asgnrRelCd",
+        FN_GET_CODENM('CT013', A.ASGNR_REL_CD)         AS "asgnrRelNm",
+        A.ABSTRCT_ZIP                                  AS "abstrctZip",
+        A.ABSTRCT_ADDR                                 AS "abstrctAddr",
+        A.ABSTRCT_DADDR                                AS "abstrctDaddr",
+        A.FRST_APLY_YN                                 AS "frstAplyYn",
+        A.FRST_APLY_NO                                 AS "frstAplyNo",
+        A.PRGRE_STUS_CD                                AS "prgreStusCd",
+        FN_GET_CODENM('CT025', A.PRGRE_STUS_CD)        AS "prgreStusNm",
+        FN_FMT_STRTODATE(A.APLY_YMD,'-')               AS "aplyYmd",
+        FN_FMT_STRTODATE(A.RCPT_YMD,'-')               AS "rcptYmd",
+        A.SIGN_CN                                      AS "signCn",
+        A.RGTR_NO                                      AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        A.MDFR_NO                                      AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate",
+		A.MNGR_REG_YN                                  AS "mngrRegYn",
+		CASE WHEN A.MNGR_REG_YN = 'Y' 
+		     THEN (SELECT USER_NM 
+		             FROM TB_USER 
+		            WHERE USER_NO = A.RGTR_NO)
+		     ELSE NULL
+		END                                            AS "mngrNm",
+        A.DMGE_PRDUCT_CD                               AS "dmgePrductCd",
+       (SELECT FN_GET_CODENM('CT202', UP_CD_ID) 
+               || ' > ' || CD_NM
+          FROM SYS_CODE
+         WHERE CD_ID = A.DMGE_PRDUCT_CD)               AS "dmgePrductNm",
+        A.DMGE_PRDUCT_CN                               AS "dmgePrductCn",
+        A.PRDUCT_SBMSN_YN                              AS "prductSbmsnYn",
+        A.PRDUCT_SBMSN_RESN                            AS "prductSbmsnResn",
+        A.PRDUCT_USE_PRPS                              AS "prductUsePrps",
+        A.PRDUCT_USE_SE                                AS "prductUseSe",
+        FN_GET_CODENM('CT201', A.PRDUCT_USE_SE)        AS "prductUseNm",
+        A.PRDUCT_USE_PLCE                              AS "prductUsePlce",
+        A.PRDUCT_USE_MTHD                              AS "prductUseMthd",
+        A.PRDUCT_IDNTY_YN                              AS "prductIdntyYn",
+        FN_FMT_STRTODATE(A.PRDUCT_USE_BGNG_YMD,'-')    AS "prductUseBgngYmd",
+        FN_FMT_STRTODATE(A.PRDUCT_USE_END_YMD ,'-')    AS "prductUseEndYmd",
+        A.PRDUCT_USE_BGNG_HOUR                         AS "prductUseBgngHour",
+        A.PRDUCT_USE_END_HOUR                          AS "prductUseEndHour",
+        A.PRDUCT_USE_CUNT_CN                           AS "prductUseCuntCn",
+        A.PRDUCT_USGQTY_CN                             AS "prductUsgqtyCn",
+        A.DMGE_DISS_NM                                 AS "dmgeDissNm",
+        A.ETC_OPINION_CN                               AS "etcOpinionCn"
+    </sql>
+		
+    <!-- 구제급여신청 목록조회 -->
+    <select id="listBioRelief" resultType="java.util.HashMap" parameterType="business.bio.relief.service.BioReliefVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_RELIEF      A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.APLY_NO   DESC
+    </select>
+    <select id="listBioReliefCount" resultType="int" parameterType="business.bio.relief.service.BioReliefVO">
+        SELECT COUNT(1) 
+          FROM TB_BIO_RELIEF      A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+   
+    <!-- 마이페이지 구제급여신청 목록조회 -->
+    <select id="listBioReliefMypage" resultType="java.util.HashMap" parameterType="business.bio.relief.service.BioReliefVO">
+        SELECT A.APLY_NO                                      AS "aplyNo",
+               A.SUFRER_NO                                    AS "sufrerNo",
+               B.IDNTFC_ID                                    AS "idntfcId",
+               B.SUFRER_NM                                    AS "sufrerNm",
+               FN_FMT_STRTODATE(B.SUFRER_BRDT,'-')            AS "sufrerBrdt",
+               A.APLY_SE_CD                                   AS "aplySeCd",
+               FN_GET_CODENM('CT010', A.APLY_SE_CD)           AS "aplySeNm",
+               A.APLY_KND_CD                                  AS "aplyKndCd",
+               FN_MRG_CODENM('CT203', A.APLY_KND_CD)          AS "aplyKndNm",
+               A.APLY_RESN                                    AS "aplyResn",
+               A.APLCNT_NO                                    AS "aplcntNo",
+               A.APLCNT_NM                                    AS "aplcntNm",
+               FN_FMT_STRTODATE(A.APLCNT_BRDT,'-')            AS "aplcntBrdt",
+               A.APLCNT_TELNO                                 AS "aplcntTelno",
+               A.APLCNT_MBTEL_NO                              AS "aplcntMbtelNo",
+               A.APLCNT_EML_ADDR                              AS "aplcntEmlAddr",
+               A.SUFRER_REL_CD                                AS "sufrerRelCd",
+               FN_GET_CODENM('CT013', A.SUFRER_REL_CD)        AS "sufrerRelNm",
+               A.DTH_YN                                       AS "dthYn",
+               A.PRGRE_STUS_CD                                AS "prgreStusCd",
+               FN_GET_CODENM('CT025', A.PRGRE_STUS_CD)        AS "prgreStusNm",
+               FN_FMT_STRTODATE(A.APLY_YMD,'-')               AS "aplyYmd",
+               FN_FMT_STRTODATE(A.RCPT_YMD,'-')               AS "rcptYmd"
+          FROM TB_BIO_RELIEF     A
+         RIGHT OUTER JOIN
+               TB_BIO_IDNTFC     B
+            ON A.SUFRER_NO = B.SUFRER_NO
+         WHERE
+		<choose>
+			<when test="@common.util.CommUtils@isNotEmpty(idntfcId)">
+               B.IDNTFC_ID = #{idntfcId}
+			</when>
+			<when test="@common.util.CommUtils@isNotEmpty(aplcntNo)">
+			   A.APLCNT_NO = #{aplcntNo}
+			</when>
+			<otherwise> 
+			   AND 1 = 0 <!-- 조건없이 모든값이 조회되는것을 방지하기 위함 --> 
+			</otherwise>
+		</choose>
+         ORDER BY 
+               A.REG_YMD DESC
+    </select>
+
+    <!-- 구제급여신청 상세조회 -->
+    <select id="viewBioRelief" resultType="business.bio.relief.service.BioReliefVO" parameterType="business.bio.relief.service.BioReliefVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_RELIEF      A
+         WHERE A.APLY_NO    = #{aplyNo}
+    </select>
+
+    <!-- 구제급여신청 본인이 작성한 최종 신청정보 KEY 조회 -->
+    <select id="viewBioReliefAplyLast" resultType="business.bio.relief.service.BioReliefVO" parameterType="business.bio.relief.service.BioReliefVO">
+    	SELECT MAX(A.APLY_NO)   AS "aplyNo"
+          FROM TB_BIO_RELIEF   A
+         WHERE A.APLCNT_NO  = #{aplcntNo}
+        <if test="@common.util.CommUtils@isNotEmpty(aplySeCd)">
+           AND A.APLY_SE_CD = #{aplySeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(prgreStusCd)">
+           AND A.PRGRE_STUS_CD = #{prgreStusCd}
+        </if>
+    </select>
+
+    <!-- 2022.12.01 LSH 관리자대행으로 구제급여신청 임시저장한 최종 신청정보 KEY 조회 -->
+    <select id="viewBioReliefAplyLastAdmn" resultType="business.bio.relief.service.BioReliefVO" parameterType="business.bio.relief.service.BioReliefVO">
+    	SELECT MAX(A.APLY_NO)   AS "aplyNo"
+          FROM TB_BIO_RELIEF   A
+         WHERE A.RGTR_NO    = #{rgtrNo}
+        <if test="@common.util.CommUtils@isNotEmpty(aplySeCd)">
+           AND A.APLY_SE_CD = #{aplySeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(prgreStusCd)">
+           AND A.PRGRE_STUS_CD = #{prgreStusCd}
+        </if>
+    </select>
+
+    <!-- 식별ID 기준 최종 신청정보 KEY 조회 -->
+    <select id="viewBioReliefByIdntfcId" resultType="business.bio.relief.service.BioReliefVO" parameterType="string">
+        SELECT APLY_NO AS "aplyNo"
+          FROM (
+                SELECT A.APLY_NO
+                     , ROW_NUMBER() OVER(PARTITION BY A.SUFRER_NO ORDER BY A.APLY_NO DESC) AS RIDX
+                  FROM TB_BIO_RELIEF A
+                 WHERE EXISTS (
+                       SELECT 1
+                         FROM TB_BIO_IDNTFC
+                        WHERE IDNTFC_ID = #{idntfcId}
+                          AND SUFRER_NO = A.SUFRER_NO
+                       ) 
+               )
+         WHERE RIDX = 1  
+    </select>
+ 
+    <!-- 구제급여신청 등록 -->
+    <insert id="regiBioRelief" parameterType="business.bio.relief.service.BioReliefVO">
+        <selectKey keyProperty="aplyNo" resultType="string" order="BEFORE">
+            SELECT 'R' || 
+                   TO_CHAR(SYSDATE, 'YY') || 
+                   TO_CHAR(SEQ_BIO_RELIEF.NEXTVAL,'FM0000000') 
+              FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_BIO_RELIEF 
+             ( APLY_NO,
+               SUFRER_NO,
+               APLY_SE_CD,
+               APLY_KND_CD,
+               APLY_RESN,
+               APLCNT_NO,
+               APLCNT_NM,
+               APLCNT_BRDT,
+               APLCNT_RRNO,
+               APLCNT_TELNO,
+               APLCNT_MBTEL_NO,
+               APLCNT_EML_ADDR,
+               APLCNT_ZIP,
+               APLCNT_ADDR,
+               APLCNT_DADDR,
+               SUFRER_REL_CD,
+               BANK_NM,
+               DPSTR_NM,
+               ACTNO,
+               DTH_YN,
+               DTH_YMD,
+               DMGE_RCOGN_YN,
+               PRIORD_BRVFM_NM,
+               PRIORD_BRVFM_REL_CD,
+               ASGNR_NM,
+               ASGNR_REL_CD,
+               ABSTRCT_ZIP,
+               ABSTRCT_ADDR,
+               ABSTRCT_DADDR,
+               FRST_APLY_YN,
+               FRST_APLY_NO,
+               APLY_YMD,
+               RCPT_YMD,
+               PRGRE_STUS_CD,
+               SIGN_CN,
+               RGTR_NO,
+               REG_YMD,
+               MNGR_REG_YN,
+               DMGE_PRDUCT_CD,
+               DMGE_PRDUCT_CN,
+               PRDUCT_SBMSN_YN,
+               PRDUCT_SBMSN_RESN,
+               PRDUCT_USE_PRPS,
+               PRDUCT_USE_SE,
+               PRDUCT_USE_PLCE,
+               PRDUCT_USE_MTHD,
+               PRDUCT_IDNTY_YN,
+               PRDUCT_USE_BGNG_YMD,
+               PRDUCT_USE_END_YMD,
+               PRDUCT_USE_BGNG_HOUR,
+               PRDUCT_USE_END_HOUR,
+               PRDUCT_USE_CUNT_CN,
+               PRDUCT_USGQTY_CN,
+               DMGE_DISS_NM,
+               ETC_OPINION_CN
+             )
+        VALUES
+             ( #{aplyNo},
+               #{sufrerNo},
+               #{aplySeCd},
+               #{aplyKndCd},
+               #{aplyResn},
+               #{aplcntNo},
+               #{aplcntNm},
+               #{aplcntBrdt},
+               SCP.ENC_B64('KEY1', #{aplcntRrno}), 
+               #{aplcntTelno},
+               #{aplcntMbtelNo},
+               #{aplcntEmlAddr},
+               #{aplcntZip},
+               #{aplcntAddr},
+               #{aplcntDaddr},
+               #{sufrerRelCd},
+               #{bankCd},
+               #{dpstrNm},
+               SCP.ENC_B64('KEY1', #{actno}), 
+               #{dthYn},
+               FN_FMT_STRTODATE(#{dthYmd},''),               
+               #{dmgeRcognYn},
+               #{priordBrvfmNm},
+               #{priordBrvfmRelCd},
+               #{asgnrNm},
+               #{asgnrRelCd},
+               #{abstrctZip},
+               #{abstrctAddr},
+               #{abstrctDaddr},
+               #{frstAplyYn},
+               #{aplyNo},
+               FN_FMT_STRTODATE(#{aplyYmd},''),               
+               FN_FMT_STRTODATE(#{rcptYmd},''),               
+               #{prgreStusCd},
+               #{signCn},
+               #{gsUserNo},
+               SYSDATE,
+               #{mngrRegYn},
+               #{dmgePrductCd},
+               #{dmgePrductCn},
+               #{prductSbmsnYn},
+               #{prductSbmsnResn},
+               #{prductUsePrps},
+               #{prductUseSe},
+               #{prductUsePlce},
+               #{prductUseMthd},
+               #{prductIdntyYn},
+               FN_FMT_STRTODATE(#{prductUseBgngYmd},''),               
+               FN_FMT_STRTODATE(#{prductUseEndYmd },''),               
+               #{prductUseBgngHour},
+               #{prductUseEndHour},
+               #{prductUseCuntCn},
+               #{prductUsgqtyCn},
+               #{dmgeDissNm},
+               #{etcOpinionCn}
+             )
+    </insert>
+
+    <!-- 구제급여신청 수정 -->
+    <update id="updtBioRelief" parameterType="business.bio.relief.service.BioReliefVO">
+        UPDATE TB_BIO_RELIEF 
+           SET MDFR_NO = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(sufrerNo)"         > SUFRER_NO            = #{sufrerNo},        </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplySeCd)"         > APLY_SE_CD           = #{aplySeCd},        </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplyKndCd)"        > APLY_KND_CD          = #{aplyKndCd},       </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplyResn)"         > APLY_RESN            = #{aplyResn},        </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntNo)"         > APLCNT_NO            = #{aplcntNo},        </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntNm)"         > APLCNT_NM            = #{aplcntNm},        </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntBrdt)"       > APLCNT_BRDT          = #{aplcntBrdt},      </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntRrno)"       > APLCNT_RRNO          = SCP.ENC_B64('KEY1', #{aplcntRrno}),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntTelno)"      > APLCNT_TELNO         = #{aplcntTelno},     </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntMbtelNo)"    > APLCNT_MBTEL_NO      = #{aplcntMbtelNo},   </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntEmlAddr)"    > APLCNT_EML_ADDR      = #{aplcntEmlAddr},   </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntZip)"        > APLCNT_ZIP           = #{aplcntZip},       </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntAddr)"       > APLCNT_ADDR          = #{aplcntAddr},      </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplcntDaddr)"      > APLCNT_DADDR         = #{aplcntDaddr},     </if>
+		<if test="@common.util.CommUtils@isNotEmpty(sufrerRelCd)"      > SUFRER_REL_CD        = #{sufrerRelCd},     </if>
+		<if test="@common.util.CommUtils@isNotEmpty(bankCd)"           > BANK_NM              = #{bankCd},          </if>
+		<if test="@common.util.CommUtils@isNotEmpty(dpstrNm)"          > DPSTR_NM             = #{dpstrNm},         </if>
+		<if test="@common.util.CommUtils@isNotEmpty(actno)"            > ACTNO                = SCP.ENC_B64('KEY1', #{actno}),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dthYn)"            > DTH_YN               = #{dthYn},           </if>
+		<if test="@common.util.CommUtils@isNotEmpty(dthYmd)"           > DTH_YMD              = FN_FMT_STRTODATE(#{dthYmd},'')</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dmgeRcognYn)"      > DMGE_RCOGN_YN        = #{dmgeRcognYn},     </if>
+		<if test="@common.util.CommUtils@isNotEmpty(priordBrvfmNm)"    > PRIORD_BRVFM_NM      = #{priordBrvfmNm},   </if>
+		<if test="@common.util.CommUtils@isNotEmpty(priordBrvfmRelCd)" > PRIORD_BRVFM_REL_CD  = #{priordBrvfmRelCd},</if>
+		<if test="@common.util.CommUtils@isNotEmpty(asgnrNm)"          > ASGNR_NM             = #{asgnrNm},         </if>
+		<if test="@common.util.CommUtils@isNotEmpty(asgnrRelCd)"       > ASGNR_REL_CD         = #{asgnrRelCd},      </if>
+		<if test="@common.util.CommUtils@isNotEmpty(abstrctZip)"       > ABSTRCT_ZIP          = #{abstrctZip},      </if>
+		<if test="@common.util.CommUtils@isNotEmpty(abstrctAddr)"      > ABSTRCT_ADDR         = #{abstrctAddr},     </if>
+		<if test="@common.util.CommUtils@isNotEmpty(abstrctDaddr)"     > ABSTRCT_DADDR        = #{abstrctDaddr},    </if>
+		<if test="@common.util.CommUtils@isNotEmpty(frstAplyYn)"       > FRST_APLY_YN         = #{frstAplyYn},      </if>
+		<if test="@common.util.CommUtils@isNotEmpty(frstAplyNo)"       > FRST_APLY_NO         = #{frstAplyNo},      </if>
+		<if test="@common.util.CommUtils@isNotEmpty(aplyYmd)"          > APLY_YMD             = FN_FMT_STRTODATE(#{aplyYmd},''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(rcptYmd)"          > RCPT_YMD             = FN_FMT_STRTODATE(#{rcptYmd},''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prgreStusCd)"      > PRGRE_STUS_CD        = #{prgreStusCd},     </if>
+		<if test="@common.util.CommUtils@isNotEmpty(signCn)"           > SIGN_CN              = #{signCn},          </if>
+		<if test="@common.util.CommUtils@isNotEmpty(dmgePrductCd     )"> DMGE_PRDUCT_CD       = #{dmgePrductCd        },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dmgePrductCn     )"> DMGE_PRDUCT_CN       = #{dmgePrductCn        },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductSbmsnYn    )"> PRDUCT_SBMSN_YN      = #{prductSbmsnYn       },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductSbmsnResn  )"> PRDUCT_SBMSN_RESN    = #{prductSbmsnResn     },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUsePrps    )"> PRDUCT_USE_PRPS      = #{prductUsePrps       },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUseSe      )"> PRDUCT_USE_SE        = #{prductUseSe         },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUsePlce    )"> PRDUCT_USE_PLCE      = #{prductUsePlce       },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUseMthd    )"> PRDUCT_USE_MTHD      = #{prductUseMthd       },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductIdntyYn    )"> PRDUCT_IDNTY_YN      = #{prductIdntyYn       },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUseBgngYmd )"> PRDUCT_USE_BGNG_YMD  = FN_FMT_STRTODATE(#{prductUseBgngYmd},''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUseEndYmd  )"> PRDUCT_USE_END_YMD   = FN_FMT_STRTODATE(#{prductUseEndYmd },''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUseBgngHour)"> PRDUCT_USE_BGNG_HOUR = #{prductUseBgngHour   },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUseEndHour )"> PRDUCT_USE_END_HOUR  = #{prductUseEndHour    },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUseCuntCn  )"> PRDUCT_USE_CUNT_CN   = #{prductUseCuntCn     },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prductUsgqtyCn   )"> PRDUCT_USGQTY_CN     = #{prductUsgqtyCn      },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dmgeDissNm       )"> DMGE_DISS_NM         = #{dmgeDissNm          },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(etcOpinionCn     )"> ETC_OPINION_CN       = #{etcOpinionCn        },</if>
+               MDFCN_YMD = SYSDATE  
+         WHERE APLY_NO   = #{aplyNo}
+    </update>
+
+    <!-- 구제급여신청 삭제 -->
+    <delete id="deltBioRelief" parameterType="business.bio.relief.service.BioReliefVO">
+        DELETE 
+          FROM TB_BIO_RELIEF 
+         WHERE APLY_NO = #{aplyNo}
+    </delete> 
+
+    <!-- 구제급여신청 이력저장 -->
+    <insert id="regiBioReliefHst" parameterType="business.bio.relief.service.BioReliefVO">
+        INSERT 
+          INTO TB_BIO_RELIEF_HST 
+             ( HST_NO,
+               LOG_TY,
+               HST_YMD,
+               APLY_NO,
+               SUFRER_NO,
+               APLY_SE_CD,
+               APLY_KND_CD,
+               APLY_RESN,
+               APLCNT_NO,
+               APLCNT_NM,
+               APLCNT_BRDT,
+               APLCNT_RRNO,
+               APLCNT_TELNO,
+               APLCNT_MBTEL_NO,
+               APLCNT_EML_ADDR,
+               APLCNT_ZIP,
+               APLCNT_ADDR,
+               APLCNT_DADDR,
+               SUFRER_REL_CD,
+               BANK_NM,
+               DPSTR_NM,
+               ACTNO,
+               DTH_YN,
+               DTH_YMD,
+               DMGE_RCOGN_YN,
+               PRIORD_BRVFM_NM,
+               PRIORD_BRVFM_REL_CD,
+               ASGNR_NM,
+               ASGNR_REL_CD,
+               ABSTRCT_ZIP,
+               ABSTRCT_ADDR,
+               ABSTRCT_DADDR,
+               FRST_APLY_YN,
+               FRST_APLY_NO,
+               APLY_YMD,
+               RCPT_YMD,
+               PRGRE_STUS_CD,    
+               SIGN_CN,           
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD,
+               DMGE_PRDUCT_CD,
+               DMGE_PRDUCT_CN,
+               PRDUCT_SBMSN_YN,
+               PRDUCT_SBMSN_RESN,
+               PRDUCT_USE_PRPS,
+               PRDUCT_USE_SE,
+               PRDUCT_USE_PLCE,
+               PRDUCT_USE_MTHD,
+               PRDUCT_IDNTY_YN,
+               PRDUCT_USE_BGNG_YMD,
+               PRDUCT_USE_END_YMD,
+               PRDUCT_USE_BGNG_HOUR,
+               PRDUCT_USE_END_HOUR,
+               PRDUCT_USE_CUNT_CN,
+               PRDUCT_USGQTY_CN,
+               DMGE_DISS_NM,
+               ETC_OPINION_CN
+             )
+        SELECT SEQ_BIO_RELIEF_HST.NEXTVAL,
+               #{logTy},
+               SYSDATE,
+               APLY_NO,
+               SUFRER_NO,
+               APLY_SE_CD,
+               APLY_KND_CD,
+               APLY_RESN,
+               APLCNT_NO,
+               APLCNT_NM,
+               APLCNT_BRDT,
+               APLCNT_RRNO,
+               APLCNT_TELNO,
+               APLCNT_MBTEL_NO,
+               APLCNT_EML_ADDR,
+               APLCNT_ZIP,
+               APLCNT_ADDR,
+               APLCNT_DADDR,
+               SUFRER_REL_CD,
+               BANK_NM,
+               DPSTR_NM,
+               ACTNO,
+               DTH_YN,
+               DTH_YMD,
+               DMGE_RCOGN_YN,
+               PRIORD_BRVFM_NM,
+               PRIORD_BRVFM_REL_CD,
+               ASGNR_NM,
+               ASGNR_REL_CD,
+               ABSTRCT_ZIP,
+               ABSTRCT_ADDR,
+               ABSTRCT_DADDR,
+               FRST_APLY_YN,
+               FRST_APLY_NO,
+               APLY_YMD,
+               RCPT_YMD,
+               PRGRE_STUS_CD,        
+               SIGN_CN,       
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD,
+               DMGE_PRDUCT_CD,
+               DMGE_PRDUCT_CN,
+               PRDUCT_SBMSN_YN,
+               PRDUCT_SBMSN_RESN,
+               PRDUCT_USE_PRPS,
+               PRDUCT_USE_SE,
+               PRDUCT_USE_PLCE,
+               PRDUCT_USE_MTHD,
+               PRDUCT_IDNTY_YN,
+               PRDUCT_USE_BGNG_YMD,
+               PRDUCT_USE_END_YMD,
+               PRDUCT_USE_BGNG_HOUR,
+               PRDUCT_USE_END_HOUR,
+               PRDUCT_USE_CUNT_CN,
+               PRDUCT_USGQTY_CN,
+               DMGE_DISS_NM,
+               ETC_OPINION_CN
+          FROM TB_BIO_RELIEF
+         WHERE APLY_NO = #{aplyNo}
+    </insert>
+
+</mapper>

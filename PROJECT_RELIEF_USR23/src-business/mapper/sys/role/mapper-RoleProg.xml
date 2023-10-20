@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="RoleProg">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchRoleId)">
+            AND A.ROLE_ID = #{srchRoleId}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchProgId)">
+            AND A.PROG_ID = #{srchProgId}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchSysCd)">
+            AND EXISTS (
+                SELECT 1
+                  FROM SYS_PROG
+                 WHERE PROG_ID   = A.PROG_ID
+                   AND SYS_SE_CD = #{srchSysCd}
+                )
+        </if>
+    </sql>
+
+    <!-- 역할별프로그램관리 목록조회 -->
+    <select id="listRoleProg" resultType="java.util.HashMap" parameterType="business.sys.role.service.RoleVO">
+        SELECT ROLE_ID              AS "roleId",
+               PROG_ID              AS "progId",
+              (SELECT ROLE_NM
+                 FROM SYS_ROLE
+                WHERE ROLE_ID = A.ROLE_ID
+               )                    AS "roleNm",
+              (SELECT PROG_NM
+                 FROM SYS_PROG
+                WHERE PROG_ID = A.PROG_ID
+               )                    AS "progNm",
+               RGTR_NO              AS "rgtrNo",
+               TO_CHAR(REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+               TO_CHAR(REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+               MDFR_NO              AS "mdfrNo",
+               TO_CHAR(MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+               TO_CHAR(MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+          FROM SYS_ROLE_PROG A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY ROLE_ID, PROG_ID
+    </select>
+
+    <!-- 역할별프로그램관리 등록 -->
+    <insert id="regiRoleProg" parameterType="business.sys.role.service.RoleVO">
+        INSERT 
+          INTO SYS_ROLE_PROG 
+             ( ROLE_ID,
+               PROG_ID,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{roleId},
+               #{progId},
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 역할별프로그램관리 삭제 -->
+    <delete id="deltRoleProg" parameterType="business.sys.role.service.RoleVO">
+        DELETE 
+          FROM SYS_ROLE_PROG 
+         WHERE ROLE_ID = #{roleId}
+           AND PROG_ID = #{progId}
+    </delete> 
+
+</mapper>

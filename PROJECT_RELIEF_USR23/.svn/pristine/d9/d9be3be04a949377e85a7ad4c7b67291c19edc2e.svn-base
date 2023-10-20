@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+       "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+ 
+<tiles-definitions>
+
+    <!-- 공통 레이아웃 -->
+    <definition name="tiles-common-modal" template="/WEB-INF/jsp/tiles/com/modal.jsp">
+        <put-attribute name="body"     value="" />
+    </definition>
+	<definition name="tiles-common-popup" template="/WEB-INF/jsp/tiles/com/popup.jsp">
+		<put-attribute name="body"     value="" />
+	</definition>
+
+	<!-- 사용자시스템 레이아웃 -->
+    <definition name="tiles-usr-page" template="/WEB-INF/jsp/tiles/usr/layout.jsp">
+        <put-attribute name="body"     value="" />
+        <put-attribute name="resource" value="/WEB-INF/jsp/tiles/usr/resource.jsp" />
+        <put-attribute name="header"   value="/WEB-INF/jsp/tiles/usr/header.jsp" />
+        <put-attribute name="footer"   value="/WEB-INF/jsp/tiles/usr/footer.jsp" />
+    </definition>
+	<definition name="tiles-usr-main" template="/WEB-INF/jsp/tiles/usr/main.jsp">
+		<put-attribute name="body"     value="" />
+		<put-attribute name="resource" value="/WEB-INF/jsp/tiles/usr/resource.jsp" />
+		<put-attribute name="header"   value="/WEB-INF/jsp/tiles/usr/header.jsp" />
+		<put-attribute name="footer"   value="/WEB-INF/jsp/tiles/usr/footer.jsp" />
+	</definition>
+
+    <!-- 사용자시스템 URL 패턴 -->
+	<definition name="usr/main" extends="tiles-usr-main">
+		<put-attribute name="body" value="/WEB-INF/jsp/usr/main.jsp" />
+	</definition>
+	<definition name="usr/*/popup*" extends="tiles-common-popup">
+		<put-attribute name="body" value="/WEB-INF/jsp/usr/{1}/popup{2}.jsp" />
+	</definition>
+    <definition name="usr/*/modal*" extends="tiles-common-modal">
+        <put-attribute name="body" value="/WEB-INF/jsp/usr/{1}/modal{2}.jsp" />
+    </definition>
+    <definition name="usr/*/*" extends="tiles-usr-page">
+        <put-attribute name="body" value="/WEB-INF/jsp/usr/{1}/{2}.jsp" />
+    </definition>
+
+    <!-- 시스템공통 레이아웃 -->
+    <definition name="com/cmm/login" template="/WEB-INF/jsp/com/cmm/login.jsp">
+        <put-attribute name="resource" value="/WEB-INF/jsp/tiles/usr/resource.jsp" />
+        <put-attribute name="header"   value="/WEB-INF/jsp/tiles/usr/header.jsp" />
+        <put-attribute name="footer"   value="/WEB-INF/jsp/tiles/usr/footer.jsp" />
+    </definition>
+    <definition name="com/*/popup*" extends="tiles-common-popup">
+        <put-attribute name="body" value="/WEB-INF/jsp/com/{1}/popup{2}.jsp" />
+    </definition>
+    <definition name="com/*/modal*" extends="tiles-common-modal">
+        <put-attribute name="body" value="/WEB-INF/jsp/com/{1}/modal{2}.jsp" />
+    </definition>
+    <definition name="com/*/*" extends="tiles-adm-page">
+        <put-attribute name="body" value="/WEB-INF/jsp/com/{1}/{2}.jsp" />
+    </definition>
+
+</tiles-definitions>

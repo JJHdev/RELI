@@ -1,0 +1,36 @@
+<!-- 주소검색 -->
+<form id="addressForm" name="addressForm" method="post" onsubmit="return false;">
+	<div class="formLayout box">
+		<div class="formGroup col-md-12">
+			<div class="inputWrap col-md-12">
+	            <input type="text" id="addressText" name="addressText" class="app-addon" placeholder="주소 입력"/>
+	            <button id="btnAdrsSearch" class="app-addon">검색</button>
+			</div>
+		</div>
+	</div>
+	<div class="app-space10"></div>
+	<div id="appAddressGrid">
+		<div id="addressGrid" class="tableWrap type4" style="height:450px;"></div>
+		<div id="addressPage" class="pagenation"></div>
+	</div>
+	<div id="appAddressForm">
+		<div class="formLayout box">
+			<div class="formGroup col-md-12">
+				<span class="col-md-2">기본주소</span>
+				<div class="inputWrap col-md-10">
+		            <div class="app-box" id="baseAddr"></div>
+				</div>
+			</div>
+			<div class="formGroup col-md-12">
+				<span class="col-md-2">상세주소</span>
+				<div class="inputWrap col-md-10">
+		            <input type="text" id="detailAddr" name="detailAddr" maxlength="50" class="w100 app-input" placeholder="상세주소 입력"/>
+				</div>
+			</div>
+		</div>
+		<div class="layerBtnWrap app-mt10">
+			<a href="javascript:void(0);" id="btnAdrsConfirm">확인</a>
+			<a href="javascript:void(0);" id="btnAdrsClose">취소</a>
+		</div>
+	</div>
+</form>

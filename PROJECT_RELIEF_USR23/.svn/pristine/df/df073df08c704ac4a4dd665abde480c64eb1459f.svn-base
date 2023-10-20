@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BioIdntfc">
+
+    <!-- 피해자정보 상세조회 -->
+    <select id="viewBioIdntfc" resultType="business.bio.relief.service.BioIdntfcVO" parameterType="string">
+        SELECT A.IDNTFC_ID                                    AS "idntfcId",
+               A.SUFRER_NO                                    AS "sufrerNo",
+               A.SUFRER_NM                                    AS "sufrerNm",
+               A.SUFRER_BRDT                                  AS "sufrerBrdt",
+               SCP.DEC_B64('KEY1',A.SUFRER_RRNO)              AS "sufrerRrno",
+               A.SUFRER_SXDST                                 AS "sufrerSxdst",
+               A.SUFRER_ZIP                                   AS "sufrerZip",
+               A.SUFRER_ADDR                                  AS "sufrerAddr",
+               A.SUFRER_DADDR                                 AS "sufrerDaddr",
+               '['||A.SUFRER_ZIP||'] '
+               || A.SUFRER_ADDR 
+               || NVL(A.SUFRER_DADDR,'')                      AS "sufrerAddrAll",
+               A.SUFRER_EML_ADDR                              AS "sufrerEmlAddr",
+               A.SUFRER_TELNO                                 AS "sufrerTelno",
+               A.SUFRER_MBTEL_NO                              AS "sufrerMbtelNo",
+               A.SUFRER_AGE                                   AS "sufrerAge",
+               FN_GET_CODENM('CT030', A.SUFRER_SXDST)         AS "sufrerSxdstNm",
+               A.RGTR_NO                                      AS "rgtrNo",
+               TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		       TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+               A.MDFR_NO                                      AS "mdfrNo",
+               TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		       TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+          FROM TB_BIO_IDNTFC A
+         WHERE SUFRER_NO = #{sufrerNo}
+    </select>
+
+    <!-- 성명/생년월일 기준 피해자정보 조회 -->
+    <select id="getBioIdntfcExistNo" resultType="string" parameterType="business.bio.relief.service.BioIdntfcVO">
+        SELECT SUFRER_NO
+          FROM TB_BIO_IDNTFC A
+         WHERE SUFRER_NM   = #{sufrerNm}
+           AND SUFRER_BRDT = #{sufrerBrdt}
+    </select>
+
+    <!-- 식별ID 생성 (접수시 생성됨) -->
+    <select id="getCreateBioIdntfcId" resultType="string">
+		SELECT TO_CHAR(SYSDATE,'YY') || '-2-' || 
+		       TO_CHAR(TO_NUMBER(SUBSTR(NVL(MAX(IDNTFC_ID), TO_CHAR(SYSDATE,'YY')||'-2-0000'), 6))+1, 'FM0000')
+		  FROM TB_BIO_IDNTFC
+		 WHERE IDNTFC_ID LIKE TO_CHAR(SYSDATE,'YY') || '%'
+    </select>
+
+    <!-- 피해자정보 등록 -->
+    <insert id="regiBioIdntfc" parameterType="business.bio.relief.service.BioIdntfcVO">
+        <selectKey keyProperty="sufrerNo" resultType="string" order="BEFORE">
+			SELECT SEQ_BIO_IDNTFC.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_BIO_IDNTFC 
+             ( SUFRER_NO,
+               IDNTFC_ID,
+               SUFRER_NM,
+               SUFRER_BRDT,
+               SUFRER_RRNO,
+               SUFRER_SXDST,
+               SUFRER_ZIP,
+               SUFRER_ADDR,
+               SUFRER_DADDR,
+               SUFRER_EML_ADDR,
+               SUFRER_TELNO,
+               SUFRER_MBTEL_NO,
+               SUFRER_AGE,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{sufrerNo},
+               #{idntfcId},
+               #{sufrerNm},
+               #{sufrerBrdt},
+               SCP.ENC_B64('KEY1', #{sufrerRrno}),
+               #{sufrerSxdst},
+               #{sufrerZip},
+               #{sufrerAddr},
+               #{sufrerDaddr},
+               #{sufrerEmlAddr},
+               #{sufrerTelno},
+               #{sufrerMbtelNo},
+               #{sufrerAge},
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 피해자정보 수정 -->
+    <update id="updtBioIdntfc" parameterType="business.bio.relief.service.BioIdntfcVO">
+        UPDATE TB_BIO_IDNTFC 
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(idntfcId)"      > IDNTFC_ID       = #{idntfcId},      </if>
+		<if test="@common.util.CommUtils@isNotEmpty(sufrerNm)"      > SUFRER_NM       = #{sufrerNm},      </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerBrdt)"    > SUFRER_BRDT     = #{sufrerBrdt},    </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerRrno)"    > SUFRER_RRNO     = SCP.ENC_B64('KEY1', #{sufrerRrno}),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerSxdst)"   > SUFRER_SXDST    = #{sufrerSxdst},   </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerZip)"     > SUFRER_ZIP      = #{sufrerZip},     </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerAddr)"    > SUFRER_ADDR     = #{sufrerAddr},    </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerDaddr)"   > SUFRER_DADDR    = #{sufrerDaddr},   </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerEmlAddr)" > SUFRER_EML_ADDR = #{sufrerEmlAddr}, </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerTelno)"   > SUFRER_TELNO    = #{sufrerTelno},   </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerMbtelNo)" > SUFRER_MBTEL_NO = #{sufrerMbtelNo}, </if>
+        <if test="@common.util.CommUtils@isNotEmpty(sufrerAge)"     > SUFRER_AGE      = #{sufrerAge},     </if>
+               MDFCN_YMD = SYSDATE  
+         WHERE SUFRER_NO = #{sufrerNo}
+    </update>
+
+    <!-- 피해자정보 이력저장 -->
+    <insert id="regiBioIdntfcHst" parameterType="business.bio.relief.service.BioIdntfcVO">
+        INSERT 
+          INTO TB_BIO_IDNTFC_HST 
+             ( HST_NO,
+               LOG_TY,
+               HST_YMD,
+               IDNTFC_ID,
+               SUFRER_NO,
+               SUFRER_NM,
+               SUFRER_BRDT,
+               SUFRER_RRNO,
+               SUFRER_SXDST,
+               SUFRER_ZIP,
+               SUFRER_ADDR,
+               SUFRER_DADDR,
+               SUFRER_EML_ADDR,
+               SUFRER_TELNO,
+               SUFRER_MBTEL_NO,
+               SUFRER_AGE,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+             )
+        SELECT SEQ_BIO_IDNTFC_HST.NEXTVAL,
+               #{logTy},
+               SYSDATE,
+               IDNTFC_ID,
+               SUFRER_NO,
+               SUFRER_NM,
+               SUFRER_BRDT,
+               SUFRER_RRNO,
+               SUFRER_SXDST,
+               SUFRER_ZIP,
+               SUFRER_ADDR,
+               SUFRER_DADDR,
+               SUFRER_EML_ADDR,
+               SUFRER_TELNO,
+               SUFRER_MBTEL_NO,
+               SUFRER_AGE,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+          FROM TB_BIO_IDNTFC
+         WHERE SUFRER_NO = #{sufrerNo}
+    </insert>
+
+</mapper>

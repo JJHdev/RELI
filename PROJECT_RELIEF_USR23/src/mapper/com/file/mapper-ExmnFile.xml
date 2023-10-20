@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ExmnFile">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(dtySeCd)">
+            AND A.DTY_SE_CD = #{dtySeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(dtyClCd)">
+            AND A.DTY_CL_CD = #{dtyClCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizAreaCd)">
+            AND A.BIZ_AREA_CD = #{bizAreaCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizOder)">
+            AND A.BIZ_ODER = #{bizOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnOder)">
+            AND A.EXMN_ODER = #{exmnOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo)">
+            AND A.APLY_NO = #{aplyNo}
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.SN                                          AS "sn",
+        A.DTY_SE_CD                                   AS "dtySeCd",
+        A.DTY_CL_CD                                   AS "dtyClCd",
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+        A.BIZ_ODER                                    AS "bizOder",
+        A.EXMN_ODER                                   AS "exmnOder",
+        A.APLY_NO                                     AS "aplyNo",
+        A.FILE_PATH                                   AS "filePath",
+        A.STRG_FILE_NM                                AS "strgNm",
+        A.FILE_NM                                     AS "fileNm",
+        A.FILE_SZ                                     AS "fileSz",
+        A.DEL_YN                                      AS "delYn",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 피해조사첨부파일 목록조회 -->
+    <select id="listExmnFile" resultType="java.util.HashMap" parameterType="business.com.file.service.ExmnFileVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_DMGE_EXMN_FILE A
+         WHERE A.DEL_YN        = 'N'
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.SN
+    </select>
+    <select id="listExmnFileCount" resultType="int" parameterType="business.com.file.service.ExmnFileVO">
+        SELECT COUNT(1) 
+          FROM TB_DMGE_EXMN_FILE A
+         WHERE A.DEL_YN        = 'N'
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 피해조사첨부파일 상세조회 -->
+    <select id="viewExmnFile" resultType="business.com.file.service.ExmnFileVO" parameterType="business.com.file.service.ExmnFileVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_DMGE_EXMN_FILE A
+         WHERE A.SN = #{sn}
+    </select>
+
+    <!-- 피해조사첨부파일 등록 -->
+    <insert id="regiExmnFile" parameterType="business.com.file.service.ExmnFileVO">
+        <selectKey keyProperty="sn" resultType="string" order="BEFORE">
+            SELECT SEQ_DMGE_EXMN_FILE.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_DMGE_EXMN_FILE 
+             ( SN,
+               DTY_SE_CD,
+               DTY_CL_CD,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               FILE_PATH,
+               STRG_FILE_NM,
+               FILE_NM,
+               FILE_SZ,
+               DEL_YN,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{sn},
+               #{dtySeCd},
+               #{dtyClCd},
+               #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{aplyNo},
+               #{filePath},
+               #{strgNm},
+               #{fileNm},
+               #{fileSz},
+               #{delYn},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 피해조사첨부파일 수정 -->
+    <update id="updtExmnFile" parameterType="business.com.file.service.ExmnFileVO">
+        UPDATE TB_DMGE_EXMN_FILE 
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(dtySeCd   )"> DTY_SE_CD    = #{dtySeCd   },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dtyClCd   )"> DTY_CL_CD    = #{dtyClCd   },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizAreaCd )"> BIZ_AREA_CD  = #{bizAreaCd },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizOder   )"> BIZ_ODER     = #{bizOder   },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnOder  )"> EXMN_ODER    = #{exmnOder  },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo    )"> APLY_NO      = #{aplyNo    },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(filePath  )"> FILE_PATH    = #{filePath  },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(strgNm    )"> STRG_FILE_NM = #{strgNm    },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(fileNm    )"> FILE_NM      = #{fileNm    },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(fileSz    )"> FILE_SZ      = #{fileSz    },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(delYn     )"> DEL_YN       = #{delYn     },</if>  
+               MDFCN_YMD = SYSDATE 
+         WHERE SN        = #{sn}
+    </update>
+
+    <!-- 피해조사첨부파일 삭제 -->
+    <delete id="deltExmnFile" parameterType="business.com.file.service.ExmnFileVO">
+        DELETE 
+          FROM TB_DMGE_EXMN_FILE 
+         WHERE SN = #{sn}
+    </delete> 
+
+</mapper>

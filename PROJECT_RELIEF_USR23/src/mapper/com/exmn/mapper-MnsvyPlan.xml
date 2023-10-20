@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="MnsvyPlan">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizArea)">
+            AND A.BIZ_AREA_CD = #{srchBizArea}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizOder)">
+            AND A.BIZ_ODER = #{srchBizOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchExmnStdt)">
+            AND (FN_FMT_STRTODATE(#{srchExmnStdt},'') BETWEEN A.EXMN_BGNG_YMD AND A.EXMN_END_YMD
+             OR  FN_FMT_STRTODATE(#{srchExmnStdt},'') <![CDATA[ <= ]]> A.EXMN_BGNG_YMD)
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchExmnEndt)">
+            AND (FN_FMT_STRTODATE(#{srchExmnEndt},'') BETWEEN A.EXMN_BGNG_YMD AND A.EXMN_END_YMD
+             OR  FN_FMT_STRTODATE(#{srchExmnEndt},'') <![CDATA[ >= ]]> A.EXMN_END_YMD)
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+       (SELECT BIZ_AREA
+          FROM TB_BIZ_MNG
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND USE_YN      = 'Y')                     AS "bizAreaNm",
+        A.BIZ_ODER                                    AS "bizOder",
+       (SELECT BIZ_ODER_NM
+          FROM TB_BIZ_ODER
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND BIZ_ODER    = A.BIZ_ODER
+           AND BIZ_USE_YN  = 'Y')                     AS "bizOderNm",
+        A.EXMN_ODER                                   AS "exmnOder",
+        A.EXMN_CN                                     AS "exmnCn",
+        FN_FMT_STRTODATE(A.EXMN_BGNG_YMD,'-')         AS "exmnBgngYmd",
+        FN_FMT_STRTODATE(A.EXMN_END_YMD ,'-')         AS "exmnEndYmd",
+       (SELECT COUNT(*)
+          FROM TB_MNSVY
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND BIZ_ODER    = A.BIZ_ODER
+           AND EXMN_ODER   = A.EXMN_ODER)             AS "exmnCnt",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 본조사계획 목록조회 -->
+    <select id="listMnsvyPlan" resultType="java.util.HashMap" parameterType="business.com.exmn.service.MnsvyVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_MNSVY_PLAN A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.REG_YMD DESC
+    </select>
+    <select id="listMnsvyPlanCount" resultType="int" parameterType="business.com.exmn.service.MnsvyVO">
+        SELECT COUNT(1) 
+          FROM TB_MNSVY_PLAN A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 본조사계획 상세조회 -->
+    <select id="viewMnsvyPlan" resultType="business.com.exmn.service.MnsvyVO" parameterType="business.com.exmn.service.MnsvyVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_MNSVY_PLAN A
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+    </select>
+
+    <!-- 본조사계획 등록 -->
+    <insert id="regiMnsvyPlan" parameterType="business.com.exmn.service.MnsvyVO">
+        INSERT 
+          INTO TB_MNSVY_PLAN 
+             ( BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               EXMN_CN,
+               EXMN_BGNG_YMD,
+               EXMN_END_YMD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{exmnCn},
+               FN_FMT_STRTODATE(#{exmnBgngYmd},''),
+               FN_FMT_STRTODATE(#{exmnEndYmd },''),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 본조사계획 수정 -->
+    <update id="updtMnsvyPlan" parameterType="business.com.exmn.service.MnsvyVO">
+        UPDATE TB_MNSVY_PLAN 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(exmnCn     )"> EXMN_CN       = #{exmnCn     },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnBgngYmd)"> EXMN_BGNG_YMD = FN_FMT_STRTODATE(#{exmnBgngYmd},''),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnEndYmd )"> EXMN_END_YMD  = FN_FMT_STRTODATE(#{exmnEndYmd },''),</if>  
+               MDFCN_YMD   = SYSDATE  
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+    </update>
+
+    <!-- 본조사계획 삭제 -->
+    <delete id="deltMnsvyPlan" parameterType="business.com.exmn.service.MnsvyVO">
+        DELETE 
+          FROM TB_MNSVY_PLAN 
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+    </delete> 
+
+    <!-- 본조사계획 NEXT 본조사차수 가져오기 (조건제거: 2021.11.24) -->
+    <select id="getMnsvyPlanNextOder" resultType="string" parameterType="business.com.exmn.service.MnsvyVO">
+        SELECT NVL(MAX(EXMN_ODER), 0) + 1
+          FROM TB_MNSVY_PLAN
+    </select>
+
+</mapper>

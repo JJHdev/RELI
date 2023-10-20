@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Bbs">
+
+	<resultMap id="bbsMap" type="business.com.bbs.service.BbsVO">
+		<result property="nttNo" column="NTT_NO" />
+		<result property="upNttNo" column="UP_NTT_NO" />
+		<result property="bbsSeCd" column="BBS_SE_CD" />
+		<result property="nttClCd" column="NTT_CL_CD" />
+		<result property="nttSj" column="NTT_SJ" />
+		<result property="nttCn" column="NTT_CN" jdbcType="CLOB" javaType="java.lang.String" />
+		<result property="pstgBgngYmd" column="PSTG_BGNG_YMD" />
+		<result property="pstgEndYmg" column="PSTG_END_YMD" />
+		<result property="nttLinkUrl" column="NTT_LINK_URL" />
+		<result property="emlAddr" column="EML_ADDR" />
+		<result property="inqCnt" column="INQ_CNT" />
+		<result property="nttPswd" column="NTT_PSWD" />
+		<result property="rlsYN" column="RLS_YN" />
+		<result property="delYN" column="DEL_YN" />
+		<result property="rgtrNo" column="RGTR_NO" />
+		<result property="regYmd" column="REG_YMD" />
+		<result property="mdfrnNo" column="MDFR_NO" />
+		<result property="mdfcnYmd" column="MDFCN_YMD" />
+		<result property="status" column="STATUS" />
+		<result property="rgtrNm" column="RGTR_NM" />
+	</resultMap>
+
+	<!-- ======================== -->
+	<!-- 공통 조회칼럼 SQL -->
+	<!-- ======================== -->
+	<sql id="Sql-Column">
+		  NTT_NO           AS "nttNo"
+		, UP_NTT_NO        AS "upNttNo"
+		, BBS_SE_CD        AS "bbsSeCd"
+		, (SELECT CD_NM 
+		   FROM SYS_CODE e
+		   WHERE a.NTT_CL_CD = e.CD_ID
+		   ) AS "nttClCd"
+		, NTT_SJ           AS "nttSj"
+		, NTT_CN           AS "nttCn"
+		, PSTG_BGNG_YMD    AS "pstgBgngYmd"
+		, PSTG_END_YMD     AS "pstgEndYmg"
+		, NTT_LINK_URL     AS "nttLinkUrl"
+		, EML_ADDR         AS "emlAddr"
+		, INQ_CNT          AS "inqCnt"
+		, NTT_PSWD         AS "nttPswd"
+		, RLS_YN           AS "rlsYN"
+		, DEL_YN           AS "delYN"
+		, RGTR_NO          AS "rgtrNo"
+		<!-- 작성자명을 표시하기위해 서브쿼리를 사용함 -->
+		, (SELECT USER_NM
+		   FROM TB_USER c
+		   WHERE c.USER_NO = a.RGTR_NO) AS RGTR_NM
+		, TO_CHAR(REG_YMD, 'yyyy-mm-dd') AS REG_YMD
+		, (SELECT NTT_NO
+		   FROM TB_BBS b
+		   WHERE a.NTT_NO = b.UP_NTT_NO) AS STATUS
+		,  (SELECT COUNT(*)
+		    FROM TB_BBS_FILE d
+		    WHERE a.NTT_NO = d.NTT_NO
+		    AND d.DEL_YN = 'N')  AS fileYN
+		
+	</sql>
+
+	<!-- ======================== -->
+	<!-- 공통 검색조건 SQL -->
+	<!-- ======================== -->
+	<sql id="Sql-Where">
+		<!-- USER_ID, USER_NM은 TB_BBS에 없는 칼럼이므로 이부분은 조건이 입력될 경우 오류가 발생함 <if test="srchUserId 
+			!= null"> AND USER_ID like '%'||#{srchUserId}||'%' </if> <if test="srchUserNm 
+			!= null"> AND USER_NM like '%'||#{srchUserNm}||'%' </if> -->
+		AND BBS_SE_CD = #{bbsSeCd}
+		AND RLS_YN = 'Y'
+		AND DEL_YN = 'N'
+		AND UP_NTT_NO is null
+		<if test="srchText != null and srchText != '' "><!-- 검색키워드가 있으면 -->
+			<choose>
+				<when test="srchType == '1'.toString() ">
+					AND USER_ID = #{srchText}
+				</when>
+				<when test="srchType == '2'.toString() ">
+					AND USER_NM = #{srchText}
+				</when>
+				<when test="srchType == '3'.toString() "><!-- 제목 -->
+					AND NTT_SJ LIKE '%'||#{srchText}||'%'
+				</when>
+				<when test="srchType == '4'.toString() "><!-- 내용 -->
+					AND NTT_CN LIKE '%'||#{srchText}||'%'
+				</when>
+				<otherwise><!-- 제목+내용 -->
+					AND (NTT_SJ LIKE '%'||#{srchText}||'%'
+					OR NTT_CN LIKE '%'||#{srchText}||'%')
+				</otherwise>
+			</choose>
+		</if>
+	</sql>
+
+
+	<!-- 게시판 공통 목록조회 (BBS_SE_CD의 인자값만 달라짐) -->
+	<select id="listBbs"
+		resultType="business.com.bbs.service.BbsVO">
+		SELECT
+		<include refid="Sql-Column" />
+		FROM TB_BBS a
+		WHERE 1 = 1
+		<include refid="Sql-Where" />
+		ORDER BY NTT_NO DESC
+	</select>
+	
+	<select id ="mylistBbs" resultType="business.com.bbs.service.BbsVO" >
+     	SELECT
+		<include refid="Sql-Column" />
+		FROM TB_BBS a
+		WHERE 1 = 1
+		<include refid="Sql-Where" />
+		AND RGTR_NO=#{rgtrNo}
+		ORDER BY NTT_NO DESC
+
+	</select>
+
+	<!-- 게시판 공통 목록카운트조회 목록을 페이징으로 처리하기 위해 반드시 있어야 하는 카운트 항목임 조건은 목록검색과 동일하게 
+		맵핑되어야 한다. -->
+	<select id="listBbsCount"
+		parameterType="business.com.bbs.service.BbsVO"
+		resultType="java.lang.Integer">
+		SELECT count(*)
+		FROM TB_BBS a
+		WHERE 1 = 1
+		<include refid="Sql-Where" />
+	</select>
+	<!-- 게시판 공통 목록카운트조회 목록ㄴ을 페이징으로 처리하기 위해 반드시 있어야 하는 카운트 항목임 조건은 목록검색과 동일하게 
+		맵핑되어야 한다. -->
+	<select id="mylistBbsCount"
+		parameterType="business.com.bbs.service.BbsVO"
+		resultType="java.lang.Integer">
+		SELECT count(*)
+		FROM TB_BBS a
+		WHERE 1 = 1
+		AND RGTR_NO=#{rgtrNo}
+		<include refid="Sql-Where" />
+	</select>
+	<!-- 게시판 공통 상세조회 -->
+	<select id="viewBbs"
+		parameterType="business.com.bbs.service.BbsVO"
+		resultType="business.com.bbs.service.BbsVO">
+		SELECT
+		<include refid="Sql-Column" />
+		FROM TB_BBS a
+		WHERE NTT_NO = #{nttNo}
+	</select>
+
+	<!-- 게시판 비밀번호 확인 (비밀번호 암호화 사용함 / 저장시에도 동일한 함수 사용할것) -->
+	<select id="checkBbsPassword"
+		parameterType="business.com.bbs.service.BbsVO" resultType="boolean">
+		SELECT CASE
+		WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+		FROM TB_BBS
+		WHERE NTT_NO = #{nttNo}
+		AND NTT_PSWD = SCP.HASH_B64('73',#{nttPswd})
+	</select>
+
+	<select id="viewBbsN" parameterType="business.com.bbs.service.BbsVO" resultType="business.com.bbs.service.BbsVO">
+		SELECT
+		<include refid="Sql-Column"/>
+		FROM TB_BBS a
+		WHERE UP_NTT_NO = #{upNttNo}
+	</select>
+	
+	<select id="checkQnaWriter" parameterType="business.com.bbs.service.BbsVO" resultType="business.com.bbs.service.BbsVO">
+		SELECT
+		<include refid="Sql-Column"/>
+		FROM TB_BBS a
+		WHERE NTT_NO = #{nttNo}
+	</select>	
+	
+	 
+	<insert id="qnaSave" parameterType="business.com.bbs.service.BbsVO">
+        <selectKey keyProperty="nttNo" resultType="int" order="BEFORE">
+            SELECT SEQ_BBS.NEXTVAL FROM DUAL
+        </selectKey>
+		INSERT
+		INTO
+		TB_BBS (
+		  NTT_NO
+		, UP_NTT_NO
+		, BBS_SE_CD
+		, NTT_CL_CD
+		, NTT_SJ
+		, NTT_CN
+		, PSTG_BGNG_YMD
+		, PSTG_END_YMD
+		, NTT_LINK_URL
+		, EML_ADDR
+		, INQ_CNT
+		, NTT_PSWD
+		, RLS_YN
+		, DEL_YN
+		, RGTR_NO
+		, REG_YMD
+		, MDFR_NO
+		, MDFCN_YMD)
+		VALUES(
+		  #{nttNo}
+		, null
+		, #{bbsSeCd}
+		, #{nttClCd}
+		, #{nttSj}
+		, #{nttCn}
+		, #{pstgBgngYmd}
+		, #{pstgEndYmg}
+		, null
+		, null
+		, null
+		, SCP.HASH_B64('73',#{nttPswd})
+		, 'Y'
+		, 'N'
+		, #{rgtrNo}
+		, SYSDATE
+		, null
+		, null
+		)
+	</insert> 
+	
+	 
+	<select id="modifyBbs" parameterType="business.com.bbs.service.BbsVO" resultType="business.com.bbs.service.BbsVO">
+		SELECT 
+		<include refid="Sql-Column" />
+		FROM TB_BBS a
+		WHERE 1=1
+		AND NTT_NO = #{nttNo}
+	</select>
+	
+	<update id='updateBbs' parameterType="business.com.bbs.service.BbsVO">
+	 UPDATE 
+	     TB_BBS 
+	 SET 
+	     NTT_SJ=#{nttSj}
+	    ,NTT_CN=#{nttCn}
+	    ,MDFR_NO=#{mdfrnNo}
+	    ,MDFCN_YMD=SYSDATE
+	 WHERE 1=1
+	 AND NTT_NO = #{nttNo}
+	 AND BBS_SE_CD =#{bbsSeCd} 
+	</update>
+	
+	
+	<update id='inqCntUp' parameterType="business.com.bbs.service.BbsVO">
+		UPDATE TB_BBS
+	    SET INQ_CNT = NVL(INQ_CNT,0)+1
+	    WHERE NTT_NO = #{nttNo}
+	</update>
+	
+	<!-- 삭제시 플래그만 업데이트 한다. -->
+	<update id='deleteBbs' parameterType="business.com.bbs.service.BbsVO">
+		 UPDATE TB_BBS 
+		    SET DEL_YN    = 'Y'
+		       ,MDFR_NO   = #{gsUserNo}
+		       ,MDFCN_YMD = SYSDATE
+		  WHERE BBS_SE_CD = #{bbsSeCd} 
+		    AND NTT_NO    = #{nttNo}
+	</update>
+	
+    <!-- [관리자] QNA 답변 등록 -->
+	<insert id='saveAnswer' parameterType="business.com.bbs.service.BbsVO">
+       INSERT INTO TB_BBS(
+                          NTT_NO
+                         ,UP_NTT_NO
+                         ,BBS_SE_CD
+                         ,NTT_CN
+                         ,RLS_YN
+                         ,DEL_YN
+                         ,REG_YMD
+                         
+                        )
+                 VALUES (
+                 SEQ_BBS.NEXTVAL
+                 ,#{nttNo}
+                 ,'20'
+                 ,#{nttCn}
+                 ,'Y'
+                 ,'N'
+                 ,SYSDATE)
+	</insert>
+	
+	<!-- [관리자] QNA 답변 수정 -->
+	<update id='updateAnswer' parameterType="business.com.bbs.service.BbsVO">
+ 	    UPDATE TB_BBS
+        SET 
+         NTT_CN =#{nttCn}
+	    ,MDFR_NO=#{mdfrnNo}
+	    ,MDFCN_YMD=SYSDATE
+        WHERE 1=1
+        AND NTT_NO = #{status}
+        AND BBS_SE_CD = #{bbsSeCd}
+	</update>
+	
+		<!-- [관리자] QNA 답변 삭제 -->
+	<update id='deleteQna' parameterType="business.com.bbs.service.BbsVO">
+        UPDATE TB_BBS
+        SET 
+         RLS_YN='N'
+        ,DEL_YN='Y'
+	    ,MDFR_NO=#{mdfrnNo}
+	    ,MDFCN_YMD=SYSDATE
+        WHERE 1=1
+        AND UP_NTT_NO = #{status}
+        
+	</update>
+
+	<!-- 메인화면 공지사항 팝업 (window) -->
+	<select id="popupNotice" parameterType="business.com.bbs.service.BbsVO" resultType="business.com.bbs.service.BbsVO">
+		SELECT NTT_NO				AS "nttNo"
+		     , NTT_SJ				AS "nttSj"
+		     , NTT_CN				AS "nttCn"
+		     , PSTG_BGNG_YMD		AS "pstgBgngYmd"
+		     , PSTG_END_YMD			AS "pstgEndYmd"
+		     , POPUP_HGHT			AS "popupHght"
+		     , POPUP_SQR			AS "popupSqr"
+	  	  FROM TB_BBS a
+		 WHERE BBS_SE_CD 	= 10
+		   AND POPUP_YN 	= 'Y'
+		   AND DEL_YN 		= 'N'
+		   AND TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN PSTG_BGNG_YMD AND PSTG_END_YMD 
+	</select> 
+
+	<!-- 메인화면 공지사항 팝업 상세조회 -->
+	<select id="viewPopupNotice" parameterType="business.com.bbs.service.BbsVO" resultType="business.com.bbs.service.BbsVO">
+		SELECT NTT_NO				AS "nttNo"
+		     , NTT_SJ				AS "nttSj"
+		     , NTT_CN				AS "nttCn"
+		     , PSTG_BGNG_YMD		AS "pstgBgngYmd"
+		     , PSTG_END_YMD			AS "pstgEndYmd"
+		     , POPUP_HGHT			AS "popupHght"
+		     , POPUP_SQR			AS "popupSqr"
+	  	  FROM TB_BBS a
+		 WHERE NTT_NO 	= #{nttNo}
+	</select> 
+	
+</mapper>
+	
+	
+	
+	
+	

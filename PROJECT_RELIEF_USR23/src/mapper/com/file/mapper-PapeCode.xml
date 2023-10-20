@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PapeCode">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(id)">
+           AND A.UP_PAPE_CD = #{id}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(upPapeCd)">
+           AND A.UP_PAPE_CD = #{upPapeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchType)">
+          AND A.UP_PAPE_CD = #{srchType}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchUseYn)">
+          AND A.USE_YN = #{srchUseYn}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchText)">
+          AND(A.PAPE_CD   LIKE '%' || #{srchText} || '%'
+           OR A.PAPE_NM   LIKE '%' || #{srchText} || '%'
+           OR A.FILE_NM   LIKE '%' || #{srchText} || '%'
+           OR A.FILE_PATH LIKE '%' || #{srchText} || '%'
+             )
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.PAPE_CD                                      AS "id",
+        A.PAPE_CD                                      AS "papeCd",
+        A.UP_PAPE_CD                                   AS "upPapeCd",
+        A.PAPE_NM                                      AS "papeNm",
+        A.CD_ORDR                                      AS "cdOrdr",
+        A.USE_YN                                       AS "useYn",
+        A.DOWN_TRGT_YN                                 AS "downTrgtYn",
+        A.FILE_NM                                      AS "fileNm",
+        A.FILE_PATH                                    AS "filePath",
+        A.DOWN_CNT                                     AS "downCnt",
+        A.LIMT_CNT                                     AS "limtCnt",
+        A.RGTR_NO                                      AS "rgtrNo",
+        NVL((SELECT USER_NM
+           FROM TB_USER
+          WHERE USER_NO = A.RGTR_NO),A.RGTR_NO)        AS "rgtrNm",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        A.MDFR_NO                                      AS "mdfrNo",
+        NVL((SELECT USER_NM
+           FROM TB_USER
+          WHERE USER_NO = A.MDFR_NO),A.MDFR_NO)        AS "mdfrNm",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate",
+        (SELECT PAPE_NM
+           FROM TB_PAPE_CODE
+          WHERE PAPE_CD     = A.UP_PAPE_CD)            AS "upPapeNm",
+        (SELECT CASE WHEN COUNT(*) > 0
+                     THEN 'closed'
+                     ELSE 'open'
+                END
+           FROM TB_PAPE_CODE
+          WHERE UP_PAPE_CD = A.PAPE_CD)                AS "state"
+    </sql>
+
+    <!-- 서류코드관리 목록조회 -->
+    <select id="listPapeCode" resultType="java.util.HashMap" parameterType="business.com.file.service.PapeCodeVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_PAPE_CODE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY
+               A.PAPE_CD,
+               A.CD_ORDR
+    </select>
+    <select id="listPapeCodeCount" resultType="int" parameterType="business.com.file.service.PapeCodeVO">
+        SELECT COUNT(1)
+          FROM TB_PAPE_CODE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 서류코드관리 계층형목록조회 -->
+    <select id="listPapeCodeTree" resultType="java.util.HashMap" parameterType="business.com.file.service.PapeCodeVO">
+        SELECT LEVEL-1   AS "level",
+               <include refid="Sql-Column"/>
+          FROM TB_PAPE_CODE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+       CONNECT BY PRIOR    A.PAPE_CD    = A.UP_PAPE_CD
+         START WITH        A.UP_PAPE_CD = 'NONE'
+         ORDER SIBLINGS BY A.PAPE_CD, A.CD_ORDR
+    </select>
+
+    <!-- 서류코드관리 상세조회 -->
+    <select id="viewPapeCode" resultType="business.com.file.service.PapeCodeVO" parameterType="business.com.file.service.PapeCodeVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_PAPE_CODE A
+         WHERE PAPE_CD      = #{papeCd}
+           AND UP_PAPE_CD   = #{upPapeCd}
+    </select>
+
+    <!-- 서류코드 중복확인(코드) -->
+    <select id="confPapeCode" parameterType="business.com.file.service.PapeCodeVO" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_PAPE_CODE
+         WHERE PAPE_CD     = #{papeCd}
+        <if test="@common.util.CommUtils@isNotEmpty(upPapeCd) ">
+           AND UP_PAPE_CD  = #{upPapeCd}
+        </if>
+    </select>
+
+    <!-- 서류코드 중복확인(상위코드) -->
+    <select id="confUpperPapeCode" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_PAPE_CODE
+         WHERE UP_PAPE_CD = #{papeCd}
+    </select>
+
+    <!-- 서류코드 중복확인(하위코드) -->
+    <select id="confLowerPapeCode" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_PAPE_CODE
+         WHERE UP_PAPE_CD = #{papeCd}
+    </select>
+
+    <!-- 서류코드관리 등록 -->
+    <insert id="regiPapeCode" parameterType="business.com.file.service.PapeCodeVO">
+        INSERT
+          INTO TB_PAPE_CODE
+             ( PAPE_CD,
+               UP_PAPE_CD,
+               PAPE_NM,
+               CD_ORDR,
+               DOWN_TRGT_YN,
+               USE_YN,
+               <if test="@common.util.CommUtils@isNotEmpty(fileNm)">
+               FILE_NM,
+               FILE_PATH,
+               </if>
+               DOWN_CNT,
+               LIMT_CNT,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{papeCd},
+               NVL(#{upPapeCd}, 'NONE'),
+               #{papeNm},
+               NVL(#{cdOrdr}, (
+                   SELECT NVL(MAX(CD_ORDR), 0) + 1
+                     FROM TB_PAPE_CODE
+                    WHERE UP_PAPE_CD = NVL(#{upPapeCd}, 'NONE')
+               )),
+               NVL(#{downTrgtYn}, 'N'),
+               NVL(#{useYn}, 'Y'),
+               <if test="@common.util.CommUtils@isNotEmpty(fileNm)">
+               #{fileNm},
+               #{filePath},
+               </if>
+               #{downCnt},
+               #{limtCnt},
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 서류코드관리 수정 -->
+    <update id="updtPapeCode" parameterType="business.com.file.service.PapeCodeVO">
+        UPDATE TB_PAPE_CODE
+           SET PAPE_NM      = #{papeNm},
+           <if test="@common.util.CommUtils@isNotEmpty(fileNm)">
+               FILE_NM      = #{fileNm},
+               FILE_PATH    = #{filePath},
+           </if>
+               DOWN_CNT     = #{downCnt},
+               LIMT_CNT     = #{limtCnt},
+               CD_ORDR      = NVL(#{cdOrdr}, (
+                                  SELECT NVL(MAX(CD_ORDR), 0) + 1
+                                    FROM TB_PAPE_CODE
+                                   WHERE UP_PAPE_CD = NVL(#{upPapeCd}, 'NONE')
+                              )),
+               DOWN_TRGT_YN = NVL(#{downTrgtYn}, 'N'),
+               USE_YN       = NVL(#{useYn}, 'Y'),
+               MDFR_NO      = #{gsUserNo},
+               MDFCN_YMD    = SYSDATE
+         WHERE PAPE_CD      = #{papeCd}
+           AND UP_PAPE_CD   = #{upPapeCd}
+    </update>
+
+    <!-- 서류코드관리 삭제 -->
+    <delete id="deltPapeCode" parameterType="business.com.file.service.PapeCodeVO">
+        DELETE
+          FROM TB_PAPE_CODE
+         WHERE PAPE_CD      = #{papeCd}
+           AND UP_PAPE_CD   = NVL(#{upPapeCd}, 'NONE')
+    </delete>
+
+    <!-- 2022.01.11 CSLEE 추가
+         다운로드 카운트 층가 저장 -->
+    <update id="updtPapeCodeDownCount" parameterType="business.com.file.service.PapeCodeVO">
+        UPDATE TB_PAPE_CODE SET
+               DOWN_CNT   = NVL(DOWN_CNT,0) + 1
+         WHERE PAPE_CD    = #{papeCd}
+           AND UP_PAPE_CD = #{upPapeCd}
+    </update>
+
+</mapper>

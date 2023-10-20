@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="RcperLvlhDtls">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Column">
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+        A.BIZ_ODER                                    AS "bizOder",
+        A.EXMN_ODER                                   AS "exmnOder",
+        A.APLY_NO                                     AS "aplyNo",
+        A.GIVE_YR                                     AS "giveYr",
+        A.GIVE_MM                                     AS "giveMm",
+        FN_FMT_STRTODATE(A.GIVE_YMD,'-')              AS "giveYmd",
+        A.GIVE_YN                                     AS "giveYn",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 요양생활수당지급상세 목록조회 -->
+    <select id="listRcperLvlhDtls" resultType="java.util.HashMap" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_RCPER_LVLH_DTLS A
+         WHERE A.BIZ_AREA_CD = #{bizAreaCd}
+           AND A.BIZ_ODER    = #{bizOder}
+           AND A.EXMN_ODER   = #{exmnOder}
+           AND A.APLY_NO     = #{aplyNo}
+        <if test="@common.util.CommUtils@isNotEmpty(giveYr)">
+            AND A.GIVE_YR    = #{giveYr}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveMm)">
+            AND A.GIVE_MM    = #{giveMm}
+        </if>
+         ORDER BY 
+               A.BIZ_AREA_CD,
+               A.BIZ_ODER,
+               A.EXMN_ODER,
+               A.APLY_NO,
+               A.GIVE_YR,
+               A.GIVE_MM
+    </select>
+    <select id="listRcperLvlhDtlsCount" resultType="int" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT COUNT(1) 
+          FROM TB_RCPER_LVLH_DTLS A
+         WHERE A.BIZ_AREA_CD = #{bizAreaCd}
+           AND A.BIZ_ODER    = #{bizOder}
+           AND A.EXMN_ODER   = #{exmnOder}
+           AND A.APLY_NO     = #{aplyNo}
+        <if test="@common.util.CommUtils@isNotEmpty(giveYr)">
+            AND A.GIVE_YR    = #{giveYr}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveMm)">
+            AND A.GIVE_MM    = #{giveMm}
+        </if>
+    </select>
+
+    <!-- 요양생활수당지급상세 상세조회 -->
+    <select id="viewRcperLvlhDtls" resultType="business.com.exmn.service.RcperLvlhVO" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_RCPER_LVLH_DTLS A
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+           AND GIVE_MM     = #{giveMm}
+    </select>
+
+    <!-- 요양생활수당지급상세 등록 -->
+    <insert id="regiRcperLvlhDtls" parameterType="business.com.exmn.service.RcperLvlhVO">
+        INSERT 
+          INTO TB_RCPER_LVLH_DTLS 
+             ( BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               GIVE_YR,
+               GIVE_MM,
+               GIVE_YMD,
+               GIVE_YN,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{aplyNo},
+               #{giveYr},
+               #{giveMm},
+               FN_FMT_STRTODATE(#{giveYmd},''),
+               NVL(#{giveYn},'N'),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 요양생활수당지급상세 이력저장 -->
+    <insert id="regiRcperLvlhDtlsHst" parameterType="business.com.exmn.service.RcperLvlhVO">
+        INSERT 
+          INTO TB_RCPER_LVLH_DTLS_HST
+             ( HST_NO,
+               LOG_TY,
+               HST_YMD,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               GIVE_YR,
+               GIVE_MM,
+               GIVE_YMD,
+               GIVE_YN,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+             )
+        SELECT SEQ_RCPER_LVLH_DTLS_HST.NEXTVAL,
+               #{logTy},
+               SYSDATE,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               GIVE_YR,
+               GIVE_MM,
+               GIVE_YMD,
+               GIVE_YN,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+          FROM TB_RCPER_LVLH_DTLS
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+           AND GIVE_MM     = #{giveMm}
+    </insert>
+
+    <!-- 요양생활수당지급상세 수정 -->
+    <update id="updtRcperLvlhDtls" parameterType="business.com.exmn.service.RcperLvlhVO">
+        UPDATE TB_RCPER_LVLH_DTLS 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(giveYmd)">
+		       GIVE_YMD    = FN_FMT_STRTODATE(#{giveYmd},''),</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(giveYn)">
+  		       GIVE_YN     = #{giveYn},
+  		</if>  
+               MDFCN_YMD   = SYSDATE  
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+           AND GIVE_MM     = #{giveMm}
+    </update>
+
+    <!-- 요양생활수당지급상세 삭제 -->
+    <delete id="deltRcperLvlhDtls" parameterType="business.com.exmn.service.RcperLvlhVO">
+        DELETE 
+          FROM TB_RCPER_LVLH_DTLS 
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+           AND GIVE_MM     = #{giveMm}
+    </delete> 
+
+</mapper>

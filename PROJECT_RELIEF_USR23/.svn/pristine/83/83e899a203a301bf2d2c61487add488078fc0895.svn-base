@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BbsFile">
+
+    <sql id="Sql-Column">
+        A.SN                                          AS "sn",
+        A.NTT_NO                                     AS "dcmtNo",
+        A.FILE_PATH                                   AS "filePath",
+        A.STRG_FILE_NM                                AS "saveName",
+        A.FILE_NM                                     AS "fileName",
+        A.FILE_SZ                                     AS "fileSize",
+        A.DOWN_CNT                                    AS "downCnt",
+        A.DEL_YN                                      AS "delYn",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 게시판 첨부파일 목록조회 -->
+    <select id="listBbsFile" resultType="business.com.bbs.service.BbsFileVO" parameterType="business.com.bbs.service.BbsFileVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BBS_FILE A
+         WHERE NTT_NO = #{dcmtNo}
+           AND DEL_YN  = 'N'
+         ORDER BY 
+               A.SN
+    </select>
+
+    <!-- 게시판 첨부파일 상세조회 -->
+    <select id="viewBbsFile" resultType="business.com.bbs.service.BbsFileVO" parameterType="business.com.bbs.service.BbsFileVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BBS_FILE A
+         WHERE SN = #{sn}
+    </select>
+
+    <!-- 게시판 첨부파일 등록 -->
+    <insert id="regiBbsFile" parameterType="business.com.bbs.service.BbsFileVO">
+        <selectKey keyProperty="sn" resultType="string" order="BEFORE">
+            SELECT SEQ_BBS_FILE.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_BBS_FILE 
+             ( SN,
+               NTT_NO,
+               FILE_PATH,
+               STRG_FILE_NM,
+               FILE_NM,
+               FILE_SZ,
+               DOWN_CNT,
+               DEL_YN,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{sn},
+               #{dcmtNo},
+               #{filePath},
+               #{saveName},
+               #{fileName},
+               #{fileSize},
+               #{downCnt},
+               'N',
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 게시판 첨부파일 수정 -->
+    <update id="updtBbsFile" parameterType="business.com.bbs.service.BbsFileVO">
+        UPDATE TB_BBS_FILE 
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(dcmtNo  )"> NTT_NO      = #{dcmtNo  },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(filePath)"> FILE_PATH    = #{filePath},</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(saveName)"> STRG_FILE_NM = #{saveName},</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(fileName)"> FILE_NM      = #{fileName},</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(fileSize)"> FILE_SZ      = #{fileSize},</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(downCnt )"> DOWN_CNT     = #{downCnt },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(delYn   )"> DEL_YN       = #{delYn   },</if>  
+               MDFCN_YMD = SYSDATE  
+         WHERE SN        = #{sn}
+    </update>
+
+    <!-- 게시판 첨부파일 삭제 -->
+    <update id="deltBbsFile" parameterType="business.com.bbs.service.BbsFileVO">
+        UPDATE TB_BBS_FILE 
+           SET MDFR_NO   = #{gsUserNo}
+              ,MDFCN_YMD = SYSDATE  
+              ,DEL_YN    = 'Y'
+         WHERE SN        = #{sn}
+    </update> 
+
+    <!-- 특정 글에 속하는 모든 파일정보 삭제 -->
+    <update id="deltBbsFileAll" parameterType="business.com.bbs.service.BbsFileVO">
+        UPDATE TB_BBS_FILE 
+           SET MDFR_NO   = #{gsUserNo}
+              ,MDFCN_YMD = SYSDATE  
+              ,DEL_YN    = 'Y'
+         WHERE NTT_NO   = #{dcmtNo}
+    </update>
+    
+</mapper>

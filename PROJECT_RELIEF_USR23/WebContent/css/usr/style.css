@@ -1,0 +1,107 @@
+@charset "utf-8";
+
+@import url("bootstrap.min.css");
+
+/* EBI-퍼블리싱 */
+@import url("reset.css");
+@import url("response.css");
+@import url("common.css");
+@import url("common-ani.css");
+@import url("layerpopup.css");
+@import url("ebi.slider.css");
+@import url("swiper.css");
+@import url("layout.css");
+@import url("main.css");
+@import url("design.css");
+
+@import url("../../plugins/easyui-1.4.3/themes/bootstrap/easyui.css");
+@import url("../../plugins/easyui-1.4.3/themes/icon.css");
+@import url("../../plugins/easyui-1.4.3/themes/color.css");
+@import url("usr-easyui.css");
+
+/* EasyUI CSS overwrite START */
+.datebox .combo-arrow {background-image: url(../../images/common/i-cal.svg);background-position: center center;}
+.cal-date input[type="text"] { border:none; font-size: 15px; }
+/* EasyUI CSS overwrite END */
+.datebox-button { display: inline-block; margin-bottom: 5px;}
+.datebox .combo-arrow {background-color:#fff; width:35px !important; height:35px !important; }
+.datebox .combo-arrow:hover {background-color:#fff;}
+.datebox { height: 35px !important; }
+
+/********************************** CSS OVERWRITE AND CREATE *********************************/
+
+/* .headerH {height:149px;} */
+
+/* .modal-header { background: #303843; } */
+.modal-header {padding:80px 50px 30px; border-bottom:0;}
+/* .modal-header .bootstrap-dialog-title { font-size: 17px; color: #fff; } */
+.modal-header .bootstrap-dialog-close-button .close { color: #fff; opacity: 1; }
+.modal-content { border-radius: 50px; }
+.modal-body {padding:50px; padding-top:0;}
+.modal-header .bootstrap-dialog-title {font-size:24px; color:#000;font-weight:600; text-align:center;}
+.modal-header .bootstrap-dialog-close-button .close {position:absolute; right:30px; top:30px; width:40px; height:40px; color:#000;}
+/* .modal-header .bootstrap-dialog-close-button .close {position:absolute; right:30px; top:30px; width:40px; height:40px;background:url(../../design/usr/images/common/i-close.svg)center /10px no-repeat;} */
+
+/* 페이징 */
+#paging {}
+#paging .pageWrap {}
+#paging .pageWrap ul {font-size:0; text-align:center;}
+#paging .pageWrap ul li {display:inline-block;}
+#paging .pageWrap ul li+li {margin-left:-1px;}
+#paging .pageWrap ul li a {display:block; font-size:18px; color:#5e8e71; width:40px; height:40px; line-height:38px; border:1px solid #e5e5e5;}
+#paging .pageWrap ul li:hover a {background-color:#f1f1f1;}
+#paging .pageWrap ul li.active {}
+#paging .pageWrap ul li.active a {background:#5e8e71; color:#fff;}
+
+#paging .pageWrap ul li.arrow a {text-indent:-999999px; background-position:center; background-repeat:no-repeat; background-size:14px;}
+#paging .pageWrap ul li.first a {background-image:url(../../images/paging/pFirst.svg);}
+#paging .pageWrap ul li.prev a {background-image:url(../../images/paging/pPrev.svg);}
+#paging .pageWrap ul li.next a {background-image:url(../../images/paging/pNext.svg);}
+#paging .pageWrap ul li.last a {background-image:url(../../images/paging/pLast.svg);}
+
+/* 구제급여 지급현황 */
+.member .relief .payWrap dl {text-align:center;}
+.member .relief .payWrap dl>* {display:inline-block; float:none !important;}
+.member .relief .payWrap dl dt {margin-right:50px; width:auto !important;}
+
+.layerPop.off {display:none;}
+.relief-tab-panel.off {display:none;}
+
+/* 오른쪽 체크박스 스타일 */
+.relief input[type="checkbox"].right-check {position:relative; left: 0; margin-top:-3px; }
+.relief input[type="checkbox"] {position:absolute; left:-9999999999999px;}
+.relief input[type="checkbox"]+label {padding-left:24px; padding-right:15px; background:url(../../images/common/input-check.svg)0 50% no-repeat;}
+.relief input[type="checkbox"]:checked+label {background-image:url(../../images/common/input-check-on.svg);}
+.relief input[type="checkbox"][disabled]+label {background-image:url(../../images/common/input-check-disabled.svg);}
+
+.relief input[type="radio"]+label {margin-right:0; padding-left:24px; padding-right:15px; background:url(../../images/common/input-radio.svg)0 50% /18px no-repeat;}
+.relief input[type="radio"]:checked+label {background-image:url(../../images/common/input-radio-on.svg);}
+.relief input[type="radio"]:checked+label {background-image:url(../../images/common/input-radio-on.svg);}
+.relief input[type=radio].disabled+label  {background-image:url(../../images/common/input-radio-disabled.svg);}
+.relief input[type=radio][disabled]+label {background-image:url(../../images/common/input-radio-disabled.svg);}
+
+/* 라디오박스 기본크기조정 */
+input[type='radio']+label {background:url(../../images/common/agree.svg)0 50% / 20px no-repeat;}
+
+/* =================== 2022.10.04 (세션 남은시간) ========================== */
+.sessionInfo {display:inline-block; float:right; padding-top:0px; padding-right:30px; vertical-align:middle; font-size:14px; color:#474747;line-height:40px;}
+.sessionInfo .leftTimeInfo {color: #00d900;}
+.sessionInfo a {color:#009797; padding-left:10px;}
+
+
+/* *****살생물제품피해구제***** */
+.intro-bio {width:1200px; max-width:100%; margin:0 auto;}
+.biocide-inner {font-size:16px !important; background-color: #f2f2f2 !important; text-align: left !important; padding-left: 12px !important; width: 208px !important;}
+.biocide-list {height:90%; display: flex; justify-content: center; align-items: center; color: #26779B; vertical-align: middle !important;}
+.biocide-ul {border-bottom: 1px solid #C8C8C8;}
+.biocide-div {border-bottom: 1px dashed #C8C8C8 !important; list-style: none !important; vertical-align: middle;}
+.biocide-info {color: #26779B;}
+.biocide-ul p:before {content : none !important;}
+.biocide-p p:before {content: none !important;}
+.eco-life {padding : 15px !important;}
+.intro-biocide-product {background-color: #f4fff0; margin-top: 50px; width:1200px; height: 130px;padding-top: 30px; padding-bottom: 30px;}
+.contents .contents-wrap {padding:120px 0; width:1200px; max-width:100%; margin:0 auto;}
+/* *****동의서 전문보기 버튼***** */
+.agreeDocuCls {background-color: #eeeeee; padding: 3px; border-radius: 3px; margin-bottom: 2px;}
+.relief input[type="checkbox"].agreeDocuCls+label{background: #eeeeee; padding: 3px; border-radius: 3px; margin-bottom: 2px;}
+.agreePre {font-family: 'Pretendard';}

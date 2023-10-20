@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Prog">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test=" !@common.util.CommUtils@isEmpty(srchSysCd) ">
+           AND A.SYS_SE_CD = #{srchSysCd}
+        </if>
+        <if test=" !@common.util.CommUtils@isEmpty(srchMenuId) ">
+           AND A.MENU_ID = #{srchMenuId}
+        </if>
+        <if test=" !@common.util.CommUtils@isEmpty(srchText) ">
+           AND(A.PROG_NM    LIKE '%'||#{srchText}||'%' 
+            OR A.PROG_ID    LIKE '%'||#{srchText}||'%'
+            OR A.PROG_URL   LIKE '%'||#{srchText}||'%')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRoleId)">
+            AND NOT EXISTS (
+                SELECT 1
+                  FROM SYS_ROLE_PROG
+                 WHERE PROG_ID = A.PROG_ID
+                   AND ROLE_ID = #{srchRoleId}
+                )
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.PROG_ID                                      AS "progId",
+        A.PROG_NM                                      AS "progNm",
+        A.PROG_URL                                     AS "progUrl",
+        A.PROG_TY                                      AS "progTy",
+        A.MENU_ID                                      AS "menuId",
+        B.MENU_NM                                      AS "menuNm",
+        A.PROG_ORDR                                    AS "progOrdr",
+        A.USE_YN                                       AS "useYn",
+        A.SYS_SE_CD                                    AS "sysCd",
+        FN_GET_CODENM('CT003', A.SYS_SE_CD)            AS "sysNm",
+        A.RGTR_NO                                      AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        A.MDFR_NO                                      AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+    </sql>
+
+    <!-- 프로그램관리 목록조회 -->
+    <select id="listProg" resultType="java.util.HashMap" parameterType="business.sys.prog.service.ProgVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM SYS_PROG A
+          LEFT OUTER JOIN
+               SYS_MENU B
+            ON A.MENU_ID = B.MENU_ID
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY A.PROG_ID ASC
+    </select>
+    <select id="listProgCount" resultType="int" parameterType="business.sys.prog.service.ProgVO">
+        SELECT COUNT(1) 
+          FROM SYS_PROG A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 프로그램관리 상세조회 -->
+    <select id="viewProg" resultType="business.sys.prog.service.ProgVO" parameterType="business.sys.prog.service.ProgVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM SYS_PROG A
+          LEFT OUTER JOIN
+               SYS_MENU B
+            ON A.MENU_ID = B.MENU_ID
+         WHERE A.PROG_ID = #{progId}
+    </select>
+
+    <!-- 프로그램관리 등록 -->
+    <insert id="regiProg" parameterType="business.sys.prog.service.ProgVO">
+        INSERT 
+          INTO SYS_PROG 
+             ( PROG_ID,
+               PROG_NM,
+               PROG_URL,
+               PROG_TY,
+               MENU_ID,
+               PROG_ORDR,
+               SYS_SE_CD,
+               USE_YN,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( UPPER(#{progId}),
+               #{progNm},
+               #{progUrl},
+               #{progTy},
+               #{menuId},
+               #{progOrdr},
+               #{sysCd},
+               #{useYn},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 프로그램관리 수정 -->
+    <update id="updtProg" parameterType="business.sys.prog.service.ProgVO">
+        UPDATE SYS_PROG 
+           SET PROG_NM              = #{progNm},
+               PROG_URL             = #{progUrl},
+               PROG_TY              = #{progTy},
+               MENU_ID              = #{menuId},
+               PROG_ORDR            = #{progOrdr},
+               SYS_SE_CD            = #{sysCd},
+               USE_YN               = #{useYn},
+               MDFR_NO              = #{gsUserNo},
+               MDFCN_YMD            = SYSDATE  
+         WHERE PROG_ID              = #{progId}
+    </update>
+
+    <!-- 프로그램관리 삭제 -->
+    <delete id="deltProg" parameterType="business.sys.prog.service.ProgVO">
+        DELETE 
+          FROM SYS_PROG 
+         WHERE PROG_ID = #{progId}
+    </delete> 
+
+</mapper>

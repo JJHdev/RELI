@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PrptExmnPlan">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizArea)">
+            AND A.BIZ_AREA_CD = #{srchBizArea}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizOder)">
+            AND A.BIZ_ODER = #{srchBizOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchExmnStdt)">
+            AND (FN_FMT_STRTODATE(#{srchExmnStdt},'') BETWEEN A.EXMN_BGNG_YMD AND A.EXMN_END_YMD
+             OR  FN_FMT_STRTODATE(#{srchExmnStdt},'') <![CDATA[ <= ]]> A.EXMN_BGNG_YMD)
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchExmnEndt)">
+            AND (FN_FMT_STRTODATE(#{srchExmnEndt},'') BETWEEN A.EXMN_BGNG_YMD AND A.EXMN_END_YMD
+             OR  FN_FMT_STRTODATE(#{srchExmnEndt},'') <![CDATA[ >= ]]> A.EXMN_END_YMD)
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+       (SELECT BIZ_AREA
+          FROM TB_BIZ_MNG
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND USE_YN      = 'Y')                     AS "bizAreaNm",
+        A.BIZ_ODER                                    AS "bizOder",
+       (SELECT BIZ_ODER_NM
+          FROM TB_BIZ_ODER
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND BIZ_ODER    = A.BIZ_ODER
+           AND BIZ_USE_YN  = 'Y')                     AS "bizOderNm",
+        A.EXMN_ODER                                   AS "exmnOder",
+        A.EXMN_CN                                     AS "exmnCn",
+        FN_FMT_STRTODATE(A.EXMN_BGNG_YMD,'-')         AS "exmnBgngYmd",
+        FN_FMT_STRTODATE(A.EXMN_END_YMD ,'-')         AS "exmnEndYmd",
+       (SELECT COUNT(*)
+          FROM TB_PRPT_EXMN
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND BIZ_ODER    = A.BIZ_ODER
+           AND EXMN_ODER   = A.EXMN_ODER)             AS "exmnCnt",
+       (SELECT AFFC_SCOPE_CN
+          FROM TB_BIZ_ODER
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND BIZ_ODER    = A.BIZ_ODER
+           AND BIZ_USE_YN  = 'Y')                     AS "affcScopeCn",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 예비조사계획 목록조회 -->
+    <select id="listPrptExmnPlan" resultType="java.util.HashMap" parameterType="business.com.exmn.service.PrptExmnVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_PRPT_EXMN_PLAN A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.REG_YMD DESC
+    </select>
+    <select id="listPrptExmnPlanCount" resultType="int" parameterType="business.com.exmn.service.PrptExmnVO">
+        SELECT COUNT(1) 
+          FROM TB_PRPT_EXMN_PLAN A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 예비조사계획 상세조회 -->
+    <select id="viewPrptExmnPlan" resultType="business.com.exmn.service.PrptExmnVO" parameterType="business.com.exmn.service.PrptExmnVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_PRPT_EXMN_PLAN A
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+    </select>
+
+    <!-- 예비조사계획 등록 -->
+    <insert id="regiPrptExmnPlan" parameterType="business.com.exmn.service.PrptExmnVO">
+        INSERT 
+          INTO TB_PRPT_EXMN_PLAN 
+             ( BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               EXMN_CN,
+               EXMN_BGNG_YMD,
+               EXMN_END_YMD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{exmnCn},
+               FN_FMT_STRTODATE(#{exmnBgngYmd},''),
+               FN_FMT_STRTODATE(#{exmnEndYmd },''),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 예비조사계획 수정 -->
+    <update id="updtPrptExmnPlan" parameterType="business.com.exmn.service.PrptExmnVO">
+        UPDATE TB_PRPT_EXMN_PLAN 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(exmnCn     )"> EXMN_CN       = #{exmnCn     },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnBgngYmd)"> EXMN_BGNG_YMD = FN_FMT_STRTODATE(#{exmnBgngYmd},''),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnEndYmd )"> EXMN_END_YMD  = FN_FMT_STRTODATE(#{exmnEndYmd },''),</if>  
+               MDFCN_YMD   = SYSDATE  
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+    </update>
+
+    <!-- 예비조사계획 삭제 -->
+    <delete id="deltPrptExmnPlan" parameterType="business.com.exmn.service.PrptExmnVO">
+        DELETE 
+          FROM TB_PRPT_EXMN_PLAN 
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+    </delete> 
+
+    <!-- 예비조사계획 NEXT 예비조사차수 가져오기 (조건제거: 2021.11.24) -->
+    <select id="getPrptExmnPlanNextOder" resultType="string" parameterType="business.com.exmn.service.PrptExmnVO">
+        SELECT NVL(MAX(EXMN_ODER), 0) + 1
+          FROM TB_PRPT_EXMN_PLAN
+    </select>
+
+</mapper>

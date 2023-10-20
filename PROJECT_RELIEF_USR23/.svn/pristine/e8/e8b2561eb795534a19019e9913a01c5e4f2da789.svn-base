@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="InfoIntrlck">
+
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo)">
+            AND A.APLY_NO = #{aplyNo}
+        </if>
+        <!-- 연동대상 다중선택 조건 (IN 조건으로 정의) -->
+        <if test="@common.util.CommUtils@isNotEmptyList(intrlckSeList)">
+        	AND A.INTRLCK_SE_CD IN 
+		    <foreach item="item" collection="intrlckSeList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+        <!-- 연동상태 다중선택 조건 (IN 조건으로 정의) -->
+        <if test="@common.util.CommUtils@isNotEmptyList(prgreStusList)">
+        	AND A.PRGRE_STUS_CD IN 
+		    <foreach item="item" collection="prgreStusList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyStdt)">
+            AND A.APLY_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchAplyStdt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyEndt)">
+            AND A.APLY_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchAplyEndt},'')
+        </if>
+         <if test="@common.util.CommUtils@isNotEmpty(srchAplcntNm)">
+         	AND (SELECT USER_NM
+		      		 FROM TB_USER
+		     	 WHERE USER_NO = A.APLCNT_NO
+		   		 ) LIKE '%' || #{srchAplcntNm} || '%'
+        </if>
+         <if test="@common.util.CommUtils@isNotEmpty(srchIdntfcId)">
+         	AND A.TRPR_IDNTFC_ID  LIKE '%' || #{srchIdntfcId} || '%'
+        </if>
+     </sql>
+
+	<select id="listInfoIntrlck" resultType="business.sys.user.service.InfoIntrlckVO" parameterType="business.sys.user.service.InfoIntrlckVO">
+		SELECT
+			A.APLY_NO				AS "aplyNo"
+			<!-- 공통코드의 명칭을 읽어오는 DB 함수 -->
+		,	FN_GET_CODENM(
+				'CT014', 
+				A.INTRLCK_SE_CD
+			)                       AS "intrlckSeCd"
+		<!-- 
+		,	CASE A.INTRLCK_SE_CD 
+				WHEN 'R12' THEN '대리인'
+				WHEN 'R11' THEN '본인'
+				END AS  "intrlckSeCd"
+		 -->
+		<!-- ,	A.INTRLCK_SE_CD			AS "intrlckSeCd" -->
+		,	A.APLCNT_NO				AS "aplcntNo"
+		,	(SELECT FN_FMT_DATA('NM',USER_NM)
+		       FROM TB_USER
+		      WHERE USER_NO = A.APLCNT_NO
+		    )  						AS "userNm"
+		,	(SELECT USER_NM
+		       FROM TB_USER
+		      WHERE USER_NO = A.APLCNT_NO
+		    )  						AS "userNmR"
+		,	FN_FMT_DATA('RRNO-M',(SELECT SCP.DEC_B64('KEY1',SUFRER_RRNO)
+		       FROM TB_IDNTFC
+		      WHERE IDNTFC_ID = A.TRPR_IDNTFC_ID
+		    ))  											AS "sufrerRrno"
+		,   FN_FMT_DATA('NM', A.TRPR_NM	)				AS "trprNm"
+		,   A.TRPR_NM				AS "trprNmR"
+		,	A.TRPR_IDNTFC_ID		AS "trprIdntfcId"
+		,	FN_FMT_STRTODATE(A.TRPR_BRDT, '-')			AS "trprBrdt"		
+		,	A.TELNO										AS "telNo"
+		,	FN_FMT_DATA('TEL-M', A.MBTEL_NO	)			AS "mbtelNo"
+		,	FN_FMT_STRTODATE(A.APLY_YMD, '-')			AS "aplyYmd"	
+		,	A.RCPT_YMD				AS "rcptYmd"
+		,	FN_GET_CODENM(
+				'CT031', 
+				A.PRGRE_STUS_CD
+			)                       AS "prgreStusCd"
+		,	A.RGTR_NO				AS "rgtrNo"
+		,	A.REG_YMD				AS "regYmd"
+		,	A.MDFR_NO				AS "mdfrNo"
+		,	A.MDFCN_YMD				AS "mdfcnYmd"
+		FROM 
+			TB_INFO_INTRLCK A
+		WHERE 
+			1 = 1
+			 <include refid="Sql-Where"/>
+		ORDER BY 
+			A.APLY_NO DESC
+	</select>
+	
+	<select id="viewIntrlckList" resultType="business.sys.user.service.InfoIntrlckVO" >
+		SELECT
+			A.APLY_NO				AS "aplyNo"
+			<!-- 공통코드의 명칭을 읽어오는 DB 함수 -->
+		,	FN_GET_CODENM(
+				'CT014', 
+				A.INTRLCK_SE_CD
+			)                       AS "intrlckSeCd"
+		<!-- 
+		,	CASE A.INTRLCK_SE_CD 
+				WHEN 'R12' THEN '대리인'
+				WHEN 'R11' THEN '본인'
+				END AS  "intrlckSeCd"
+		 -->
+		<!-- ,	A.INTRLCK_SE_CD			AS "intrlckSeCd" -->
+		,	A.INTRLCK_SE_CD			AS "intrlckSeCd"
+		,	A.APLCNT_NO				AS "aplcntNo"
+			<!-- JOIN으로 처리하게 되면 단일행이 아닌 다중행이 조회될 수 있으므로
+			     사용자의 명칭만 필요한 경우엔 이렇게 SUBQUERY를 쓰시는게 좋습니다.
+			 -->
+		,	(SELECT USER_NM
+		       FROM TB_USER
+		      WHERE USER_NO = A.APLCNT_NO
+		    )  											AS "userNm"
+		,	FN_FMT_DATA('RRNO',(SELECT SCP.DEC_B64('KEY1',SUFRER_RRNO)
+		       FROM TB_IDNTFC
+		      WHERE IDNTFC_ID = A.TRPR_IDNTFC_ID
+		    ))  										AS "sufrerRrno"    
+		,	A.TRPR_NM									AS "trprNm"
+		,	A.TRPR_IDNTFC_ID							AS "trprIdntfcId"
+		,	FN_FMT_STRTODATE(A.TRPR_BRDT, '-')			AS "trprBrdt"		
+		,	A.TELNO										AS "telNo"
+		,	FN_FMT_DATA('TEL', A.MBTEL_NO	)			AS "mbtelNo"
+		,	A.APLY_YMD									AS "aplyYmd"
+		,	A.RCPT_YMD									AS "rcptYmd"
+		,	FN_GET_CODENM(
+				'CT031', 
+				A.PRGRE_STUS_CD
+			)                       AS "prgreStusCd"
+		,	A.RGTR_NO									AS "rgtrNo"
+		,	A.REG_YMD									AS "regYmd"
+		,	A.MDFR_NO									AS "mdfrNo"
+		,	A.MDFCN_YMD									AS "mdfcnYmd"
+		FROM 
+			TB_INFO_INTRLCK A
+		WHERE 
+			A.APLY_NO = #{aplyNo}
+	</select>
+	
+	 <select id="listInfoIntrlckCount" resultType="int" parameterType="business.sys.user.service.InfoIntrlckVO">
+        SELECT 
+            COUNT(1) 
+      FROM 
+         TB_INFO_INTRLCK A
+		WHERE 
+			1 = 1
+			 <include refid="Sql-Where"/>
+    </select>
+    
+     <!-- 사용자정보 수정 -->
+    <update id="updateIntrlckList" parameterType="business.sys.user.service.InfoIntrlckVO" >
+        UPDATE 
+        	TB_INFO_INTRLCK 
+           SET 
+			PRGRE_STUS_CD		=	'02'
+		,	RGTR_NO				=	#{rgtrNo}
+		,	REG_YMD				=	TO_CHAR(SYSDATE,'YYYYMMDD')
+		WHERE 
+			APLY_NO = #{aplyNo}
+    </update>
+
+</mapper>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ReliefOder">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyStdt)">
+            AND B.APLY_YMD <![CDATA[ >= ]]> REPLACE(#{srchAplyStdt},'-','')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyEndt)">
+            AND B.APLY_YMD <![CDATA[ <= ]]> REPLACE(#{srchAplyEndt},'-','')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRcptStdt)">
+            AND B.RCPT_YMD <![CDATA[ >= ]]> REPLACE(#{srchRcptStdt},'-','')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRcptEndt)">
+            AND B.RCPT_YMD <![CDATA[ <= ]]> REPLACE(#{srchRcptEndt},'-','')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizArea)">
+            AND A.BIZ_AREA_CD = #{srchBizArea}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyOder)">
+            AND B.APLY_ODER = #{srchAplyOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplcntNm)">
+            AND A.APLCNT_NM LIKE '%' || #{srchAplcntNm} || '%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchSufrerNm)">
+            AND I.SUFRER_NM LIKE '%' || #{srchSufrerNm} || '%'
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        B.APLY_NO                                      AS "aplyNo",
+        B.APLY_ODER                                    AS "aplyOder",
+        I.IDNTFC_ID                                    AS "idntfcId",
+        A.SUFRER_NO                                    AS "sufrerNo",
+        I.SUFRER_NM                                    AS "sufrerNm",
+        FN_FMT_DATA('NM', I.SUFRER_NM)                 AS "sufrerNmMask",
+        A.APLY_SE_CD                                   AS "aplySeCd",
+        FN_GET_CODENM('CT010', A.APLY_SE_CD)           AS "aplySeNm",
+        A.APLY_KND_CD                                  AS "aplyKndCd",
+        FN_MRG_CODENM('CT011', A.APLY_KND_CD)          AS "aplyKndNm",
+        A.APLY_RESN                                    AS "aplyResn",
+        A.BIZ_AREA_CD                                  AS "bizAreaCd",
+        (SELECT BIZ_AREA                          
+           FROM TB_BIZ_MNG                        
+          WHERE BIZ_AREA_CD = A.BIZ_AREA_CD       
+            AND USE_YN      = 'Y')                     AS "bizAreaNm",
+        A.APLCNT_NO                                    AS "aplcntNo",
+        A.APLCNT_NM                                    AS "aplcntNm",
+        FN_FMT_DATA('NM', A.APLCNT_NM)                 AS "aplcntNmMask",
+        FN_FMT_STRTODATE(A.APLCNT_BRDT,'-')            AS "aplcntBrdt",
+        SCP.DEC_B64('KEY1',A.APLCNT_RRNO)              AS "aplcntRrno",
+        A.APLCNT_TELNO                                 AS "aplcntTelno",
+        A.APLCNT_MBTEL_NO                              AS "aplcntMbtelNo",
+        A.APLCNT_EML_ADDR                              AS "aplcntEmlAddr",
+        A.APLCNT_ZIP                                   AS "aplcntZip",
+        A.APLCNT_ADDR                                  AS "aplcntAddr",
+        A.APLCNT_DADDR                                 AS "aplcntDaddr",
+        '['||A.APLCNT_ZIP||'] '
+        || A.APLCNT_ADDR 
+        || NVL(A.APLCNT_DADDR,'')                      AS "aplcntAddrAll",
+        A.SUFRER_REL_CD                                AS "sufrerRelCd",
+        FN_GET_CODENM('CT013', A.SUFRER_REL_CD)        AS "sufrerRelNm",
+        A.BANK_NM                                      AS "bankCd",
+        FN_GET_CODENM('CT035', A.BANK_NM)              AS "bankNm",
+        A.DPSTR_NM                                     AS "dpstrNm",
+        SCP.DEC_B64('KEY1',A.ACTNO)                    AS "actno",
+        A.DTH_YN                                       AS "dthYn",
+        B.PRGRE_STUS_CD                                AS "prgreStusCd",
+        FN_GET_CODENM('CT025', B.PRGRE_STUS_CD)        AS "prgreStusNm",
+        FN_FMT_STRTODATE(B.APLY_YMD,'-')               AS "aplyYmd",
+        FN_FMT_STRTODATE(B.RCPT_YMD,'-')               AS "rcptYmd",
+        B.RGTR_NO                                      AS "rgtrNo",
+        TO_CHAR(B.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		TO_CHAR(B.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        B.MDFR_NO                                      AS "mdfrNo",
+        TO_CHAR(B.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		TO_CHAR(B.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+    </sql>
+		
+    <!-- 구제급여신청 목록조회 -->
+    <select id="listReliefOder" resultType="java.util.HashMap" parameterType="business.com.relief.service.ReliefVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_RELIEF      A,
+               TB_RELIEF_ODER B,
+               TB_IDNTFC      I
+         WHERE A.APLY_NO    = B.APLY_NO
+           AND A.SUFRER_NO  = I.SUFRER_NO
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               B.REG_YMD DESC
+    </select>
+    <select id="listReliefOderCount" resultType="int" parameterType="business.com.relief.service.ReliefVO">
+        SELECT COUNT(1) 
+          FROM TB_RELIEF      A,
+               TB_RELIEF_ODER B,
+               TB_IDNTFC      I
+         WHERE A.APLY_NO    = B.APLY_NO
+           AND A.SUFRER_NO  = I.SUFRER_NO
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 구제급여신청 상세조회 -->
+    <select id="viewReliefOder" resultType="business.com.relief.service.ReliefVO" parameterType="business.com.relief.service.ReliefVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_RELIEF      A,
+               TB_RELIEF_ODER B,
+               TB_IDNTFC      I
+         WHERE A.APLY_NO    = B.APLY_NO
+           AND A.SUFRER_NO  = I.SUFRER_NO
+           AND A.APLY_NO    = #{aplyNo}
+           AND B.APLY_ODER  = #{aplyOder}
+    </select>
+
+    <!-- 구제급여신청차수 등록 -->
+    <insert id="regiReliefOder" parameterType="business.com.relief.service.ReliefVO">
+        <selectKey keyProperty="aplyOder" resultType="string" order="BEFORE">
+	    	SELECT NVL(MAX(APLY_ODER),0)+1
+	          FROM TB_RELIEF_ODER
+	         WHERE APLY_NO = #{aplyNo}
+        </selectKey>
+        INSERT 
+          INTO TB_RELIEF_ODER 
+             ( APLY_NO,
+               APLY_ODER,
+               APLY_YMD,
+               RCPT_YMD,
+               PRGRE_STUS_CD,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{aplyNo},
+               #{aplyOder},
+               FN_FMT_STRTODATE(#{aplyYmd},''),
+               FN_FMT_STRTODATE(#{rcptYmd},''),
+               #{prgreStusCd},
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 구제급여신청차수 수정 -->
+    <update id="updtReliefOder" parameterType="business.com.relief.service.ReliefVO">
+        UPDATE TB_RELIEF_ODER
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(aplyYmd)"    > APLY_YMD      = FN_FMT_STRTODATE(#{aplyYmd},''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(rcptYmd)"    > RCPT_YMD      = FN_FMT_STRTODATE(#{rcptYmd},''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prgreStusCd)"> PRGRE_STUS_CD = #{prgreStusCd},</if>
+               MDFCN_YMD = SYSDATE
+         WHERE APLY_NO   = #{aplyNo}
+           AND APLY_ODER = #{aplyOder}
+    </update>
+
+
+    <!-- 구제급여신청차수 삭제 -->
+    <delete id="deltReliefOder" parameterType="business.com.relief.service.ReliefVO">
+        DELETE 
+          FROM TB_RELIEF_ODER 
+         WHERE APLY_NO   = #{aplyNo}
+           AND APLY_ODER = #{aplyOder}
+    </delete> 
+
+    <!-- 의료비 추가신청 최종차수 가져오기 -->
+    <select id="getReliefLastOder" resultType="string" parameterType="business.com.relief.service.ReliefVO">
+        SELECT MAX(APLY_ODER)
+          FROM TB_RELIEF_ODER
+         WHERE APLY_NO = #{aplyNo}
+	  <choose>
+        <!-- 본조사인 경우 접수(04)/본조사(06)건의 최종차수 -->
+		<when test=" prgreStusCd == '04' ">
+		  AND PRGRE_STUS_CD IN ('04','06')
+		</when>
+        <!-- 지급인 경우 본조사(06)/지급(07)건의 최종차수 -->
+		<when test=" prgreStusCd == '06' ">
+		  AND PRGRE_STUS_CD IN ('06','07')
+		</when>
+	  </choose>
+    </select>
+
+</mapper>

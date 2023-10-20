@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Mnsvy">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizArea)">
+            AND A.BIZ_AREA_CD = #{srchBizArea}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizOder)">
+            AND A.BIZ_ODER = #{srchBizOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchExmnOder)">
+            AND A.EXMN_ODER = #{srchExmnOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizAreaCd)">
+            AND A.BIZ_AREA_CD = #{bizAreaCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizOder)">
+            AND A.BIZ_ODER = #{bizOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnOder)">
+            AND A.EXMN_ODER = #{exmnOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchSufrerNm)">
+            AND C.SUFRER_NM LIKE '%' || #{srchSufrerNm} || '%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplcntNm)">
+            AND B.APLCNT_NM LIKE '%' || #{srchAplcntNm} || '%'
+        </if>
+		<if test="@common.util.CommUtils@isNotEmpty(srchAplyStdt)">
+		    AND B.APLY_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchAplyStdt},'')
+		</if>
+		<if test="@common.util.CommUtils@isNotEmpty(srchAplyEndt)">
+		    AND B.APLY_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchAplyEndt},'')
+		</if>
+		<if test="@common.util.CommUtils@isNotEmpty(srchRcptStdt)">
+		    AND B.RCPT_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchRcptStdt},'')
+		</if>
+		<if test="@common.util.CommUtils@isNotEmpty(srchRcptEndt)">
+		    AND B.RCPT_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchRcptEndt},'')
+		</if>
+    </sql>
+    <sql id="Sql-Column">
+        A.BIZ_AREA_CD                                  AS "bizAreaCd",
+       (SELECT BIZ_AREA
+          FROM TB_BIZ_MNG
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND USE_YN      = 'Y')                      AS "bizAreaNm",
+        A.BIZ_ODER                                     AS "bizOder",
+       (SELECT BIZ_ODER_NM
+          FROM TB_BIZ_ODER
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND BIZ_ODER    = A.BIZ_ODER
+           AND BIZ_USE_YN  = 'Y')                      AS "bizOderNm",
+        A.EXMN_ODER                                    AS "exmnOder",
+
+        A.APLY_NO                                      AS "aplyNo",
+        C.IDNTFC_ID                                    AS "idntfcId",
+        C.SUFRER_NM                                    AS "sufrerNm",
+        FN_FMT_DATA('NM', C.SUFRER_NM)                 AS "sufrerNmMask",
+        B.APLY_SE_CD                                   AS "aplySeCd",
+        FN_GET_CODENM('CT010', B.APLY_SE_CD)           AS "aplySeNm",
+        B.APLY_KND_CD                                  AS "aplyKndCd",
+        FN_MRG_CODENM('CT011', B.APLY_KND_CD)          AS "aplyKndNm",
+        B.APLCNT_NO                                    AS "aplcntNo",
+        B.APLCNT_NM                                    AS "aplcntNm",
+        FN_FMT_DATA('NM', B.APLCNT_NM)                 AS "aplcntNmMask",
+        B.APLCNT_MBTEL_NO                              AS "aplcntMbtelNo",
+        B.SUFRER_REL_CD                                AS "sufrerRelCd",
+        FN_GET_CODENM('CT013', B.SUFRER_REL_CD)        AS "sufrerRelNm",
+        B.PRGRE_STUS_CD                                AS "prgreStusCd",
+        FN_GET_CODENM('CT025', B.PRGRE_STUS_CD)        AS "prgreStusNm",
+        FN_FMT_STRTODATE(B.APLY_YMD,'-')               AS "aplyYmd",
+        FN_FMT_STRTODATE(B.RCPT_YMD,'-')               AS "rcptYmd",
+        A.RTROACT_AMT                                  AS "rtroactAmt",
+        A.RTROACT_BGNG_YM                              AS "rtroactBgngYm",
+        A.RTROACT_END_YM                               AS "rtroactEndYm",
+        A.GIVE_BGNG_YM                                 AS "giveBgngYm",
+        A.GIVE_END_YM                                  AS "giveEndYm",
+        A.SVRTY_DMGE_GRD_CD                            AS "svrtyDmgeGrdCd",
+        A.LAST_DMGE_GRD_CD                             AS "lastDmgeGrdCd",
+        A.FNRL_CST_AMT                                 AS "fnrlCstAmt",
+        A.FNRL_CST_CN                                  AS "fnrlCstCn",
+        A.BRVFM_RWRD_AMT                               AS "brvfmRwrdAmt",
+        A.BRVFM_RWMNY_CN                               AS "brvfmRwmnyCn",
+        A.PRPRTY_DMGE_RWRD_AMT                         AS "prprtyDmgeRwrdAmt",
+        A.PRPRTY_DMGE_RWRD_CN                          AS "prprtyDmgeRwrdCn",
+        A.LGCY_RCOGN_AMT                               AS "lgcyRcognAmt",
+        A.DPCN_AMT                                     AS "dpcnAmt",
+        A.RTRVL_NEED_AMT                               AS "rtrvlNeedAmt",
+        A.RDM_AMT                                      AS "rdmAmt",
+        A.RCOGN_AMT                                    AS "rcognAmt",
+        A.GIVE_AMT                                     AS "giveAmt",
+        FN_FMT_STRTODATE(A.DTH_YMD,'-')                AS "dthYmd",
+        A.DTH_AGE                                      AS "dthAge",
+        A.DMGE_REL_YN                                  AS "dmgeRelYn",
+        A.FNRL_CST_GIVE_RSLT_CD                        AS "fnrlCstGiveRsltCd",
+        FN_GET_CODENM('CT040',A.FNRL_CST_GIVE_RSLT_CD) AS "fnrlCstGiveRsltNm",
+        A.DTH_DIRECT_DTHCS_CN                          AS "dthDirectDthcsCn",
+        A.DTH_CAUSE_CN1                                AS "dthCauseCn1",
+        A.DTH_CAUSE_CN2                                AS "dthCauseCn2",
+        A.DTH_CAUSE_CN3                                AS "dthCauseCn3",
+        A.DTH_CAUSE_CN4                                AS "dthCauseCn4",
+        A.DTH_CAUSE_RSLT_CN                            AS "dthCauseRsltCn",
+        A.DTH_ETC_CN                                   AS "dthEtcCn",
+        A.DLTNC_RSLT_CD                                AS "dltncRsltCd",
+        FN_GET_CODENM('CT012', A.DLTNC_RSLT_CD)        AS "dltncRsltNm",
+        A.DLTNC_RSLT_RESN                              AS "dltncRsltResn",
+        A.GIVE_BANK_NM                                 AS "giveBankCd",
+        FN_GET_CODENM('CT035', A.GIVE_BANK_NM)         AS "giveBankNm",
+        A.GIVE_DPSTR_NM                                AS "giveDpstrNm",
+        SCP.DEC_B64('KEY1',A.GIVE_ACTNO)               AS "giveActno",
+        FN_FMT_STRTODATE(A.RDM_DPST_YMD ,'-')          AS "rdmDpstYmd",
+        FN_FMT_STRTODATE(A.GIVE_DCSN_YMD,'-')          AS "giveDcsnYmd",
+        FN_FMT_STRTODATE(A.GIVE_YMD     ,'-')          AS "giveYmd",
+        FN_FMT_STRTODATE(A.RVW_BGNG_YMD ,'-')          AS "rvwBgngYmd",
+        FN_FMT_STRTODATE(A.RVW_END_YMD  ,'-')          AS "rvwEndYmd",
+        A.RGTR_NO                                      AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        A.MDFR_NO                                      AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+    </sql>
+
+    <!-- 본조사 목록조회 -->
+    <select id="listMnsvy" resultType="java.util.HashMap" parameterType="business.com.exmn.service.MnsvyVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_MNSVY      A,
+               TB_RELIEF     B,
+               TB_IDNTFC     C
+         WHERE A.APLY_NO     = B.APLY_NO
+           AND B.SUFRER_NO   = C.SUFRER_NO
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.REG_YMD DESC,
+               B.REG_YMD DESC
+    </select>
+    <select id="listMnsvyCount" resultType="int" parameterType="business.com.exmn.service.MnsvyVO">
+        SELECT COUNT(1) 
+          FROM TB_MNSVY      A,
+               TB_RELIEF     B,
+               TB_IDNTFC     C
+         WHERE A.APLY_NO     = B.APLY_NO
+           AND B.SUFRER_NO   = C.SUFRER_NO
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 본조사 상세조회 -->
+    <select id="viewMnsvy" resultType="business.com.exmn.service.MnsvyVO" parameterType="business.com.exmn.service.MnsvyVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_MNSVY      A,
+               TB_RELIEF     B,
+               TB_IDNTFC     C
+         WHERE A.APLY_NO     = B.APLY_NO
+           AND B.SUFRER_NO   = C.SUFRER_NO
+           AND A.BIZ_AREA_CD = #{bizAreaCd}
+           AND A.BIZ_ODER    = #{bizOder}
+           AND A.EXMN_ODER   = #{exmnOder}
+           AND A.APLY_NO     = #{aplyNo}
+    </select>
+
+    <!-- 본조사 신청번호 기준 최종 조사차수 조회 -->
+    <select id="getMnsvyOderLast" resultType="string" parameterType="string">
+    	SELECT MAX(A.EXMN_ODER) AS "exmnOder"
+          FROM TB_MNSVY A
+         WHERE A.APLY_NO = #{aplyNo}
+    </select>
+
+    <!-- 본조사 등록 -->
+    <insert id="regiMnsvy" parameterType="business.com.exmn.service.MnsvyVO">
+        INSERT 
+          INTO TB_MNSVY 
+             ( BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               RTROACT_AMT,
+               RTROACT_BGNG_YM,
+               RTROACT_END_YM,
+               GIVE_BGNG_YM,
+               GIVE_END_YM,
+               SVRTY_DMGE_GRD_CD,
+               LAST_DMGE_GRD_CD,
+               FNRL_CST_AMT,
+               FNRL_CST_CN,
+               BRVFM_RWRD_AMT,
+               BRVFM_RWMNY_CN,
+               PRPRTY_DMGE_RWRD_AMT,
+               PRPRTY_DMGE_RWRD_CN,
+               LGCY_RCOGN_AMT,
+               DPCN_AMT,
+               RTRVL_NEED_AMT,
+               RDM_AMT,
+               RCOGN_AMT,
+               GIVE_AMT,
+               DTH_YMD,
+               DTH_AGE,
+               DMGE_REL_YN,
+               FNRL_CST_GIVE_RSLT_CD,
+               DTH_DIRECT_DTHCS_CN,
+               DTH_CAUSE_CN1,
+               DTH_CAUSE_CN2,
+               DTH_CAUSE_CN3,
+               DTH_CAUSE_CN4,
+               DTH_CAUSE_RSLT_CN,
+               DTH_ETC_CN,
+               DLTNC_RSLT_CD,
+               DLTNC_RSLT_RESN,
+               GIVE_BANK_NM,
+               GIVE_DPSTR_NM,
+               GIVE_ACTNO,
+               RDM_DPST_YMD,
+               GIVE_DCSN_YMD,
+               GIVE_YMD,
+               RVW_BGNG_YMD,
+               RVW_END_YMD,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{aplyNo},
+               FN_FMT_DATA('NUM2', #{rtroactAmt}),
+               #{rtroactBgngYm},
+               #{rtroactEndYm},
+               #{giveBgngYm},
+               #{giveEndYm},
+               #{svrtyDmgeGrdCd},
+               #{lastDmgeGrdCd},
+               FN_FMT_DATA('NUM2', #{fnrlCstAmt}),
+               #{fnrlCstCn},
+               FN_FMT_DATA('NUM2', #{brvfmRwrdAmt}),
+               #{brvfmRwmnyCn},
+               FN_FMT_DATA('NUM2', #{prprtyDmgeRwrdAmt}),
+               #{prprtyDmgeRwrdCn},
+               FN_FMT_DATA('NUM2', #{lgcyRcognAmt}),
+               FN_FMT_DATA('NUM2', #{dpcnAmt}),
+               FN_FMT_DATA('NUM2', #{rtrvlNeedAmt}),
+               FN_FMT_DATA('NUM2', #{rdmAmt}),
+               FN_FMT_DATA('NUM2', #{rcognAmt}),
+               FN_FMT_DATA('NUM2', #{giveAmt}),
+               FN_FMT_STRTODATE(#{dthYmd},''),
+               #{dthAge},
+               #{dmgeRelYn},
+               #{fnrlCstGiveRsltCd},
+               #{dthDirectDthcsCn},
+               #{dthCauseCn1},
+               #{dthCauseCn2},
+               #{dthCauseCn3},
+               #{dthCauseCn4},
+               #{dthCauseRsltCn},
+               #{dthEtcCn},
+               #{dltncRsltCd},
+               #{dltncRsltResn},
+               #{giveBankCd},
+               #{giveDpstrNm},
+               SCP.ENC_B64('KEY1', #{giveActno}),
+               FN_FMT_STRTODATE(#{rdmDpstYmd },''),
+               FN_FMT_STRTODATE(#{giveDcsnYmd},''),
+               FN_FMT_STRTODATE(#{giveYmd    },''),
+               FN_FMT_STRTODATE(#{rvwBgngYmd },''),
+               FN_FMT_STRTODATE(#{rvwEndYmd  },''),
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 본조사 이력저장 -->
+    <insert id="regiMnsvyHst" parameterType="business.com.exmn.service.MnsvyVO">
+        INSERT 
+          INTO TB_MNSVY_HST
+             ( HST_NO,
+               LOG_TY,
+               HST_YMD,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               RTROACT_AMT,
+               RTROACT_BGNG_YM,
+               RTROACT_END_YM,
+               GIVE_BGNG_YM,
+               GIVE_END_YM,
+               SVRTY_DMGE_GRD_CD,
+               LAST_DMGE_GRD_CD,
+               FNRL_CST_AMT,
+               FNRL_CST_CN,
+               BRVFM_RWRD_AMT,
+               BRVFM_RWMNY_CN,
+               PRPRTY_DMGE_RWRD_AMT,
+               PRPRTY_DMGE_RWRD_CN,
+               LGCY_RCOGN_AMT,
+               DPCN_AMT,
+               RTRVL_NEED_AMT,
+               RDM_AMT,
+               RCOGN_AMT,
+               GIVE_AMT,
+               DTH_YMD,
+               DTH_AGE,
+               DMGE_REL_YN,
+               FNRL_CST_GIVE_RSLT_CD,
+               DTH_DIRECT_DTHCS_CN,
+               DTH_CAUSE_CN1,
+               DTH_CAUSE_CN2,
+               DTH_CAUSE_CN3,
+               DTH_CAUSE_CN4,
+               DTH_CAUSE_RSLT_CN,
+               DTH_ETC_CN,
+               DLTNC_RSLT_CD,
+               DLTNC_RSLT_RESN,
+               GIVE_BANK_NM,
+               GIVE_DPSTR_NM,
+               GIVE_ACTNO,
+               RDM_DPST_YMD,
+               GIVE_DCSN_YMD,
+               GIVE_YMD,
+               RVW_BGNG_YMD,
+               RVW_END_YMD,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+             )
+        SELECT SEQ_MNSVY_HST.NEXTVAL,
+               #{logTy},
+               SYSDATE,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               RTROACT_AMT,
+               RTROACT_BGNG_YM,
+               RTROACT_END_YM,
+               GIVE_BGNG_YM,
+               GIVE_END_YM,
+               SVRTY_DMGE_GRD_CD,
+               LAST_DMGE_GRD_CD,
+               FNRL_CST_AMT,
+               FNRL_CST_CN,
+               BRVFM_RWRD_AMT,
+               BRVFM_RWMNY_CN,
+               PRPRTY_DMGE_RWRD_AMT,
+               PRPRTY_DMGE_RWRD_CN,
+               LGCY_RCOGN_AMT,
+               DPCN_AMT,
+               RTRVL_NEED_AMT,
+               RDM_AMT,
+               RCOGN_AMT,
+               GIVE_AMT,
+               DTH_YMD,
+               DTH_AGE,
+               DMGE_REL_YN,
+               FNRL_CST_GIVE_RSLT_CD,
+               DTH_DIRECT_DTHCS_CN,
+               DTH_CAUSE_CN1,
+               DTH_CAUSE_CN2,
+               DTH_CAUSE_CN3,
+               DTH_CAUSE_CN4,
+               DTH_CAUSE_RSLT_CN,
+               DTH_ETC_CN,
+               DLTNC_RSLT_CD,
+               DLTNC_RSLT_RESN,
+               GIVE_BANK_NM,
+               GIVE_DPSTR_NM,
+               GIVE_ACTNO,
+               RDM_DPST_YMD,
+               GIVE_DCSN_YMD,
+               GIVE_YMD,
+               RVW_BGNG_YMD,
+               RVW_END_YMD,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+          FROM TB_MNSVY
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+    </insert>
+
+    <!-- 본조사 수정 -->
+    <update id="updtMnsvy" parameterType="business.com.exmn.service.MnsvyVO">
+        UPDATE TB_MNSVY 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(rtroactAmt          )"> RTROACT_AMT           = FN_FMT_DATA('NUM2', #{rtroactAmt          }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(rtroactBgngYm       )"> RTROACT_BGNG_YM       = #{rtroactBgngYm       },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(rtroactEndYm        )"> RTROACT_END_YM        = #{rtroactEndYm        },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveBgngYm          )"> GIVE_BGNG_YM          = #{giveBgngYm          },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveEndYm           )"> GIVE_END_YM           = #{giveEndYm           },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(svrtyDmgeGrdCd      )"> SVRTY_DMGE_GRD_CD     = #{svrtyDmgeGrdCd      },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(lastDmgeGrdCd       )"> LAST_DMGE_GRD_CD      = #{lastDmgeGrdCd       },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(fnrlCstAmt          )"> FNRL_CST_AMT          = FN_FMT_DATA('NUM2', #{fnrlCstAmt          }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(fnrlCstCn           )"> FNRL_CST_CN           = #{fnrlCstCn           },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(brvfmRwrdAmt        )"> BRVFM_RWRD_AMT        = FN_FMT_DATA('NUM2', #{brvfmRwrdAmt        }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(brvfmRwmnyCn        )"> BRVFM_RWMNY_CN        = #{brvfmRwmnyCn        },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(prprtyDmgeRwrdAmt   )"> PRPRTY_DMGE_RWRD_AMT  = FN_FMT_DATA('NUM2', #{prprtyDmgeRwrdAmt   }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(prprtyDmgeRwrdCn    )"> PRPRTY_DMGE_RWRD_CN   = #{prprtyDmgeRwrdCn    },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(lgcyRcognAmt        )"> LGCY_RCOGN_AMT        = FN_FMT_DATA('NUM2', #{lgcyRcognAmt        }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dpcnAmt             )"> DPCN_AMT              = FN_FMT_DATA('NUM2', #{dpcnAmt             }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(rtrvlNeedAmt        )"> RTRVL_NEED_AMT        = FN_FMT_DATA('NUM2', #{rtrvlNeedAmt        }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(rdmAmt              )"> RDM_AMT               = FN_FMT_DATA('NUM2', #{rdmAmt              }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(rcognAmt            )"> RCOGN_AMT             = FN_FMT_DATA('NUM2', #{rcognAmt            }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveAmt             )"> GIVE_AMT              = FN_FMT_DATA('NUM2', #{giveAmt             }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dthYmd              )"> DTH_YMD               = FN_FMT_STRTODATE(#{dthYmd},''),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dthAge              )"> DTH_AGE               = #{dthAge              },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dmgeRelYn           )"> DMGE_REL_YN           = #{dmgeRelYn           },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(fnrlCstGiveRsltCd   )"> FNRL_CST_GIVE_RSLT_CD = #{fnrlCstGiveRsltCd   },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dthDirectDthcsCn    )"> DTH_DIRECT_DTHCS_CN   = #{dthDirectDthcsCn    },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dthCauseCn1         )"> DTH_CAUSE_CN1         = #{dthCauseCn1         },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dthCauseCn2         )"> DTH_CAUSE_CN2         = #{dthCauseCn2         },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dthCauseCn3         )"> DTH_CAUSE_CN3         = #{dthCauseCn3         },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dthCauseCn4         )"> DTH_CAUSE_CN4         = #{dthCauseCn4         },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dthCauseRsltCn      )"> DTH_CAUSE_RSLT_CN     = #{dthCauseRsltCn      },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dthEtcCn            )"> DTH_ETC_CN            = #{dthEtcCn            },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dltncRsltCd         )"> DLTNC_RSLT_CD         = #{dltncRsltCd         },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(dltncRsltResn       )"> DLTNC_RSLT_RESN       = #{dltncRsltResn       },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveBankCd          )"> GIVE_BANK_NM          = #{giveBankCd          },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveDpstrNm         )"> GIVE_DPSTR_NM         = #{giveDpstrNm         },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveActno           )"> GIVE_ACTNO            = SCP.ENC_B64('KEY1', #{giveActno           }),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(rdmDpstYmd          )"> RDM_DPST_YMD          = FN_FMT_STRTODATE(#{rdmDpstYmd },''),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveDcsnYmd         )"> GIVE_DCSN_YMD         = FN_FMT_STRTODATE(#{giveDcsnYmd},''),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveYmd             )"> GIVE_YMD              = FN_FMT_STRTODATE(#{giveYmd    },''),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(rvwBgngYmd          )"> RVW_BGNG_YMD          = FN_FMT_STRTODATE(#{rvwBgngYmd },''),</if>
+        <if test="@common.util.CommUtils@isNotEmpty(rvwEndYmd           )"> RVW_END_YMD           = FN_FMT_STRTODATE(#{rvwEndYmd  },''),</if>  
+               MDFCN_YMD   = SYSDATE
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+    </update>
+
+    <!-- 본조사 삭제 -->
+    <delete id="deltMnsvy" parameterType="business.com.exmn.service.MnsvyVO">
+        DELETE 
+          FROM TB_MNSVY 
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+    </delete> 
+
+    <!-- 마이페이지 신청기준 본조사 목록조회 -->
+    <select id="listMnsvyMypage" resultType="java.util.HashMap" parameterType="string">
+        SELECT A.BIZ_AREA_CD                                  AS "bizAreaCd",
+               A.BIZ_ODER                                     AS "bizOder",
+               A.EXMN_ODER                                    AS "exmnOder",
+               A.APLY_NO                                      AS "aplyNo",
+               FN_FMT_STRTODATE(A.GIVE_DCSN_YMD,'-')          AS "giveDcsnYmd",   <!-- 심의회 개최일자 (지급결정일자) -->
+               A.DLTNC_RSLT_CD                                AS "dltncRsltCd",   <!-- 본조사 결과코드 -->
+               FN_GET_CODENM('CT012', A.DLTNC_RSLT_CD)        AS "dltncRsltNm",   <!-- 본조사 결과명칭 -->
+               A.DLTNC_RSLT_RESN                              AS "dltncRsltResn", <!-- 본조사 결과사유 -->
+               A.LAST_DMGE_GRD_CD                             AS "lastDmgeGrdCd", <!-- 최종 피해등급 -->
+               A.RCOGN_AMT                                    AS "rcognAmt",      <!-- 인정 금액 -->
+               A.GIVE_AMT                                     AS "giveAmt",       <!-- 지급 금액 -->
+               FN_FMT_STRTODATE(A.GIVE_YMD     ,'-')          AS "giveYmd",       <!-- 지급 일자 -->
+               A.GIVE_BGNG_YM                                 AS "giveBgngYm",    <!-- 지급 시작년월 -->
+               A.GIVE_END_YM                                  AS "giveEndYm",     <!-- 지급 종료년월 -->
+               A.GIVE_BANK_NM                                 AS "giveBankCd",    <!-- 지급 은행코드 -->
+               FN_GET_CODENM('CT035', A.GIVE_BANK_NM)         AS "giveBankNm",    <!-- 지급 은행명칭 -->
+               A.GIVE_DPSTR_NM                                AS "giveDpstrNm",   <!-- 지급 예금주명 -->
+               SCP.DEC_B64('KEY1',A.GIVE_ACTNO)               AS "giveActno",     <!-- 지급 계좌 -->
+               <!-- 신청기준 인정질환 대표 명칭 -->
+               (SELECT M2.SCKWND_NM 
+                       || ' 외 ' 
+                       || (SELECT COUNT(*)-1
+                             FROM TB_MCP_DTLS M1
+                            WHERE M1.APLY_NO       = A.APLY_NO
+                              AND M1.RCOGN_STUS_CD = '01')
+                       || '건'
+                  FROM TB_MCP_DTLS M2
+                 WHERE M2.SN = (SELECT MIN(M3.SN)
+                                  FROM TB_MCP_DTLS M3
+                                 WHERE M3.APLY_NO       = A.APLY_NO
+                                   AND M3.RCOGN_STUS_CD = '01')
+               )                                              AS "rcognSckwndNm"
+          FROM TB_MNSVY   A
+         WHERE A.APLY_NO  = #{aplyNo}
+         ORDER BY 
+               A.BIZ_AREA_CD,
+               A.BIZ_ODER,
+               A.EXMN_ODER
+    </select>
+
+    <!-- 요양생활수당관리 존재여부확인 
+        2022.11.14 : ntarget : TB_RCPER_LVLH_MNG 테이블 삭제
+    -->
+    <select id="existRcperLvlh" resultType="boolean" parameterType="business.com.exmn.service.MnsvyVO">
+        <!-- 
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+          FROM TB_RCPER_LVLH_MNG A
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+         -->
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+          FROM TB_RCPER_LVLH_DTLS A
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+    </select>
+
+    <!-- 의료비 존재여부확인 -->
+    <select id="existMcpDtls" resultType="boolean" parameterType="business.com.exmn.service.MnsvyVO">
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+          FROM TB_MCP_DTLS A
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+    </select>
+
+</mapper>

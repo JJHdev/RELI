@@ -1,0 +1,155 @@
+# \uC2DC\uC2A4\uD15C
+system.code	= USR
+system.code.admin = ADM
+system.servername = 127.0.0.1
+domain.url	= http://localhost/,http://temp.sundosoft.co.kr/
+
+# \uC2DC\uC2A4\uD15C \uC0AC\uC6A9\uAD6C\uBD84 (real:\uC6B4\uC601, dev:\uAC1C\uBC1C)
+system.real	= dev
+
+# \uAD8C\uD55C\uCCB4\uD06C \uC5EC\uBD80[SecurityInterceptor] \uC0AC\uC6A9\uC5EC\uBD80 (\uAD8C\uD55C\uCCB4\uD06C, \uD398\uC774\uC9C0\uB85C\uADF8\uB4F1\uB85D, \uB85C\uADF8\uC778\uB85C\uADF8\uB4F1\uB85D)
+auth.check	= true
+
+# \uBC84\uD2BC\uAD8C\uD55C\uCCB4\uD06C \uC5EC\uBD80[ButtonTag] \uC0AC\uC6A9\uC5EC\uBD80
+auth.btn.check	= false
+
+# \uC2DC\uC2A4\uD15C \uC81C\uD55C\uB41C\uC0AC\uC6A9\uC790 \uB864 (\uBE44\uD68C\uC6D0)
+system.role.restricted	= ROLE_USR_RESTRICTED
+# 2022.01.05 ADD - General User Role
+system.role.user = ROLE_AUTH_USR
+# 2022.01.05 ADD - Identify User Role
+system.role.idnt = ROLE_AUTH_IDN
+
+# Database Type
+Globals.DbType = tibero
+
+
+# JDBC (Tibero) - \uAC1C\uBC1C (sundo123#)
+Globals.tibero.Driver 	= com.tmax.tibero.jdbc.TbDriver
+Globals.tibero.Url 		= jdbc:tibero:thin:@210.113.102.194:8629:relief_db
+Globals.tibero.UserName = relief03
+Globals.tibero.Password = relief123#
+
+# File Attachment
+upload.real.dir		= D:/APP_PROJECT/PROJECT/PROJECT_SUNDO21/UPLOAD_FILE/upload/
+upload.temp.dir 	= D:/APP_PROJECT/PROJECT/PROJECT_SUNDO21/UPLOAD_FILE/upload/temp/
+upload.excel.dir 	= D:/APP_PROJECT/PROJECT/PROJECT_SUNDO21/UPLOAD_FILE/upload/excel/
+upload.log.dir		= D:/APP_PROJECT/PROJECT/PROJECT_SUNDO21/UPLOAD_FILE/upload/logs/
+upload.path 		= /upload/
+download.url 		= http://localhost:8088
+# 2022.01.05 ADD - relative path to deleted file
+upload.remove.dir   = removed/
+# File Sub Directory Name
+upload.sub.bbs		= bbs
+
+# Excel Templete
+excel.templete.dir	= D:/APP_PROJECT/PROJECT/PROJECT_SUNDO21/PROJECT_RELIEF_USR/WebContent/WEB-INF/excel
+excel.templete.servletContextDir = /WEB-INF/excel
+
+# CLIP Report Directory
+report.ClipReport.dir = D:/APP_PROJECT/PROJECT/PROJECT_SUNDO21/PROJECT_RELIEF_USR/WebContent/WEB-INF/clipreport5
+report.ClipReport.properties = /clipreport5.properties
+
+#Exclude Program - Access Program Regi.
+exclude.acc.prog 	= login.do, loginSucc.do, logout.do
+
+## Session ID
+SESS.PAGEINFO		= PAGEINFO
+SESS.MENUINFO		= MENUINFO
+SESS.MENULIST       = MENULIST
+SESS.ACCESSURL      = ACCESSURL
+SESS.SYSTEMCODE     = SYSCODE
+# 2022.01.05 ADD - Identify ID SMS Authentication Random No
+SESS.IDNT.RANDOM    = SESS_RANDOM
+# 2022.01.05 ADD - Identify ID SMS Authentication Confirm
+SESS.IDNT.AUTH      = SESS_AUTHENTICATION
+# 2022.01.05 ADD - Find Password SMS Authentication Random No
+SESS.PSWD.RANDOM    = SESS_PSWD_RANDOM
+# 2022.01.05 ADD - Find Password SMS Authentication Confirm
+SESS.PSWD.AUTH      = SESS_PSWD_AUTHENTICATION
+
+# 2022.10.04 ADD - Session Time Cookie
+COOK.LATEST.TIME    = COOK_LATEST_TIME
+COOK.EXPIRE.TIME    = COOK_EXPIRE_TIME
+
+# attach file #
+file.all.allow.exts	= hwp, doc, docx, xls, xlsx, ppt, pptx, pdf, jpg, jpeg, png, gif, bmp, txt, zip, rar, gz
+file.bbs.allow.exts	= hwp, doc, docx, xls, xlsx, ppt, pptx, pdf, jpg, jpeg, png, gif, bmp, txt, zip, rar, gz
+file.img.allow.exts	= jpg, jpeg, png, gif
+
+
+## 2022.01.05 LGU+ SMS Configuration 
+#--------------------------------------------------------
+# SMS Send Activation
+SMS.ENABLE = true
+# SMS Business Send Activation
+SMS.ENABLE.BIZ = false
+# SMS Logo Image Send Include
+SMS.INCLUDE.LOGO = false
+# SMS Logo Image File Name
+SMS.INCLUDE.LOGO.FILE = sms_logo.jpg
+# SMS Sender Number
+SMS.SENDER.NUMBER = 0222841850
+# SMS Sender Name
+SMS.SENDER.NAME = \uD658\uACBD\uC0B0\uC5C5\uAE30\uC220\uC6D0
+
+# SMS LGU+ OpenAPI KEY (DEV)
+SMS.API.KEY = UP-1636355879-5059
+# SMS LGU+ OpenAPI Password (DEV)
+SMS.API.SECRET = ka34046
+# SMS LGU+ OpenAPI Algorithm (DEV)
+SMS.API.ALGORITHM = 1
+
+## 2022.01.05 Mobilians Identification Configuration 
+#--------------------------------------------------------
+
+# Mobilians Service ID
+MOBILIANS.SVCID = 211020108396
+# Mobilians Pay Mode - \uCC98\uB9AC\uAD6C\uBD84(00:\uD14C\uC2A4\uD2B8\uACB0\uC81C, 10:\uC2E4\uAC70\uB798\uACB0\uC81C)
+MOBILIANS.PAYMODE = 10
+# Mobilians CI Mode - SMS\uBC1C\uC1A1 (61:SMS\uBC1C\uC1A1  67:SMS\uBBF8\uBC1C\uC1A1)
+MOBILIANS.CIMODE = 61
+# Mobilians Encrypt Use - \uC554\uD638\uD654 \uC0AC\uC6A9 \uC5EC\uBD80
+MOBILIANS.CRYPTYN = Y
+# Mobilians Encrypt Flag - \uC554\uD638\uD654 Key \uAD6C\uBD84 (1 or 2 : \uAC00\uB9F9\uC810 \uAD00\uB9AC\uC790 \uB4F1\uB85D \uD6C4 \uC0AC\uC6A9)
+MOBILIANS.CRYPTGB = 1
+# Mobilians Encrypt Password - \uC554\uD638\uD654 \uBE44\uBC00\uBC88\uD638
+MOBILIANS.PASSOWRD = relief21
+# Mobilians Domain - \uAC00\uB9F9\uC810 \uB3C4\uBA54\uC778
+MOBILIANS.SITEURL = www.ehtis.or.kr
+# Mobilians OK URL - \uCC98\uB9AC\uACB0\uACFC\uC218\uC2E0 \uD398\uC774\uC9C0
+MOBILIANS.OKURL = /com/cmm/okurlMobilians.do
+# Mobilians NOTI URL - \uAC00\uB9F9\uC810\uACB0\uACFC\uC804\uC1A1 \uD398\uC774\uC9C0
+MOBILIANS.NOTIURL = /com/cmm/notiurlMobilians.do
+
+
+
+## 2022.01.05 Mois Address Configuration 
+#--------------------------------------------------------
+
+# Address Popup API Certification Key (DEV)
+#ADDRESS.POPUP.CERTKEY = devU01TX0FVVEgyMDIxMTAzMDEzMDUyMTExMTgyNDA=
+# Address Popup API Return URL
+#ADDRESS.POPUP.RETURNURL = /com/cmm/popupAddress.do
+# Address Popup API Return Type
+#ADDRESS.POPUP.RETURNTYPE = 4
+
+# Address Search OpenAPI Certification Key (DEV)
+ADDRESS.SEARCH.CERTKEY = U01TX0FVVEgyMDIyMTEwNDE3MjgzOTExMzE4OTY=
+# Address Search OpenAPI URL
+ADDRESS.SEARCH.APIURL = https://www.juso.go.kr/addrlink/addrLinkApi.do
+# Address Search OpenAPI Return Type
+ADDRESS.SEARCH.RETURNTYPE = json
+
+
+
+## 2022.01.07 DRM Configuration
+#--------------------------------------------------------
+# Fsdinit dir path #
+DRM.FSDINIT.PATH = classpath:config/drm/local/fsdinit
+#DRM.FSDINIT.PATH = classpath:config/drm/dev/fsdinit
+#DRM.FSDINIT.PATH = classpath:config/drm/real/fsdinit
+# DOMAIN ID #
+DRM.DOMAIN.ID = 0100000000002874
+# DRM ENABLE (FileManager)
+DRM.ENABLE  = false

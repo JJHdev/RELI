@@ -1,0 +1,38 @@
+<!-- 파일업로드 -->
+<div id="popupUpload" class="dialogPop type1 on">
+    <div class="layerWrap">
+        <!-- 레이어내용 -->
+        <div class="layerPop-inner">
+			<div class="tableWrap type3">
+				<form name="popupUploadForm" class="usr-form-group" method="post" onsubmit="return false;">
+					<input type="hidden" name="filePath" value=""/>
+					<input type="hidden" name="fileType" value=""/>
+					<input type="hidden" name="fileNo"   value=""/>
+					<input type="hidden" name="docuCd"   value=""/>
+					<input type="hidden" name="needYn"   value=""/>
+					<input type="hidden" name="fileYn"   value="Y"/>
+					
+					<table id="popupContentTable">
+						<tr>
+							<td colspan="3">
+								<div class="inputWrap pop-filebox">
+									<input name="fileName" class="upload-name" value="파일선택" readonly />
+									<label for="ex_filename1">첨부하기</label>
+									<input id="ex_filename1" type="file" name="upfile" class="upload-hidden">
+								</div>
+							</td>
+						</tr>
+					</table>
+				</form>
+			</div>
+			
+			<p class="err" style="text-align:center; padding-top:20px;"></p>
+			
+			<div class="btnWrap type3">
+				<a href="javascript:void(0);" id="btnUploadCancel" data-dismiss="modal">취소</a>
+				<a href="javascript:void(0);" id="btnUploadSave"  >등록</a>
+			</div>
+			
+		</div>
+    </div>
+</div>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="InfoLog">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Column">
+        A.SN              AS "sn",
+        A.USER_NO         AS "userNo",
+        A.CNTN_SE_NM      AS "cntnSeNm",
+        TO_CHAR(CNTN_DT,'YYYY-MM-DD HH24:MI:SS') 
+                          AS "cntnDt",
+        A.IP_ADDR         AS "ipAddr",
+        A.SRVR_NM         AS "srvrNm",
+        A.SYS_SE_CD       AS "sysSeCd",
+        A.KEY1            AS "key1",
+        A.KEY2            AS "key2",
+        A.KEY3            AS "key3",
+        A.KEY4            AS "key4"
+    </sql>
+    
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchStDt)">
+            AND A.CNTN_DT <![CDATA[ >= ]]> TO_TIMESTAMP(#{srchStDt}||'00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchEnDt)">
+            AND A.CNTN_DT <![CDATA[ <= ]]> TO_TIMESTAMP(#{srchEnDt}||'23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchText)">
+            AND(A.USER_NO   LIKE '%'||#{srchText}||'%'
+             OR A.SYS_SE_CD LIKE '%'||#{srchText}||'%'
+             OR A.IP_ADDR   LIKE '%'||#{srchText}||'%'
+             OR A.SRVR_NM   LIKE '%'||#{srchText}||'%')
+        </if>
+    </sql>
+
+    <!-- 정보조회이력 목록조회 -->
+    <select id="listInfoLog" resultType="java.util.HashMap" parameterType="business.sys.log.service.LogVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM SYS_INFO_HST A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.SN DESC
+    </select>
+    <select id="listInfoLogCount" resultType="int" parameterType="business.sys.log.service.LogVO">
+        SELECT COUNT(1) 
+          FROM SYS_INFO_HST A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 정보조회이력 삭제 -->
+    <delete id="deltInfoLog" parameterType="business.sys.log.service.LogVO">
+        DELETE 
+          FROM SYS_INFO_HST 
+         WHERE SN = #{sn}
+    </delete> 
+</mapper>

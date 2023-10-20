@@ -1,0 +1,106 @@
+@charset "utf-8";
+
+/* ************************ PC (992~) ************************ */
+h3.type1 {font-size:24px; font-weight:600; line-height:28.8px; margin-bottom:13px;}
+h3.type2 {font-size:24px; line-height:1.5; padding-left:45px; background:url(../../images/mypage/relief_pay_icon.svg) no-repeat;}
+
+.h50 {clear:both; height:50px; clear:both;}
+.h20 {clear:both; height:20px; clear:both;}
+.alignL {text-align:left;}
+.alignC {text-align:center;}
+.member .type4 table th {background:#F1F3F9 !important; font-size:21px !important; font-weight:600;} 
+.member .type4 table td:last-child {color:#666;} 
+.member .relief {}
+.member .c_white {color:#fff !important;}
+.member .c_black {color:#000 !important;}
+
+.member .state_ok {color:#fff; background:#8EC31F !important;}
+.member .state_sup {color:#fff; background:#FF0000 !important;}
+.member .state_mod {color:#000 !important; background:#fff !important; border:1px solid #ddd;}
+
+.member .relief [class^='state'] {display:inline-block; padding:7px 12px; border-radius:5px; line-height:1; color:#fff; font-size:14px;}
+
+.member .flow1 {}
+.member .flow .c_red {color:red;}
+.member .flow .c_green {color:8EC31F;}
+.member .flow1 .step li {position:relative; float:left; width:25%; padding:15px;}
+.member .flow1 .step li+li:before {content:""; width:15px; height:35px; background:url(../../images/mypage/arrow1.png) no-repeat; position:absolute; left:-9px; top:38px;}
+.member .flow1 .step li p {position:relative; padding:30px 0; text-align:center; background:#F1F3F9; border-radius:100px; line-height:1; font-size:20px; font-weight:600; color:#ABB8BC;}
+.member .flow1 .step li p img {display:none;}
+.member .flow1 .step li.on p {background:#8EC31F; color:#fff;}
+.member .flow1 .step li.on p img {display:block; height:110px; position:absolute; right:0; bottom:0;}
+.member .flow1 .step li.on p img {display:block; height:110px; position:absolute; right:0; bottom:0;}
+.member .flow1 .step_info {clear:both; padding:0 15px;}
+.member .flow1 .step_info [class^='step'] {display:none;}
+.member .flow1 .step_info [class^='step'].on {display:block;}
+.member .flow1 .step_info>ul {padding:30px; overflow:hidden; border:2px solid #8EC31F; border-radius:20px;}
+.member .flow1 .step_info>ul>li {float:left; vertical-align:top;}
+.member .flow1 .step_info>ul>li.clear {clear:both; float:left; margin-top:10px;}
+.member .flow1 .step_info dl {overflow:hiddne;}
+.member .flow1 .step_info dl>* {float:left;}
+.member .flow1 .step_info dl dt {width:170px;padding:13px 0; color:#000; background:#E7F4CA; text-align:center; line-height:1.4; border-radius:15px;}
+.member .flow1 .step_info dl dd {padding:13px 20px 0 20px; line-height:1.4;}
+
+.member .payWrap {}
+.member .payWrap>ul {padding-left:45px; margin-top:20px;}
+.member .payWrap>ul>li {float:left; width:calc(50% - 20px); height:100px; box-shadow:0 0 10px rgba(0,0,0,.2);}
+.member .payWrap>ul>li:last-child {float:right;}
+.member .payWrap dl>* {float:left; font-size:20px;}
+.member .payWrap dt {width:180px; text-align:center; color:#484848;}
+.member .payWrap dd {color:#000;}
+.member .payWrap dd span {font-size:35px; font-weight:800; line-height:1; display:inline-block; vertical-align:middle; transform:translateY(-5px);}
+.member .payWrap [class^='box'] li {border:2px solid; padding:35px; border-radius:100px; line-height:1.4;}
+.member .payWrap .box_green>li {border-color:#8EC31F;}
+.member .payWrap .box_blue>li {border-color:#008B8B;}
+
+
+/* ************************ TABLET (~991) ************************ */
+@media screen and (max-width: 991px) {	
+
+	h3.type1 {font-size:21px;}
+	h3.type2 {font-size:21px;}
+	
+	.member .flow {}
+	.member .flow1 {}
+	
+	
+	.member .payWrap>ul {}
+	.member .payWrap>ul>li {width:100%; height:auto;}
+	.member .payWrap>ul>li+li {margin-top:10px;}
+	.member .payWrap dd span {font-size:32px}
+	.member .payWrap [class^='box'] li {padding:30px}
+	
+	
+}
+
+
+
+/* ************************ MOBILE (~768) ************************ */
+@media screen and (max-width: 768px) {
+	
+	h3.type1 {font-size:20px;}
+	h3.type2 {font-size:20px;}
+	
+	.member .flow {}
+	.member .flow1 {}
+	.member .flow1 .step li {width:100%; padding:10px;}
+	.member .flow1 .step li p {padding:20px 0;}
+	.member .flow1 .step li+li:before {left:calc(50% - 7px); top:-16px; transform:rotate(90deg);}
+	.member .flow1 .step li.on p img {display:none;}
+	.member .flow1 .step_info>ul>li {}
+	.member .flow1 .step_info>ul>li+li {clear:both; margin-top:10px;}
+	
+	.member .payWrap>ul {padding-left:0;}
+	.member .payWrap>ul>li {width:100%;}
+	.member .payWrap>ul>li+li {margin-top:10px;}
+	.member .payWrap dl>* {width:100%;}
+	.member .payWrap dt {}
+	.member .payWrap dd {text-align:center; margin-top:10px;}
+	.member .payWrap dd span {font-size:27px}
+	.member .payWrap [class^='box'] li {padding:20px}
+	
+	
+}
+
+
+

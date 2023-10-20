@@ -1,0 +1,367 @@
+@charset "utf-8";
+
+
+
+select {
+	padding-right:40px !important;
+    -webkit-appearance: none; /* 네이티브 외형 감추기 */
+    -moz-appearance: none;
+    appearance: none;
+     background: url(../../images/common/select_arrow.png) no-repeat right 10px center; /* 화살표 모양의 이미지 */
+}
+select::-ms-expand { display: none; } /* IE 10, 11의 네이티브 화살표 숨기기 */
+select:focus {border:1px solid #3572c6 !important; outline:none}
+
+
+
+.guide-request input[type='checkbox'] {display:none;}
+.guide-request input[type='checkbox']+label { padding:3px 30px; padding-left:30px; background:url(../../images/common/i-check.png) left top 6px no-repeat; cursor:pointer;}
+.guide-request input[type='checkbox']:checked+label {background-image:url(../../images/common/i-check-on.png);}
+
+.guide-request input[type='radio'] {display:none;}
+.guide-request input[type='radio']+label {padding:3px 0px; padding-left:30px;  background:url(../../images/common/i-check.png) left top 5px no-repeat; cursor:pointer;}
+.guide-request input[type='radio']:checked+label {background-image:url(../../images/common/i-check-on.png);}
+
+
+
+
+
+
+/* ************************ 데스크탑 (992~) ************************ */
+@media screen and (min-width: 992px) {
+
+
+	/* ***** 이용안내 신청서 양식 ***** */
+	/* 이용안내 신청서 - 공통 */
+	.guide-request {}
+	.guide-request .hidden {position:absolute; left: -100000px; top: auto; width:1px; height:1px; overflow:hidden;}
+	.guide-request .sub-section h4 {position:relative; padding-left:25px; margin-bottom:20px; font-size:20px; font-weight:400; color:#000; letter-spacing:-0.5px;}
+	.guide-request .sub-section h4:before {position:absolute; left:0; top:7px; content:''; display:inline-block; width:15px; height:3px; background:#000}
+
+	/* 이용안내 신청서 - 개인정보 체크박스 */
+	.guide-request .request-check>div {margin-top:30px}
+	.guide-request .request-check pre {border-radius:10px; border:1px solid #ddd; padding:30px; background:#fff; font-family:'NotoSansKR' !important; font-size:16px; font-weight:300; line-height:1.7; letter-spacing:-0.25px; color:#000;}
+	.guide-request .request-check .check-box-wrap {margin-top:20px;}
+	.guide-request .request-check .check-box-wrap p {font-weight:400; color:#000}
+	.guide-request .request-check .check-box-wrap p+p {margin-top:10px;}
+	
+	/* 이용안내 신청서 - 신청서 상단 공지 */
+	.guide-request .request-form>div.notice {margin-bottom:20px; border-radius:10px; background:#f9f9f9 url(../../images/common/i-notice02.png) no-repeat right 30px bottom 30px; padding:30px;}
+	.guide-request .request-form>div.notice li {position:relative; padding-left:10px; color:#000}
+	.guide-request .request-form>div.notice li+li {margin-top:5px;}
+	.guide-request .request-form>div.notice li:before {position:absolute; left:0; top:12px; content:''; display:inline-block; width:2px; height:2px; background:#333}
+	.guide-request .request-form>div.notice .call span {margin-left:20px; padding-left:20px; background:url(../../images/common/i-call.png) no-repeat left center}
+
+
+	/* 이용안내 신청서 - 신청 폼 공통 */
+	.guide-request .request-form .inputWrap {border-bottom:1px solid #ddd; width:100%; background:#f9f9f9}
+	.guide-request .request-form .inputWrap:after {clear:both; content:''; display:block;}
+	.guide-request .request-form .inputWrap.inputHidden {display:none}
+
+	.guide-request .request-form .inputWrap>* {display:inline-block; float:left; padding:20px;}
+	.guide-request .request-form .inputWrap>p {position:relative; padding:20px 50px; width:230px; font-weight:400; color:#000; line-height:2em}
+	.guide-request .request-form .inputWrap.essential p:after {position:absolute; left:40px; top:20px; content:'*'; display:inline-block; font-weight:400; color:#f30000}
+	.guide-request .request-form>section>div.w-50 {float:left; width:50%;}
+	
+	.guide-request .request-form .inputWrap>fieldset {min-height:76px; background:#fff; width:calc(100% - 230px)}
+	.guide-request .request-form .inputWrap>fieldset:after {clear:both; content:''; display:block;}
+	.guide-request .request-form .inputWrap>fieldset input[type="text"] {width:230px; border-radius:5px; border:1px solid #ddd; padding:5px 10px; outline:none;}
+	.guide-request .request-form .inputWrap>fieldset input[type="text"]:focus {border:1px solid #3572c6}
+	.guide-request .request-form .inputWrap>fieldset #date {display:inline-block; float:left;}
+	.guide-request .request-form .inputWrap>fieldset .btnDate {display:inline-block; float:left; width:38px; height:36px; margin-left:5px; border-radius:5px; background:#333 url(../../images/common/i-calender.png) no-repeat center;}
+	.guide-request .request-form .inputWrap>fieldset .btnAddress {float:left; display:inline-block; padding:0 15px; height:36px; margin-left:5px; margin-bottom:5px; font-size:14px; color:#fff; line-height:36px; border-radius:5px; background:#333}
+	.guide-request .request-form .inputWrap>fieldset #input-address-numb {float:left; display:inline-block;}
+	.guide-request .request-form .inputWrap>fieldset #input-address {width:100%; display:block; margin-top:5px;}
+	.guide-request .request-form .inputWrap>fieldset #input-address-detail {width:100%; display:block; margin-top:5px;}
+	.guide-request .request-form .inputWrap>fieldset select {padding:5px 10px; border:1px solid #ddd; border-radius:5px;}
+	.guide-request .request-form .inputWrap.inputPhon input {width:80px !important;}
+	.guide-request .request-form .inputWrap.inputPhon span {padding:0 5px;}
+	.guide-request .request-form .inputWrap.datepicker>p {float:left; min-height:76px; padding-top:22px;}
+	.guide-request .request-form .inputWrap.essential>p {float:left; min-height:76px; padding-top:22px;}
+
+	.guide-request .request-form .input-sex label {line-height:35px; padding:2px 30px; padding-right:0; margin-right:15px;}
+	.guide-request .request-form .inputWrap.datepicker .notice {font-size:15px; color:#3572c6; display:inline-block; padding-left:20px; line-height:36px}
+	.guide-request .request-form .inputWrap.essential .notice {font-size:15px; color:#3572c6; display:inline-block; padding-left:20px; line-height:36px}
+
+	.guide-request .request-form .inputWrap.inputEmail input {width:100% !important}
+	.guide-request .request-form .inputWrap.autoInput .text {display:inline-block; font-size:18px; font-weight:400;}
+	.guide-request .request-form .inputWrap.autoInput .text span {font-size:22px; font-weight:bold; color:#3e9eff; font-style:italic; text-decoration:underline; padding:0 3px;}
+	.guide-request .request-form .inputWrap.autoInput input {display:inline-block; margin-left:20px; width:300px !important}
+
+	.guide-request .request-form .inputWrap.inputCall fieldset .select {padding-left:20px;}
+	.guide-request .request-form .inputWrap.inputCall fieldset .select input {width:auto !important;}
+	.guide-request .request-form .inputWrap.inputCall fieldset .select label { line-height:35px; margin-right:15px;padding:2px 30px; padding-right:0;}
+	.guide-request .request-form .inputWrap.inputCall input {width:80px !important;}
+	.guide-request .request-form .inputWrap.inputCall span {padding:0 5px;}
+	.guide-request .request-form .inputWrap.inputCall fieldset>div {float:left;}
+
+
+	/* 이용안내 신청서 - 신청 하단 버튼 */
+	.guide-request .btn-area {text-align:center; margin-top:30px}
+	.guide-request .btn-area a {display:inline-block; padding:20px 50px; font-size:18px; color:#fff; line-height:1; border-radius:5px; background:#00a651}
+
+
+	/* 자원봉사활동 신청 */
+	.service-request .request-form>div.notice li:first-child {padding-left:0;}
+	.service-request .request-form>div.notice li:first-child:before {display:none;}
+	.service-request .request-form>div.notice li:first-child span {font-weight:400; color:#f30000; margin-right:5px;}
+	.service-request .request-form>section {border-top:1px solid #000}
+	.service-request .request-form>section:after {clear:both; content:''; display:inline-block;}
+	.service-request .request-form>section>div {}
+	.service-request .request-form textarea {resize:none; border-radius:5px; border:1px solid #ddd; padding:10px; width:100%; height:250px; outline:none;}
+	.service-request .request-form textarea:focus {border:1px solid #3572c6}
+
+
+	/* 후원활동 신청 */
+	.support-request .request-form>div.notice li:first-child {padding-left:0;}
+	.support-request .request-form>div.notice li:first-child:before {display:none;}
+	.support-request .request-form>div.notice li:first-child span {font-weight:400; color:#f30000; margin-right:5px;}
+	
+	.support-request .request-form>section {border-top:1px solid #000}
+	.support-request .request-form input[type='radio']+label {margin-right:15px; line-height:35px;}
+	.support-request .request-form .inputPrice fieldset p {}
+	.support-request .request-form .inputPrice fieldset p input {margin:0 15px; margin-right:5px;}
+	.support-request .request-form .inputPaydate input {float:left; display:inline-block;}
+	.support-request .request-form .inputNotice>p {padding:30px 50px;}
+	.support-request .request-form .inputNotice fieldset p {position:relative; padding-left:10px; color:#000}
+	.support-request .request-form .inputNotice fieldset p+p {margin-top:5px;}
+	.support-request .request-form .inputNotice fieldset p:before {position:absolute; left:0; top:12px; content:''; display:inline-block; width:2px; height:2px; background:#333}
+	.support-request .request-form .inputNotice fieldset p span {font-weight:400; padding-right:10px;}
+	
+
+
+
+
+	/* 달력 */
+	.mobileCal .mobileCalPopup {display:none;}
+	.mobileCal .mobileCalPopup {z-index:9990;position:fixed; width:100%; height:100%; left:0; top:0; background:rgba(0, 0, 0, .5)}
+	.mobileCal .mobileCalPopup .bg {}
+	.mobileCal .mobileCalPopup .mobileCalFrame {z-index:9992; position:fixed; text-align:center; max-width:90%;}
+	.mobileCalInner { padding:50px 30px; color:#000; font-weight:400; border-radius:10px; background:#fff;}
+	.mobileCalInner select {padding:5px 20px; margin-right:10px; border-radius:5px; border:1px solid #ddd;}
+	.mobileCalInner select:focus {outline:none;}
+	.mobileCalInner select+select {margin-left:15px; color:#000}
+	.mobileCalInner .btn_box {text-align:center; margin-top:30px;}
+	.mobileCalInner .btn_box ul {display:inline-block;}
+	.mobileCalInner .btn_box ul:after {clear:both; content:''; display:block;}
+	.mobileCalInner .btn_box ul li {display:inline-block; float:left; margin:0 5px;}
+	.mobileCalInner .btn_box ul li a {display:inline-block; font-size:15px; border-radius:3px; padding:5px 20px; background:#333; color:#fff}
+	.mobileCalInner .btn_box ul li:first-child a {background:#00a651}
+	
+
+
+
+
+
+	
+
+
+}
+
+
+
+
+
+/* ************************ 태블릿 (~991) ************************ */
+@media screen and (max-width:991px) {
+
+
+
+	/* ***** 이용안내 신청서 양식 ***** */
+	/* 이용안내 신청서 - 공통 */
+	.guide-request .request-check .check-box-wrap {}
+	.guide-request .request-check .check-box-wrap label {display:inline-block;}
+
+
+	.guide-request {}
+	.guide-request .hidden {position:absolute; left: -100000px; top: auto; width:1px; height:1px; overflow:hidden;}
+	.guide-request .sub-section h4 {position:relative; padding-left:25px; margin-bottom:20px; font-size:18px; font-weight:400; color:#000; letter-spacing:-0.5px;}
+	.guide-request .sub-section h4:before {position:absolute; left:0; top:7px; content:''; display:inline-block; width:15px; height:3px; background:#000}
+
+	.guide-request .request-check>div {margin-top:30px}
+	.guide-request .request-check pre {border-radius:10px; border:1px solid #ddd; padding:30px; background:#fff; font-family:'NotoSansKR' !important; font-size:15px; font-weight:300; line-height:1.7; letter-spacing:-0.25px; color:#000;}
+	.guide-request .request-check .check-box-wrap {margin-top:20px; padding:0}
+	.guide-request .request-check .check-box-wrap p {font-weight:400; color:#000;}
+	.guide-request .request-check .check-box-wrap p+p {margin-top:10px;}
+	.guide-request .request-check .check-box-wrap input[type='checkbox']+label {  background:url(../../images/common/i-check.png) left top 4px no-repeat;}
+
+	.guide-request .request-form>div.notice {margin-bottom:20px; border-radius:10px; background:#f9f9f9; background-size:40px; padding:20px;}
+	.guide-request .request-form>div.notice li {position:relative; padding-left:10px; color:#000}
+	.guide-request .request-form>div.notice li+li {margin-top:5px;}
+	.guide-request .request-form>div.notice li:first-child {padding-left:0;}
+	.guide-request .request-form>div.notice li:first-child:before {display:none;}
+	.guide-request .request-form>div.notice li:first-child span {font-weight:400; color:#f30000; margin-right:5px;}
+	.guide-request .request-form>div.notice li:before {position:absolute; left:0; top:10px; content:''; display:inline-block; width:2px; height:2px; background:#333}
+	.guide-request .request-form>div.notice .call span {margin-left:20px; padding-left:20px; background:url(../../images/common/i-call.png) no-repeat left center}
+
+
+	.guide-request .request-form .inputWrap {border-bottom:1px solid #ddd; width:100%; background:#f9f9f9}
+	.guide-request .request-form .inputWrap:after {clear:both; content:''; display:block;}
+	.guide-request .request-form .inputWrap.inputHidden {display:none;}
+	
+	.guide-request .request-form .inputWrap>* {display:inline-block; float:left; padding:20px;}
+	.guide-request .request-form .inputWrap>p {position:relative; padding:20px 50px; width:230px; font-weight:400; color:#000; line-height:2em}
+	.guide-request .request-form .inputWrap.essential p:after {position:absolute; left:40px; top:20px; content:'*'; display:inline-block; font-weight:400; color:#f30000}
+
+	.guide-request .request-form .inputWrap>fieldset {min-height:76px; background:#fff; width:calc(100% - 230px)}
+	.guide-request .request-form .inputWrap>fieldset:after {clear:both; content:''; display:block;}
+	.guide-request .request-form .inputWrap>fieldset input[type="text"] {width:230px; border-radius:5px; border:1px solid #ddd; padding:6px 10px; outline:none;}
+	.guide-request .request-form .inputWrap>fieldset input[type="text"]:focus {border:1px solid #3572c6}
+	.guide-request .request-form .inputWrap>fieldset #date {display:inline-block; float:left;}
+	.guide-request .request-form .inputWrap>fieldset .btnDate {display:inline-block; float:left; width:38px; height:36px; margin-left:5px; border-radius:5px; background:#333 url(../../images/common/i-calender.png) no-repeat center;}
+	.guide-request .request-form .inputWrap>fieldset .btnAddress {float:left; display:inline-block; padding:0 15px; height:36px; margin-left:5px; margin-bottom:5px; font-size:14px; color:#fff; line-height:36px; border-radius:5px; background:#333}
+	.guide-request .request-form .inputWrap>fieldset #input-address-numb {float:left; display:inline-block;}
+	.guide-request .request-form .inputWrap>fieldset #input-address {width:100%; display:block; margin-top:5px;}
+	.guide-request .request-form .inputWrap>fieldset #input-address-detail {width:100%; display:block; margin-top:5px;}
+	.guide-request .request-form .inputWrap>fieldset select {padding:5px 10px; border:1px solid #ddd; border-radius:5px;}
+	.guide-request .request-form .inputWrap.inputPhon input {width:80px !important;}
+	.guide-request .request-form .inputWrap.inputPhon span {padding:0 5px;}
+	.guide-request .request-form .inputWrap.datepicker>p {float:left; min-height:76px; padding-top:22px;}
+	.guide-request .request-form .inputWrap.datepicker .notice {font-size:15px; color:#3572c6; display:inline-block; padding-left:20px; line-height:36px}
+	.guide-request .request-form .inputWrap.essential>p {float:left; min-height:76px; padding-top:22px;}
+	.guide-request .request-form .inputWrap.essential .notice {font-size:15px; color:#3572c6; display:inline-block; padding-left:20px; line-height:36px}
+	
+	
+	.guide-request .request-form .inputWrap.inputEmail input {width:100% !important}
+	
+	.guide-request .request-form .inputWrap.autoInput .text {display:inline-block; font-size:18px; font-weight:400;}
+	.guide-request .request-form .inputWrap.autoInput .text span {font-size:22px; font-weight:bold; color:#3e9eff; font-style:italic; text-decoration:underline; padding:0 3px;}
+	.guide-request .request-form .inputWrap.autoInput input {display:inline-block; margin-left:20px; width:300px !important}
+
+	.guide-request .request-form .inputWrap.inputCall input {width:80px !important;}
+	.guide-request .request-form .inputWrap.inputCall span {padding:0 5px;}
+	.guide-request .request-form .inputWrap.inputCall fieldset>div {float:left;}
+	.guide-request .request-form .inputWrap.inputCall fieldset .select {padding-left:20px; line-height:36px}
+	.guide-request .request-form .inputWrap.inputCall fieldset .select input {width:auto !important;}
+	.guide-request .request-form .inputWrap.inputCall fieldset .select label { padding:3px 30px; padding-right:0; margin-right:15px;}
+
+
+
+	.guide-request .btn-area {text-align:center; margin-top:15px}
+	.guide-request .btn-area a {display:inline-block; padding:20px 50px; color:#fff; font-weight:400; font-size:15px; line-height:1; border-radius:5px; background:#00a651}
+
+
+
+	/* 자원봉사활동 신청 */
+	
+	.service-request .request-form>section {border-top:1px solid #000}
+	.service-request .request-form>section:after {clear:both; content:''; display:inline-block;}
+	.service-request .request-form>section>div {}
+	.service-request .request-form .input-sex label {padding:3px 30px; padding-right:0; margin-right:15px;}
+
+	
+	.service-request .request-form textarea {resize:none; border-radius:5px; border:1px solid #ddd; padding:10px; width:100%; height:250px; outline:none;}
+	.service-request .request-form textarea:focus {border:1px solid #3572c6}
+
+	/* 후원활동 신청 */
+	.support-request .request-form>div.notice li:first-child {padding-left:0;}
+	.support-request .request-form>div.notice li:first-child:before {display:none;}
+	.support-request .request-form>div.notice li:first-child span {font-weight:400; color:#f30000; margin-right:5px;}
+	
+	.support-request .request-form>section {border-top:1px solid #000}
+	.support-request .request-form input[type='radio']+label {margin-right:15px; line-height:35px;}
+	.support-request .request-form .inputPrice fieldset p {}
+	.support-request .request-form .inputPrice fieldset p input {margin:0 15px; margin-right:5px;}
+	.support-request .request-form .inputPaydate input {float:left; display:inline-block;}
+	.support-request .request-form .inputNotice fieldset p {position:relative; padding-left:10px; color:#000}
+	.support-request .request-form .inputNotice fieldset p+p {margin-top:5px;}
+	.support-request .request-form .inputNotice fieldset p:before {position:absolute; left:0; top:12px; content:''; display:inline-block; width:2px; height:2px; background:#333}
+	.support-request .request-form .inputNotice fieldset p span {font-weight:400; padding-right:10px;}
+
+	.support-request .request-form .inputPay input[type='radio']+label {display:block; line-height:normal; margin-bottom:10px;}
+	.support-request .request-form .inputVisit input[type='radio']+label {display:block; line-height:normal; margin-bottom:10px;}
+
+	
+
+
+
+	
+
+
+	/* 달력 */
+	.mobileCal .mobileCalPopup {display:none;}
+	.mobileCal .mobileCalPopup {z-index:9990;position:fixed; width:100%; height:100%; left:0; top:0; background:rgba(0, 0, 0, .5)}
+	.mobileCal .mobileCalPopup .bg {}
+	.mobileCal .mobileCalPopup .mobileCalFrame {z-index:9992; position:fixed; text-align:center; max-width:90%;}
+	.mobileCalInner { padding:50px 30px; color:#000; font-weight:400; border-radius:10px; background:#fff;}
+	.mobileCalInner select {padding:5px 20px; margin-right:10px; border-radius:5px; border:1px solid #ddd;}
+	.mobileCalInner select:focus {outline:none;}
+	.mobileCalInner select+select {margin-left:15px; color:#000}
+	.mobileCalInner .btn_box {text-align:center; margin-top:30px;}
+	.mobileCalInner .btn_box ul {display:inline-block;}
+	.mobileCalInner .btn_box ul:after {clear:both; content:''; display:block;}
+	.mobileCalInner .btn_box ul li {display:inline-block; float:left; margin:0 5px;}
+	.mobileCalInner .btn_box ul li a {display:inline-block; font-size:15px; border-radius:3px; padding:5px 20px; background:#333; color:#fff}
+	.mobileCalInner .btn_box ul li:first-child a {background:#00a651}
+	
+
+
+
+
+
+
+}
+
+
+
+
+
+
+/* ************************ 모바일 (0~767) ************************ */
+@media screen and (max-width:767px) {
+
+	/* ***** 이용안내 신청서 양식 ***** */
+	/* 이용안내 신청서 - 공통 */
+	.guide-request .request-check pre {height:200px; overflow:auto; padding:20px;}
+
+	.guide-request .request-form>div.notice {background:#f9f9f9}
+	.guide-request .request-form>div.notice .call span {display:block; margin-left:0; margin-top:3px;}
+	
+
+	.guide-request .request-form .inputWrap {background:none;}
+	.guide-request .request-form .inputWrap>p {float:none; min-height:auto !important;  width:100%; padding:15px 30px; padding-top:15px !important; font-size:16px; line-height:1; background:#f9f9f9; border-bottom:1px dashed #ebebeb}
+	.guide-request .request-form .inputWrap.essential p:after {left:20px; top:10px;}
+	.guide-request .request-form .inputWrap>fieldset {width:100%; min-height:auto; padding:15px 20px}
+
+	.guide-request .request-form .inputWrap>fieldset input[type="text"] {width:100%;}
+	.guide-request .request-form .inputWrap>fieldset #date {width:180px;}
+	.guide-request .request-form .inputWrap>fieldset #input-address-numb {width:180px;}
+	.guide-request .request-form .inputWrap.inputCall fieldset .select {display:block; width:100%; padding-left:0; margin-top:10px;}
+	.guide-request .request-form .inputWrap.datepicker .notice {width:100%; padding-lefT:0; margin-top:5px;}
+	.guide-request .request-form .inputWrap.essential .notice {width:100%; padding-lefT:0; margin-top:5px;}
+	
+
+	
+	.guide-request .request-form .inputWrap.autoInput .text {display:block; font-size:18px; font-weight:400;}
+	.guide-request .request-form .inputWrap.autoInput .text span {font-size:22px; font-weight:bold; color:#3e9eff; font-style:italic; text-decoration:underline; padding:0 3px;}
+	.guide-request .request-form .inputWrap.autoInput input {display:block; margin-left:0px; width:100% !important; margin-top:10px;}
+
+
+	.guide-request .btn-area {margin-top:20px;}
+	.guide-request .btn-area a {width:100%; line-height:normal; padding:10px 30px;}
+
+
+
+
+	/* 자원봉사 신청서 */
+	.service-request .request-form .inputWrap.datepicker .notice {width:100%; padding-lefT:0; margin-top:5px;}
+	.service-request .btn-area {margin-top:0}
+
+	
+	/* 후원 신청 */
+	.support-request .request-form .inputPrice fieldset p input {width:180px !important; margin:0 10px; margin-right:0}
+	.support-request .request-form .inputPaydate input {float:left; display:inline-block; width:180px !important;}
+	.support-request .request-form .inputPay input[type='radio']+label {display:block; line-height:normal; margin-bottom:10px;}
+	.support-request .request-form .inputVisit input[type='radio']+label {display:block; line-height:normal; margin-bottom:10px;}
+
+
+	/* 달력 */
+	.mobileCalInner select {padding:5px 10px; padding-right:25px !important; margin-right:5px;}
+	.mobileCalInner select+select {margin-left:10px;}
+	
+
+
+
+
+
+}

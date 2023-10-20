@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="RcperLvlh">
+
+    <!-- 
+        2022.11.14 : ntarget : TB_RCPER_LVLH_MNG 테이블 삭제
+        mapper-RcperLvlh.xml 삭제
+     -->
+     
+     
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Column">
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+        A.BIZ_ODER                                    AS "bizOder",
+        A.EXMN_ODER                                   AS "exmnOder",
+        A.APLY_NO                                     AS "aplyNo",
+        A.GIVE_YR                                     AS "giveYr",
+        A.RCPER_LVLH_ALLWNC_AMT                       AS "rcperLvlhAmt",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 요양생활수당관리 목록조회 -->
+    <select id="listRcperLvlh" resultType="java.util.HashMap" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_RCPER_LVLH_MNG A
+         WHERE A.BIZ_AREA_CD = #{bizAreaCd}
+           AND A.BIZ_ODER    = #{bizOder}
+           AND A.EXMN_ODER   = #{exmnOder}
+           AND A.APLY_NO     = #{aplyNo}
+        <if test="@common.util.CommUtils@isNotEmpty(giveYr)">
+            AND A.GIVE_YR = #{giveYr}
+        </if>
+         ORDER BY 
+               A.BIZ_AREA_CD,
+               A.BIZ_ODER,
+               A.EXMN_ODER,
+               A.APLY_NO,
+               A.GIVE_YR
+    </select>
+    <select id="listRcperLvlhCount" resultType="int" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT COUNT(1) 
+          FROM TB_RCPER_LVLH_MNG A
+         WHERE A.BIZ_AREA_CD = #{bizAreaCd}
+           AND A.BIZ_ODER    = #{bizOder}
+           AND A.EXMN_ODER   = #{exmnOder}
+           AND A.APLY_NO     = #{aplyNo}
+        <if test="@common.util.CommUtils@isNotEmpty(giveYr)">
+            AND A.GIVE_YR = #{giveYr}
+        </if>
+    </select>
+
+    <!-- 요양생활수당관리 상세조회 -->
+    <select id="viewRcperLvlh" resultType="business.com.exmn.service.RcperLvlhVO" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT <include refid="Sql-Column"/>
+              ,(SELECT GIVE_BGNG_YM
+                  FROM TB_MNSVY
+                 WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+                   AND BIZ_ODER    = A.BIZ_ODER
+                   AND EXMN_ODER   = A.EXMN_ODER
+                   AND APLY_NO     = A.APLY_NO)   AS "giveBgngYm"
+              ,(SELECT GIVE_END_YM
+                  FROM TB_MNSVY
+                 WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+                   AND BIZ_ODER    = A.BIZ_ODER
+                   AND EXMN_ODER   = A.EXMN_ODER
+                   AND APLY_NO     = A.APLY_NO)   AS "giveEndYm"
+          FROM TB_RCPER_LVLH_MNG A
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+    </select>
+
+    <!-- 요양생활수당관리 등록 -->
+    <insert id="regiRcperLvlh" parameterType="business.com.exmn.service.RcperLvlhVO">
+        INSERT 
+          INTO TB_RCPER_LVLH_MNG 
+             ( BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               GIVE_YR,
+               RCPER_LVLH_ALLWNC_AMT,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{aplyNo},
+               #{giveYr},
+               FN_FMT_DATA('NUM',#{rcperLvlhAmt}),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 요양생활수당관리 이력저장 -->
+    <insert id="regiRcperLvlhHst" parameterType="business.com.exmn.service.RcperLvlhVO">
+        INSERT 
+          INTO TB_RCPER_LVLH_MNG_HST
+             ( HST_NO,
+               LOG_TY,
+               HST_YMD,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               GIVE_YR,
+               RCPER_LVLH_ALLWNC_AMT,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+             )
+        SELECT SEQ_RCPER_LVLH_MNG_HST.NEXTVAL,
+               #{logTy},
+               SYSDATE,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               GIVE_YR,
+               RCPER_LVLH_ALLWNC_AMT,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+          FROM TB_RCPER_LVLH_MNG
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+    </insert>
+
+    <!-- 요양생활수당관리 수정 -->
+    <update id="updtRcperLvlh" parameterType="business.com.exmn.service.RcperLvlhVO">
+        UPDATE TB_RCPER_LVLH_MNG 
+           SET MDFR_NO     = #{gsUserNo},
+               RCPER_LVLH_ALLWNC_AMT = FN_FMT_DATA('NUM',#{rcperLvlhAmt}),
+               MDFCN_YMD   = SYSDATE  
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+    </update>
+
+    <!-- 요양생활수당관리 삭제 -->
+    <delete id="deltRcperLvlh" parameterType="business.com.exmn.service.RcperLvlhVO">
+        DELETE 
+          FROM TB_RCPER_LVLH_MNG 
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+    </delete> 
+
+</mapper>

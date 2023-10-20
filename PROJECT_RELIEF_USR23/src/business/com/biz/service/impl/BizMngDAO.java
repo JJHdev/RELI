@@ -1,0 +1,135 @@
+ package business.com.biz.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Repository;
+
+import business.com.biz.service.BizMngVO;
+import commf.paging.PaginatedArrayList;
+import common.base.BaseDAO;
+
+/**
+ * [DAO클래스] - 사업관리하는 DAO 클래스
+ * 
+ * 사용 가능한  DAO Statement Method
+ * 1. list          : 리스트 조회시 사용함.
+ * 2. pageListOra   : 페이징처리용 리스트조회시 사용함. for Oracle, Tibero
+ * 3. view          : 단건조회, 상세조회시 사용함.
+ * 4. save          : INSERT, UPDATE, DELETE 모두 사용가능. (Return Type : Integer)
+ * 5. insert        : INSERT (Return String : Key 채번 사용함.)
+ * 6. update        : UPDATE (Return Type : Integer)
+ * 7. delete        : DELETE (Return Type : Integer)
+ * 
+ *
+ * @class   : BizMngDAO
+ * @author  : 김주호
+ * @since   : 2021.10.02
+ * @version : 1.0
+ *
+ *   수정일     수정자               수정내용
+ *  -------    --------    ---------------------------
+ *
+ */
+
+@Repository("BizMngDAO")
+@SuppressWarnings({"all"})
+public class BizMngDAO extends BaseDAO {
+
+	public List listBizMng(BizMngVO bizMngVO) {
+		 return list("BizMng.listBizMng",bizMngVO);
+	}
+	/**
+     * 사업관리 페이징목록 조회
+     */
+	public PaginatedArrayList getListBizMng(BizMngVO bizMngVO, int currPage, int pageSize) {
+		return pageList("BizMng.getListBizMng", bizMngVO, currPage, pageSize);
+	}
+	/**
+     * 사업관리 목록 조회
+     */
+	public List getListBizMng(BizMngVO bizMngVO) {
+		 return list("BizMng.getListBizMng", bizMngVO);
+	}
+	
+    /**
+     *사업관리 상세조회
+     */
+	public BizMngVO viewListBizMng(BizMngVO bizMngVO) {
+		 return (BizMngVO) view("BizMng.viewListBizMng", bizMngVO);
+	}
+	/**
+	 * 사업관리 - 신규사업등록
+	 */
+	public Integer saveNewBiz(BizMngVO bizMngVO) {
+		return (Integer) save("BizMng.saveNewBiz", bizMngVO);
+	}
+
+    /*
+     * 사업관리 - 기존사업 추가 차수 검색
+     */
+	public BizMngVO searchGernOder(BizMngVO bizMngVO) {
+		 return (BizMngVO) view("BizMng.searchGernOder", bizMngVO);
+	}
+	
+	public BizMngVO getBizKey(BizMngVO bizMngVO) {
+		 return (BizMngVO) view("BizMng.getBizKey", bizMngVO);
+	}
+	
+	public Integer saveOder(BizMngVO bizMngVO) {
+		return (Integer) save("BizMng.saveOder",bizMngVO);
+	}
+	public Integer addAreaOder(BizMngVO bizMngVO) {
+		return (Integer) save("BizMng.addAreaOder", bizMngVO);
+	}
+	 /*
+     * 사업관리 - 사업내용수정
+     */
+	public Integer modifyBiz(BizMngVO bizMngVO) {
+		return (Integer) save("BizMng.modifyBiz", bizMngVO);
+	}
+	/*
+     * 사업관리 - 사업지역 사업이름 수정
+     */
+	public Integer modifyAREA(BizMngVO bizMngVO) {
+		return (Integer) save("BizMng.modifyAREA", bizMngVO);
+	}
+	/*
+     * 사업관리 - 사업 삭제
+     */	
+	public Integer deleteBiz(BizMngVO bizMngVO) {
+		return (Integer) save("BizMng.deleteBiz", bizMngVO);
+	}
+	/*
+     * 사업관리 - 사업삭제 중 예비조사 계획 유무 확인 
+     */		
+	public BizMngVO prptExmnCount(BizMngVO bizMngVO) {
+		return (BizMngVO) view("BizMng.prptExmnCount", bizMngVO);
+	}
+	/**
+     * 사업관리 화면 - 전체사업 차수 삭제
+     */	
+	public int allDeleteBizOder(BizMngVO bizMngVO) {
+		return (Integer) save("BizMng.allDeleteBizOder", bizMngVO);
+	}
+	/**
+     * 사업관리 화면 - 사업 삭제
+     */		
+	public int allDeleteBiz(BizMngVO bizMngVO) {
+		return (Integer) save("BizMng.allDeleteBiz", bizMngVO);
+	}
+	/**
+     * 사업관리 화면 - 사업 삭제중 예비조사 계획 유무 확인 메소드 
+     */		
+	public BizMngVO allPrptExmnCount(BizMngVO bizMngVO) {
+		return (BizMngVO) view("BizMng.allPrptExmnCount", bizMngVO);
+	}
+	/**
+     * 사업관리 화면 - 사업 차수 삭제중 사업차수가 존재하는지 확인  
+     */		
+	public BizMngVO oderCount(BizMngVO bizMngVO) {
+		return  (BizMngVO)view("BizMng.oderCount", bizMngVO);
+	}
+
+
+}

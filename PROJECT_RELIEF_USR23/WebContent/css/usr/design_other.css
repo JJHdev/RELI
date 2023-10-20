@@ -1,0 +1,21 @@
+@charset "utf-8";
+
+/* ************************ PC (992~) ************************ */
+.member .relief .payWrap dl {text-align:center;}
+.member .relief .payWrap dl>* {display:inline-block; float:none !important;}
+.member .relief .payWrap dl dt {margin-right:50px; width:auto !important;}
+
+
+
+
+/* ************************ TABLET (~991) ************************ */
+@media screen and (max-width: 991px) {
+	
+}
+
+
+
+/* ************************ MOBILE (~768) ************************ */
+@media screen and (max-width: 768px) {
+	
+}

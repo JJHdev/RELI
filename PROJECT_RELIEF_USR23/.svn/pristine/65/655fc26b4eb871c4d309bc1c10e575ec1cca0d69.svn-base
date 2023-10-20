@@ -1,0 +1,135 @@
+
+<!-- 개인정보동의 -->
+<div id="popupAgree" class="layerPop type2">
+    <div class="layerWrap">
+        <!-- 레이어내용 -->
+        <div class="layerPop-inner relief">
+            <div class="personalInfo">
+                <ul class="pb30">
+                    <li><p>ㆍ개인정보의 수집 및 이용에 동의하십니까?</p>
+                        <div class="inputWrap">
+                            <input type="radio" id="agree1-1" name="agree1" class="agreeItem" value="Y" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree1-1">동의</label>
+                            <input type="radio" id="agree1-2" name="agree1" class="agreeItem" value="N" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree1-2">비동의</label>
+                            <input type="checkbox" id="agreeDocu1" name="agreeDocu1" class="agreeDocuCls" value="Y"/>
+                            <label for="agreeDocu1">전문보기</label>
+                            <div class="inner" style="display: none; height: 120px; overflow:scroll;">
+                            <pre class="agreePre">
+● 개인정보의 수집·이용 목적 : 환경오염피해 구제급여 해당 여부, 피해조사 및 구제급여 (선)지급 결정 등을 위한 인적 사항, 피해사실의 확인 및 진료정보 조회, 타 법에 따른 지원금 수급여부 조회, 제도개선 관련 각종 연구용역, 설문조사, 구상권 행사, 근로관련 정보(근로여부, 근로사업장, 근로소득액 등) 및 손해배상 관련 정보(소송여부, 화해(재판외/재판상), 조정 등) 조회
+● 수집하려는 개인정보의 항목 : 성명, 주소, 성별, 전화번호, 휴대전화번호 등
+● 개인정보의 보유 및 이용 기간 : 이용목적 완료시까지(피해자의 생애관리 및 정책자료 활용)
+※ 개인정보보호법에 의거 개인정보의 제공에 따른 동의를 거부할 수 있으나, 환경보건 서비스 제공 및 지원금 수급이 불가능할 수 있습니다.</pre>
+                            </div>
+                        </div>
+                    </li>
+                    <li><p>ㆍ민감정보의 수집 및 이용에 동의하십니까?</p>
+                        <div class="inputWrap">
+                            <input type="radio" id="agree2-1" name="agree2" class="agreeItem" value="Y" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree2-1">동의</label>
+                            <input type="radio" id="agree2-2" name="agree2" class="agreeItem" value="N" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree2-2">비동의</label>
+                            <input type="checkbox" id="agreeDocu2" name="agreeDocu2" class="agreeDocuCls" value="Y"/>
+                            <label for="agreeDocu2">전문보기</label>
+                            <div class="inner" style="display: none; height: 120px; overflow:scroll;">
+                            <pre class="agreePre">
+● 민감정보의 수집·이용 목적 : 환경오염피해 구제급여 해당 여부, 피해조사 및 구제급여 (선)지급 결정 등을 위한 인적 사항, 피해사실의 확인 및 진료정보 조회, 타 법에 따른 지원금 수급여부 조회, 제도개선 관련 각종 연구용역, 설문조사, 구상권 행사, 근로관련 정보(근로여부, 근로사업장, 근로소득액 등) 및 손해배상 관련 정보(소송여부, 화해(재판외/재판상), 조정 등) 조회
+● 수집하려는 민감정보의 항목 : 질환정보(의료진료기록, 치료관련기록, 약품조제기록 등), 의료비 내역, 역학조사·건강피해조사 자료(관련 연구용역 자료 포함), 기타 국가 및 지방자치단체가 제공하는 공공부조 및 사회서비스 수혜이력 
+● 민감정보의 보유 및 이용 기간 : 이용목적 완료시까지(피해자의 생애관리 및 정책자료 활용)
+● 민감정보 처리 법적근거 : ｢환경오염피해 배상책임 및 구제에 관한 법률｣ 시행령 제34조
+※ 개인정보보호법에 의거 개인정보의 제공에 따른 동의를 거부할 수 있으나, 환경보건 서비스 제공 및 지원금 수급이 불가능할 수 있습니다.
+                            </pre>
+                            </div>
+                        </div>
+                    </li>
+                    <li><p>ㆍ고유식별정보의 수집 및 이용에 동의하십니까?</p>
+                        <div class="inputWrap">
+                            <input type="radio" id="agree3-1" name="agree3" class="agreeItem" value="Y" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree3-1">동의</label>
+                            <input type="radio" id="agree3-2" name="agree3" class="agreeItem" value="N" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree3-2">비동의</label>
+                            <input type="checkbox" id="agreeDocu3" name="agreeDocu3" class="agreeDocuCls" value="Y"/>
+                            <label for="agreeDocu3">전문보기</label>
+                            <div class="inner" style="display: none; height: 120px; overflow:scroll;">
+                            <pre class="agreePre">
+● 고유식별정보의 수집·이용 목적 : 환경오염피해 구제급여 해당 여부, 피해조사 및 구제급여 (선)지급 결정 등을 위한 인적 사항, 피해사실의 확인 및 진료정보 조회, 타 법에 따른 지원금 수급여부 조회, 제도개선 관련 각종 연구용역, 설문조사, 구상권 행사, 근로관련 정보(근로여부, 근로사업장, 근로소득액 등) 및 손해배상 관련 정보(소송여부, 화해(재판외/재판상), 조정 등) 조회
+● 수집하려는 고유식별정보의 항목 : 주민등록번호, 여권번호
+● 고유식별정보의 보유 및 이용 기간 : 이용목적 완료시까지(피해자의 생애관리 및 정책자료 활용)
+● 고유식별정보 처리 법적근거 : ｢환경오염피해 배상책임 및 구제에 관한 법률｣ 시행령 제34조
+※ 개인정보보호법에 의거 개인정보의 제공에 따른 동의를 거부할 수 있으나, 환경보건 서비스 제공 및 지원금 수급이 불가능할 수 있습니다.
+                            </pre>
+                            </div>
+                        </div>
+                    </li>
+                    <li><p>ㆍ개인정보의 제3자 제공에 동의하십니까?</p>
+                        <div class="inputWrap">
+                            <input type="radio" id="agree4-1" name="agree4" class="agreeItem" value="Y" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree4-1">동의</label>
+                            <input type="radio" id="agree4-2" name="agree4" class="agreeItem" value="N" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree4-2">비동의</label>
+                            <input type="checkbox" id="agreeDocu4" name="agreeDocu4" class="agreeDocuCls" value="Y"/>
+                            <label for="agreeDocu4">전문보기</label>
+                            <div class="inner" style="display: none; height: 120px; overflow:scroll;">
+                            <pre class="agreePre">
+● 개인정보를 제공받는 자 : ｢개인정보 보호법｣에 따른 공공기관, ｢환경오염피해 배상책임 및 구제에 관한 법｣에 따라 설치된 위원회,｢환경오염피해 배상책임 및 구제에 관한 법｣ 제3조에 따른 시설,  타 법에 따른 조회기관, 각종 프로그램 운영자, 환경부, 김포시청, 건강보험공단, 국민연금공단, 근로복지공단, 이화여대 산학협력단, 한국환경산업기술원과 MOU를 체결한 기관 중 제도개선 및 영향조사·연구, 피해조사·분석, 급여산정 등의 업무를 수행하는자
+● 개인정보를 제공받는 자의 개인정보 이용 목적 : 환경오염피해 구제급여 해당 여부, 피해조사 및 구제급여 (선)지급 결정 등을 위한 인적 사항, 피해사실의 확인 및 진료정보 조회, 타 법에 따른 지원금 수급여부 조회, 제도개선 관련 각종 연구용역, 설문조사, 구상권 행사, 근로관련 정보(근로여부, 근로사업장, 근로소득액 등), 손해배상 관련 정보(소송여부, 화해(재판외/재판상), 조정 등) 조회 및 김포시 환경오염피해 인정자 대상 주민건강모니터링 사업 추진
+● 제공하는 개인정보의 항목 : 성명, 주소, 성별, 전화번호, 휴대전화번호, 질환정보, 구제급여 (선)지급이력 등
+● 개인정보를 제공받는 자의 개인정보 보유 및 이용 기간 : 이용목적 완료시까지
+※ 개인정보보호법에 의거 개인정보의 제공에 따른 동의를 거부할 수 있으나, 환경보건 서비스 제공 및 지원금 수급이 불가능할 수 있습니다.
+                            </pre>
+                            </div>
+                        </div>
+                    </li>
+                    <li><p>ㆍ민감정보의 제3자 제공에 동의하십니까?</p>
+                        <div class="inputWrap">
+                            <input type="radio" id="agree5-1" name="agree5" class="agreeItem" value="Y" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree5-1">동의</label>
+                            <input type="radio" id="agree5-2" name="agree5" class="agreeItem" value="N" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree5-2">비동의</label>
+                            <input type="checkbox" id="agreeDocu5" name="agreeDocu5" class="agreeDocuCls" value="Y"/>
+                            <label for="agreeDocu5">전문보기</label>
+                            <div class="inner" style="display: none; height: 120px; overflow:scroll;">
+                            <pre class="agreePre">
+● 민감정보를 제공받는 자 : ｢개인정보 보호법｣에 따른 공공기관, ｢환경오염피해 배상책임 및 구제에 관한 법｣에 따라 설치된 위원회,｢환경오염피해 배상책임 및 구제에 관한 법｣ 제3조에 따른 시설,  타 법에 따른 조회기관, 각종 프로그램 운영자, 환경부, 김포시청, 건강보험공단, 국민연금공단, 근로복지공단, 이화여대 산학협력단, 한국환경산업기술원과 MOU를 체결한 기관 중 제도개선 및 영향조사·연구, 피해조사·분석, 급여산정 등의 업무를 수행하는자
+● 민감정보를 제공받는 자의 민감정보 이용 목적 : 환경오염피해 구제급여 해당 여부, 피해조사 및 구제급여 (선)지급 결정 등을 위한 인적 사항, 피해사실의 확인 및 진료정보 조회, 타 법에 따른 지원금 수급여부 조회, 제도개선 관련 각종 연구용역, 설문조사, 구상권 행사, 근로관련 정보(근로여부, 근로사업장, 근로소득액 등), 손해배상 관련 정보(소송여부, 화해(재판외/재판상), 조정 등) 조회 및 김포시 환경오염피해 인정자 대상 주민건강모니터링 사업 추진
+● 제공하는 민감정보의 항목 : 질환정보, 구제급여 (선)지급이력 등
+● 민감정보를 제공받는 자의 민감정보 보유 및 이용 기간 : 이용목적 완료시까지
+● 민감정보 처리 법적근거 : ｢환경오염피해 배상책임 및 구제에 관한 법률｣ 시행령 제34조
+※ 개인정보보호법에 의거 개인정보의 제공에 따른 동의를 거부할 수 있으나, 환경보건 서비스 제공 및 지원금 수급이 불가능할 수 있습니다.
+                            </pre>
+                            </div>
+                        </div>
+                    </li>
+                    <li><p>ㆍ고유식별정보의 제3자 제공에 동의하십니까?</p>
+                        <div class="inputWrap">
+                            <input type="radio" id="agree6-1" name="agree6" class="agreeItem" value="Y" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree6-1">동의</label>
+                            <input type="radio" id="agree6-2" name="agree6" class="agreeItem" value="N" onclick="checkSelectAll()" disabled="disabled"/>
+                            <label for="agree6-2">비동의</label>
+                            <input type="checkbox" id="agreeDocu6" name="agreeDocu6" class="agreeDocuCls" value="Y"/>
+                            <label for="agreeDocu6">전문보기</label>
+                            <div class="inner" style="display: none; height: 120px; overflow:scroll;">
+                            <pre class="agreePre">
+● 고유식별정보를 제공받는 자 : ｢개인정보 보호법｣에 따른 공공기관, ｢환경오염피해 배상책임 및 구제에 관한 법｣에 따라 설치된 위원회,｢환경오염피해 배상책임 및 구제에 관한 법｣ 제3조에 따른 시설,  타 법에 따른 조회기관, 각종 프로그램 운영자, 환경부, 김포시청, 건강보험공단, 국민연금공단, 근로복지공단, 이화여대 산학협력단, 한국환경산업기술원과 MOU를 체결한 기관 중 제도개선 및 영향조사·연구, 피해조사·분석, 급여산정 등의 업무를 수행하는자
+● 고유식별정보를 제공받는 자의 개인정보 이용 목적 : 환경오염피해 구제급여 해당 여부, 피해조사 및 구제급여 (선)지급 결정 등을 위한 인적 사항, 피해사실의 확인 및 진료정보 조회, 타 법에 따른 지원금 수급여부 조회, 제도개선 관련 각종 연구용역, 설문조사, 구상권 행사, 근로관련 정보(근로여부, 근로사업장, 근로소득액 등), 손해배상 관련 정보(소송여부, 화해(재판외/재판상), 조정 등) 조회 및 김포시 환경오염피해 인정자 대상 주민건강모니터링 사업 추진
+● 제공하는 고유식별정보의 항목 : 타법에 따른 급여 수급여부 조회 시 주민등록번호, 여권번호
+● 고유식별정보를 제공받는 자의 고유식별정보 보유 및 이용 기간 : 이용목적 완료시까지
+● 고유식별정보 처리 법적근거 : ｢환경오염피해 배상책임 및 구제에 관한 법률｣ 시행령 제34조
+※ 개인정보보호법에 의거 개인정보의 제공에 따른 동의를 거부할 수 있으나, 환경보건 서비스 제공 및 지원금 수급이 불가능할 수 있습니다.
+                            </pre>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="inputWrap">
+                    <input type="checkbox" id="agreeAll" name="agreeAll" class="agreeAll" value="Y" />
+                    <label for="agreeAll">전체동의</label>
+                </div>
+                <div class="btnWrap type1">
+                    <a id="btnPopupAgree" href="#void">제출하기</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

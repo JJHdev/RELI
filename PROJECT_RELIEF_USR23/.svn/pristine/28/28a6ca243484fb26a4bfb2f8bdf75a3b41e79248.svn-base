@@ -1,0 +1,73 @@
+/* ******************** 페이징 ******************** */
+/* 게시판 페이징-모바일용 */
+.contents .page_box_normal {position:relative; margin-top:30px; text-align:center;}
+.contents .page_box_normal .mobile {display:inline-block; margin:0; padding:0;}
+.contents .page_box_normal .mobile label {display:none;}
+.contents .page_box_normal .mobile>li {float:left; height:100%;}
+.contents .page_box_normal .mobile>li:last-child {padding-right:0;}
+/*
+.contents .page_box_normal .mobile .prev,
+.contents .page_box_normal .mobile .next {display:block;border:1px solid #dedede; background:#fff !important; color:#333 !important; padding:12px 15px; border-right:0;}
+*/
+.contents .page_box_normal .mobile .prev {display:block; min-width:40px; height:40px; background:url(../../images/common/prev.png) no-repeat 50% #fff !important; background-size:6px !important; border:1px solid #dedede; border-radius:0; border-right:0;}
+.contents .page_box_normal .mobile .next {display:block; min-width:40px; height:40px; background:url(../../images/common/next.png) no-repeat 50% #fff !important; background-size:6px !important; border:1px solid #dedede; border-radius:0; border-right:0;}
+.contents .page_box_normal .mobile .form-control  {border:1px solid #dedede; border-radius:0;}
+.contents .page_box_normal .mobile .dropdown-toggle:hover {border-radius:0 !important;}
+.contents .page_box_normal .mobile .btn-default {border:0; height:32px !important;}
+/* .contents .page_box_normal .mobile li a {background-size:15px !important;} */
+
+.contents .page_box_normal .mobile select#page {padding:8px; border-radius:0 !important; height:40px !important; border:1px solid #dedede !important; min-width:70px;}
+.contents .page_box_normal .mobile .write {display:inline-block; height:40px; line-height:1; margin-left:5px; padding:12px 15px; font-family:"NotoSansKR"; background:#f9f9f9 !important; color:#000 !important;}
+.contents .page_box_normal .mobile .write:hover {background:#eee !important;}
+
+/* 게시판 페이징 - pc용 */
+.contents .page_box_normal {position:relative; text-align:center; border:1px solid transparent;}
+.contents .page_box_normal .pc.pagination {display:inline-block;}
+.contents .page_box_normal .pc.pagination>li>a {text-align:center; color:#333; border:1px solid #dedede; height:40px; line-height:1;}
+.contents .page_box_normal .pc.pagination>li>a.active {background:#1e51a9 !important; color:#fff; font-weight:400; position:relative; border:1px solid transparent !important;}
+.contents .page_box_normal .pc.pagination .first,
+.contents .page_box_normal .pc.pagination .prev,
+.contents .page_box_normal .pc.pagination .next,
+.contents .page_box_normal .pc.pagination .last {color:#333; background-color:#fff;}
+.contents .page_box_normal .pc.pagination .first:hover,
+.contents .page_box_normal .pc.pagination .prev:hover,
+.contents .page_box_normal .pc.pagination .next:hover,
+.contents .page_box_normal .pc.pagination .last:hover {background:#f0f0f0}
+/* .contents .page_box_normal .pc.pagination .prev {margin-right:10px;} */
+/* .contents .page_box_normal .pc.pagination .next {margin-left:10px;} */
+.contents .page_box_normal .pc.pagination .write {display:inline-block; height:40px; line-height:1; margin-left:5px; padding:12px 15px; font-family:"NotoSansKR"; background:#f9f9f9 !important; color:#000 !important;}
+.contents .page_box_normal .pc.pagination .write:hover {background:#eee !important;}
+.contents .page_box_normal .pagination >li:first-child >a, .pagination>li:last-child>a {border-radius:0;}
+
+.contents .page_box_normal .pc.pagination li a img {height:10px !important;}
+
+.contents .page_box_normal {width:100%; margin-top:50px; line-height:1; font-size:14px; font-weight:normal; text-align:center;}
+.contents .page_box_normal .pc {display:inline-block;}
+.contents .page_box_normal .pc li {float:left; margin-left:-1px;}
+.contents .page_box_normal .pc li a {display:block; padding:12px 15px; border:1px solid rgba(0,0,0,.15); background:#fff; color:#000;}
+.contents .page_box_normal .pc li a:hover {background:#f0f0f0;}
+.contents .page_box_normal .pc li a.active {background:#333; color:#fff; border-color:#333;}
+
+/* 하단 페이지 버튼 */ 
+.mobileCalInner .btn_box {text-align:center; padding-top:20px;}
+.mobileCalInner .btn_box ul {overflow:hidden;}
+.mobileCalInner .btn_box li {display:inline-block;}
+.mobileCalInner .btn_box li a {display:block;}
+
+
+
+
+/* ************************ TABLET (~991) ************************ */
+@media screen and (max-width: 991px) {
+	
+	.contents .page_box_normal {margin-top:40px;}
+	
+}
+
+/* ************************ MOBILE (~768) ************************ */
+@media screen and (max-width: 768px) {
+	
+	.contents .page_box_normal {margin-top:30px;}
+	
+}
+

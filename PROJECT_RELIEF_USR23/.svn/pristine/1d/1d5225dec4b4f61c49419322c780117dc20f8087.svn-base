@@ -1,0 +1,1249 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Statistics">
+
+    <!-- 사업별 건강피해 인정현황 조회 (지역별 소계,  포함할것) -->
+    <select id="listAreaDmgRcogn" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT
+		       CASE WHEN Z.BIZ_AREA_CD IS NULL 
+		            THEN '계'
+		            ELSE (SELECT BIZ_AREA || ' ' || BIZ_DTL_AREA FROM TB_BIZ_MNG WHERE BIZ_AREA_CD = Z.BIZ_AREA_CD)
+		       END                              AS "bizAreaNm"
+		     , NVL(Z.BIZ_AREA_CD, 'TOT')        AS "bizAreaCd"
+		     , NVL(Z.BIZ_ODER,    '0'  )        AS "bizOder"
+		     , DECODE(Z.BIZ_ODER, NULL, 
+		              '소계', 
+		              Z.BIZ_ODER||'차사업'
+		       )                                AS "bizOderNm"
+		     , REQ_CNT                          AS "aplyAllCnt"   <!-- 신청인원 -->
+		     , R1_CNT                           AS "rcognAllCnt1" <!-- 피해인정 -->
+		     , R9_CNT                           AS "rcognAllCnt2" <!-- 미인정 -->
+		     , RR_CNT                           AS "rcognAllCnt3" <!-- 조사중 -->
+		     , CASE WHEN NVL(BIZ_ODER,0) = 0 AND DUP_REQ <![CDATA[ > ]]> 0 THEN
+		            TO_NUMBER(DECODE(TEMP_REQ, 0 , null, TEMP_REQ))
+		       ELSE
+		            TO_NUMBER(DECODE(DUP_REQ, 0 , null, DUP_REQ))
+		       END                              AS "aplyFltCnt"   <!-- 신청인원(중복제외) -->
+		     , CASE WHEN NVL(BIZ_ODER,0) = 0 AND DUP_R1 <![CDATA[ > ]]> 0 THEN
+		            TEMP_R1
+		       ELSE
+		            DUP_R1
+		       END                              AS "rcognFltCnt1" <!-- 피해인정(중복제외) -->
+		     , CASE WHEN NVL(BIZ_ODER,0) = 0 AND DUP_R9 <![CDATA[ > ]]> 0 THEN
+		            TEMP_R9
+		       ELSE
+		            DUP_R9
+		       END                              AS "rcognFltCnt2" <!-- 미인정(중복제외) -->
+		     , CASE WHEN NVL(BIZ_ODER,0) = 0 AND DUP_RR <![CDATA[ > ]]> 0 THEN
+		            TEMP_RR
+		       ELSE
+		            DUP_RR
+		       END                              AS "rcognFltCnt3" <!-- 조사중(중복제외) -->
+		FROM   (
+		    SELECT X.BIZ_AREA_CD
+		         , X.BIZ_ODER
+		         , SUM(X.REQ_CNT)                                       AS REQ_CNT
+		         , SUM(X.R1_CNT)                                        AS R1_CNT
+		         , SUM(X.R9_CNT)                                        AS R9_CNT
+		         , SUM(X.RR_CNT)                                        AS RR_CNT
+		         , CASE WHEN SUM(X.REQ_CNT) <![CDATA[ > ]]> SUM(X.DUP_TOT_CNT) THEN
+		                SUM(X.DUP_TOT_CNT)
+		           END                                                  AS DUP_REQ
+		         , CASE WHEN SUM(X.R1_CNT)  <![CDATA[ > ]]> SUM(X.DUP_R1_CNT) THEN
+		                SUM(X.DUP_R1_CNT)
+		           END                                                  AS DUP_R1
+		         , CASE WHEN SUM(X.R9_CNT)  <![CDATA[ > ]]> SUM(X.DUP_R9_CNT) THEN
+		                SUM(X.DUP_R9_CNT)
+		           END                                                  AS DUP_R9
+		         , CASE WHEN SUM(X.RR_CNT)  <![CDATA[ > ]]> SUM(X.DUP_RR_CNT) THEN
+		                SUM(X.DUP_RR_CNT)
+		           END                                                  AS DUP_RR
+		         , SUM(X.DUP_TOT_CNT2)                                  AS TEMP_REQ
+		         , NVL(SUM(X.DUP_R1_CNT2),0)+NVL(SUM(Y.NON_CNT),0)      AS TEMP_R1
+		         , NVL(SUM(X.DUP_R9_CNT2),0)-NVL(SUM(Y.NON_CNT),0)      AS TEMP_R9
+		         , SUM(X.DUP_RR_CNT2)                                   AS TEMP_RR
+		         , SUM(Y.NON_CNT)                                       AS NON_CNT
+		    FROM  (
+		        SELECT BIZ_AREA_CD
+		             , NVL(TO_CHAR(R.BIZ_ODER), '소계')                 AS BIZ_ODER
+		             , SUM(DECODE(R.DLTNC_RSLT_CD, NULL, CNT))          AS REQ_CNT
+		             , SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', CNT))          AS R1_CNT
+		             , SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', CNT))          AS R9_CNT
+		             , SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT))          AS RR_CNT
+		             , CASE WHEN R.BIZ_ODER = 1 OR R.BIZ_ODER = 2 THEN
+		                    NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', DUP_CNT)),0)
+		                   +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', DUP_CNT)),0)
+		                   +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT)),0)
+		               END                                              AS DUP_TOT_CNT
+		             , CASE WHEN R.BIZ_ODER = 2 THEN
+		                        SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', DUP_CNT))
+		               END                                              AS DUP_R1_CNT
+		             , CASE WHEN R.BIZ_ODER = 2 THEN
+		                        SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', DUP_CNT))
+		               END                                              AS DUP_R9_CNT
+		             , CASE WHEN R.BIZ_ODER = 2 THEN
+		                        SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', DUP_CNT))
+		               END                                              AS DUP_RR_CNT
+		             , CASE WHEN R.BIZ_ODER = 1 THEN
+		                        NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', CNT)) ,0)
+		                       +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', CNT)) ,0)
+		                       +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT)) ,0)
+		                    WHEN R.BIZ_ODER = 2 THEN
+		                        NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', DUP_CNT)) ,0)
+		                       +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', DUP_CNT)) ,0)
+		                       +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT)) ,0)
+		               END                                              AS DUP_TOT_CNT2
+		             , CASE WHEN R.BIZ_ODER = 1 THEN
+		                        SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', CNT))
+		                    WHEN R.BIZ_ODER = 2 THEN
+		                        SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', DUP_CNT))
+		               END                                              AS DUP_R1_CNT2
+		             , CASE WHEN R.BIZ_ODER = 1 THEN
+		                        SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', CNT))
+		                    WHEN R.BIZ_ODER = 2 THEN
+		                        SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', DUP_CNT))
+		               END                                              AS DUP_R9_CNT2
+		             , CASE WHEN R.BIZ_ODER = 1 THEN
+		                        SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT))
+		                    WHEN R.BIZ_ODER = 2 THEN
+		                        SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', DUP_CNT))
+		               END                                              AS DUP_RR_CNT2
+		        FROM (
+		            SELECT B.BIZ_AREA_CD
+		                 , B.BIZ_ODER
+		                 , B.DLTNC_RSLT_CD
+		                 , COUNT(*)         AS CNT
+		                 , CASE WHEN B.BIZ_ODER <![CDATA[ >= ]]> 2 AND DLTNC_RSLT_CD <![CDATA[ <> ]]> 'RR' THEN
+		                           (
+		                            SELECT COUNT(*)
+		                            FROM   (
+		                                    SELECT BIZ_AREA_CD
+		                                         , BIZ_ODER
+		                                         , APLY_NO
+		                                         , DLTNC_RSLT_CD
+		                                      FROM (
+		                                           SELECT P.*
+		                                                , ROW_NUMBER() OVER(PARTITION BY BIZ_AREA_CD, APLY_NO ORDER BY EXMN_ODER DESC) AS RIDX
+		                                             FROM TB_PRPT_EXMN P
+		                                    )
+		                                     WHERE RIDX = 1
+		                                   ) AA
+		                                 , TB_RELIEF BB
+		                                 , TB_IDNTFC CC
+		                             WHERE AA.BIZ_AREA_CD   = B.BIZ_AREA_CD
+		                               AND AA.DLTNC_RSLT_CD = B.DLTNC_RSLT_CD
+		                               AND AA.BIZ_ODER      = B.BIZ_ODER
+		                               AND AA.APLY_NO       = BB.APLY_NO
+		                               AND BB.SUFRER_NO     = CC.SUFRER_NO
+		                               AND CC.IDNTFC_ID     NOT IN (
+		                                                            SELECT IDNTFC_ID
+		                                                              FROM TB_PRPT_EXMN AA
+		                                                                 , TB_RELIEF BB
+		                                                                 , TB_IDNTFC CC
+		                                                             WHERE AA.BIZ_AREA_CD   = B.BIZ_AREA_CD
+		                                                               AND AA.BIZ_ODER      <![CDATA[ < ]]> B.BIZ_ODER
+		                                                               AND AA.APLY_NO       = BB.APLY_NO
+		                                                               AND BB.SUFRER_NO     = CC.SUFRER_NO
+		                                                            )
+		                            )
+		                        WHEN B.BIZ_ODER <![CDATA[ >= ]]> 2 AND DLTNC_RSLT_CD = 'RR' THEN
+		                            (
+		                            SELECT COUNT(*)
+		                              FROM TB_RELIEF BB
+		                                 , TB_IDNTFC CC
+		                             WHERE BB.SUFRER_NO     = CC.SUFRER_NO
+		                               AND BB.PRGRE_STUS_CD = '04'
+		                               AND BB.BIZ_AREA_CD   = B.BIZ_AREA_CD
+		                               AND CC.IDNTFC_ID     NOT IN (
+		                                                            SELECT IDNTFC_ID
+		                                                              FROM TB_PRPT_EXMN AA
+		                                                                 , TB_RELIEF BB
+		                                                                 , TB_IDNTFC CC
+		                                                             WHERE AA.BIZ_AREA_CD   = B.BIZ_AREA_CD
+		                                                               AND AA.BIZ_ODER      <![CDATA[ < ]]> 2
+		                                                               AND AA.APLY_NO       = BB.APLY_NO
+		                                                               AND BB.SUFRER_NO     = CC.SUFRER_NO
+		                                                            )
+		                            )
+		                 ELSE
+		                    NULL
+		                 END    AS DUP_CNT
+		            FROM   TB_RELIEF A
+		                 , (
+		                        <!-- 인정/미인정 -->
+		                        SELECT BIZ_AREA_CD
+		                             , BIZ_ODER
+		                             , EXMN_ODER
+		                             , APLY_NO
+		                             , DLTNC_RSLT_CD
+		                        FROM (
+		                             SELECT AA.*
+		                                  , ROW_NUMBER() OVER(PARTITION BY BIZ_AREA_CD, BIZ_ODER, APLY_NO ORDER BY EXMN_ODER DESC) AS RIDX
+		                               FROM TB_PRPT_EXMN AA
+		                        )
+		                        WHERE 0 = 0
+		                          AND RIDX = 1
+
+		                        UNION ALL
+
+		                        <!-- 조사중 -->
+		                        SELECT BIZ_AREA_CD
+		                             , 2
+		                             , 0
+		                             , APLY_NO
+		                             , 'RR'
+		                          FROM TB_RELIEF
+		                         WHERE 0 = 0
+		                           AND PRGRE_STUS_CD = '04'
+		                   ) B
+		            WHERE A.APLY_NO = B.APLY_NO
+		              AND B.DLTNC_RSLT_CD IS NOT NULL <!-- 예비조사 결과 있는것만 -->
+		            GROUP BY ROLLUP(B.BIZ_AREA_CD, B.BIZ_ODER, B.DLTNC_RSLT_CD)
+		        ) R
+		        WHERE BIZ_AREA_CD IS NOT NULL
+		          AND BIZ_ODER IS NOT NULL
+		        GROUP BY ROLLUP(BIZ_AREA_CD, BIZ_ODER)
+		        ORDER BY BIZ_AREA_CD, BIZ_ODER
+		    ) X,
+		    (
+		        SELECT A.BIZ_AREA_CD
+		             , A.BIZ_ODER
+		             , COUNT(*) AS NON_CNT
+		          FROM TB_PRPT_EXMN A
+		             , TB_RELIEF B
+		             , TB_IDNTFC C
+		         WHERE A.APLY_NO = B.APLY_NO
+		           AND B.SUFRER_NO = C.SUFRER_NO
+		           AND A.BIZ_ODER = 2
+		           AND A.DLTNC_RSLT_CD = 'R1'
+		           AND C.IDNTFC_ID IN (
+		                                SELECT DISTINCT C.IDNTFC_ID
+		                                  FROM TB_PRPT_EXMN A
+		                                     , TB_RELIEF B
+		                                     , TB_IDNTFC C
+		                                 WHERE A.APLY_NO     = B.APLY_NO
+		                                   AND B.SUFRER_NO   = C.SUFRER_NO
+		                                   AND A.BIZ_ODER    = 1
+		                                   AND A.DLTNC_RSLT_CD = 'R9'
+		                                )
+		        GROUP BY A.BIZ_AREA_CD, A.BIZ_ODER
+		    ) Y
+		    WHERE X.BIZ_AREA_CD IS NOT NULL
+		      AND X.BIZ_ODER <![CDATA[ <> ]]> '소계'
+		      AND X.BIZ_AREA_CD = Y.BIZ_AREA_CD(+)
+		      AND X.BIZ_ODER = Y.BIZ_ODER(+)
+		    GROUP BY ROLLUP(X.BIZ_AREA_CD, X.BIZ_ODER)
+		) Z
+		ORDER BY DECODE(Z.BIZ_AREA_CD, NULL, 'A0000', Z.BIZ_AREA_CD),
+		         DECODE(Z.BIZ_ODER,    NULL, 0, 'SUB', 0, Z.BIZ_ODER)
+    </select>
+
+    <!-- 연도별 건강피해 인정현황 조회 -->
+    <select id="listYearDmgRcogn" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT S3.YR                AS "aplyYear"
+		     , SUM(S1.CNT)          AS "aplyDupCnt"   <!-- 신청기준(중복포함) -->
+		     , SUM(S1.DUP_CNT)      AS "aplyCnt"      <!-- 신청기준 -->
+		     , SUM(S2.RC_CNT)       AS "aplcntDupCnt" <!-- 신청인기준(중복포함) -->
+		     , SUM(S2.RC_DUP_CNT)   AS "aplcntCnt"    <!-- 신청인기준 -->
+		  FROM (
+		        SELECT YR
+		             , COUNT(*) AS CNT
+		             , SUM(DECODE(DUP_YN, 0, 1, 0))  AS DUP_CNT
+		          FROM (
+		                SELECT SUBSTR(A.RCPT_YMD, 0, 4) AS YR
+		                     , A.APLY_NO
+		                     , A.SUFRER_NO
+		                     , B.IDNTFC_ID
+		                     , A.BIZ_AREA_CD
+		                     , (SELECT SIGN(count(DISTINCT SUFRER_NO))
+		                          FROM TB_RELIEF
+		                         WHERE SUBSTR(RCPT_YMD, 0, 4) <![CDATA[ < ]]> SUBSTR(A.RCPT_YMD, 0, 4)
+		                           AND SUFRER_NO = A.SUFRER_NO
+		                       ) AS DUP_YN
+		                  FROM TB_RELIEF A
+		                     , TB_IDNTFC B
+		                 WHERE A.SUFRER_NO = B.SUFRER_NO
+		          )
+		         GROUP BY ROLLUP(YR)
+		      ) S1
+		      , (
+		        SELECT YR
+		             , COUNT(*) AS RC_CNT
+		             , SUM(DECODE(DUP_YN, 0, 1, 0))  AS RC_DUP_CNT
+		          FROM (
+		                SELECT SUBSTR(DLTNC_OPMT_YMD, 0 , 4) AS YR
+		                     , B.SUFRER_NO
+		                     , (
+		                       SELECT SIGN(COUNT(*))
+		                         FROM TB_PRPT_EXMN AA
+		                            , TB_RELIEF BB
+		                        WHERE AA.APLY_NO = BB.APLY_NO
+		                          AND AA.DLTNC_RSLT_CD = 'R1'
+		                          AND BB.SUFRER_NO = B.SUFRER_NO
+		                          AND AA.EXMN_ODER <![CDATA[ < ]]> A.EXMN_ODER
+		                       ) AS DUP_YN
+		                  FROM (
+		                        SELECT BIZ_AREA_CD
+		                             , BIZ_ODER
+		                             , EXMN_ODER
+		                             , APLY_NO
+		                             , DLTNC_RSLT_CD
+		                             , CASE WHEN DLTNC_OPMT_YMD IS NULL THEN
+		                                    (SELECT MAX(DLTNC_OPMT_YMD)
+		                                       FROM TB_PRPT_EXMN
+		                                      WHERE EXMN_ODER = AA.EXMN_ODER)
+		                               ELSE
+		                                    DLTNC_OPMT_YMD
+		                               END      AS DLTNC_OPMT_YMD
+		                          FROM TB_PRPT_EXMN AA
+		                       ) A
+		                     , TB_RELIEF B
+		                 WHERE A.APLY_NO        = B.APLY_NO
+		                   AND A.DLTNC_RSLT_CD  = 'R1'
+		                   AND A.APLY_NO        = B.APLY_NO
+		          )
+		          GROUP BY YR
+		      ) S2
+		      , (
+		         SELECT TO_CHAR(SYSDATE, 'YYYY')-LEVEL+1 AS YR
+		           FROM DUAL
+		        CONNECT BY LEVEL <![CDATA[ <= ]]> ((TO_CHAR(SYSDATE, 'YYYY')+1)-2016)
+		      ) S3
+		WHERE 0 = 0
+		  AND S3.YR     = S1.YR(+)
+		  AND S3.YR     = S2.YR(+)
+		GROUP BY ROLLUP(S3.YR)
+		<!-- 2022.01.18 총계를 최상단으로 변경처리  -->
+		ORDER BY DECODE(S3.YR, NULL, 0, S3.YR)
+    </select>
+
+    <!-- 1,2차통합 건강피해 인정현황 조회 -->
+    <select id="listTotalDmgRcogn" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		WITH T_REL AS (
+		    SELECT
+		           Z.BIZ_AREA_CD
+		         , NVL(BIZ_ODER, 'SUB_TOT')         AS BIZ_ODER
+		         , REQ_CNT                          AS REQ_CNT
+		         , R1_CNT                           AS R1_CNT
+		         , R9_CNT                           AS R9_CNT
+		         , RR_CNT                           AS RR_CNT
+		         , CASE WHEN NVL(BIZ_ODER,0) = 0 AND DUP_REQ > 0 THEN
+		                TO_NUMBER(DECODE(TEMP_REQ, 0 , null, TEMP_REQ))
+		           ELSE
+		                TO_NUMBER(DECODE(DUP_REQ, 0 , null, DUP_REQ))
+		           END                              AS DUP_REQ_CNT
+		         , CASE WHEN NVL(BIZ_ODER,0) = 0 AND DUP_R1 > 0 THEN
+		                TEMP_R1
+		           ELSE
+		                DUP_R1
+		           END                              AS DUP_R1_CNT
+		         , CASE WHEN NVL(BIZ_ODER,0) = 0 AND DUP_R9 > 0 THEN
+		                TEMP_R9
+		           ELSE
+		                DUP_R9
+		           END                              AS DUP_R9_CNT
+		         , CASE WHEN NVL(BIZ_ODER,0) = 0 AND DUP_RR > 0 THEN
+		                TEMP_RR
+		           ELSE
+		                DUP_RR
+		           END                              AS DUP_RR_CNT
+		    FROM   (
+		        SELECT X.BIZ_AREA_CD
+		             , X.BIZ_ODER
+		             , SUM(X.REQ_CNT)                                       AS REQ_CNT
+		             , SUM(X.R1_CNT)                                        AS R1_CNT
+		             , SUM(X.R9_CNT)                                        AS R9_CNT
+		             , SUM(X.RR_CNT)                                        AS RR_CNT
+		             , CASE WHEN SUM(X.REQ_CNT) <![CDATA[ > ]]> SUM(X.DUP_TOT_CNT) THEN
+		                    SUM(X.DUP_TOT_CNT)
+		               END                                                  AS DUP_REQ
+		             , CASE WHEN SUM(X.R1_CNT)  <![CDATA[ > ]]> SUM(X.DUP_R1_CNT) THEN
+		                    SUM(X.DUP_R1_CNT)
+		               END                                                  AS DUP_R1
+		             , CASE WHEN SUM(X.R9_CNT)  <![CDATA[ > ]]> SUM(X.DUP_R9_CNT) THEN
+		                    SUM(X.DUP_R9_CNT)
+		               END                                                  AS DUP_R9
+		             , CASE WHEN SUM(X.RR_CNT)  <![CDATA[ > ]]> SUM(X.DUP_RR_CNT) THEN
+		                    SUM(X.DUP_RR_CNT)
+		               END                                                  AS DUP_RR
+		             , SUM(X.DUP_TOT_CNT2)                                  AS TEMP_REQ
+		             , NVL(SUM(X.DUP_R1_CNT2),0)+NVL(SUM(Y.NON_CNT),0)      AS TEMP_R1
+		             , NVL(SUM(X.DUP_R9_CNT2),0)-NVL(SUM(Y.NON_CNT),0)      AS TEMP_R9
+		             , SUM(X.DUP_RR_CNT2)                                   AS TEMP_RR
+		             , SUM(Y.NON_CNT)                                       AS NON_CNT
+		        FROM  (
+		            SELECT BIZ_AREA_CD
+		                 , NVL(TO_CHAR(R.BIZ_ODER), '소계')                 AS BIZ_ODER
+		                 , SUM(DECODE(R.DLTNC_RSLT_CD, NULL, CNT))          AS REQ_CNT
+		                 , SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', CNT))          AS R1_CNT
+		                 , SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', CNT))          AS R9_CNT
+		                 , SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT))          AS RR_CNT
+		                 , CASE WHEN R.BIZ_ODER = 1 OR R.BIZ_ODER = 2 THEN
+		                        NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', DUP_CNT)),0)
+		                       +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', DUP_CNT)),0)
+		                       +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT)),0)
+		                   END                                              AS DUP_TOT_CNT
+		                 , CASE WHEN R.BIZ_ODER = 2 THEN
+		                            SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', DUP_CNT))
+		                   END                                              AS DUP_R1_CNT
+		                 , CASE WHEN R.BIZ_ODER = 2 THEN
+		                            SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', DUP_CNT))
+		                   END                                              AS DUP_R9_CNT
+		                 , CASE WHEN R.BIZ_ODER = 2 THEN
+		                            SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', DUP_CNT))
+		                   END                                              AS DUP_RR_CNT
+		                 , CASE WHEN R.BIZ_ODER = 1 THEN
+		                            NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', CNT)) ,0)
+		                           +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', CNT)) ,0)
+		                           +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT)) ,0)
+		                        WHEN R.BIZ_ODER = 2 THEN
+		                            NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', DUP_CNT)) ,0)
+		                           +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', DUP_CNT)) ,0)
+		                           +NVL(SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT)) ,0)
+		                   END                                              AS DUP_TOT_CNT2
+		                 , CASE WHEN R.BIZ_ODER = 1 THEN
+		                            SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', CNT))
+		                        WHEN R.BIZ_ODER = 2 THEN
+		                            SUM(DECODE(R.DLTNC_RSLT_CD, 'R1', DUP_CNT))
+		                   END                                              AS DUP_R1_CNT2
+		                 , CASE WHEN R.BIZ_ODER = 1 THEN
+		                            SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', CNT))
+		                        WHEN R.BIZ_ODER = 2 THEN
+		                            SUM(DECODE(R.DLTNC_RSLT_CD, 'R9', DUP_CNT))
+		                   END                                              AS DUP_R9_CNT2
+		                 , CASE WHEN R.BIZ_ODER = 1 THEN
+		                            SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', CNT))
+		                        WHEN R.BIZ_ODER = 2 THEN
+		                            SUM(DECODE(R.DLTNC_RSLT_CD, 'RR', DUP_CNT))
+		                   END                                              AS DUP_RR_CNT2
+		            FROM (
+		                SELECT B.BIZ_AREA_CD
+		                     , B.BIZ_ODER
+		                     , B.DLTNC_RSLT_CD
+		                     , COUNT(*)         AS CNT
+		                     , CASE WHEN B.BIZ_ODER <![CDATA[ >= ]]> 2 AND DLTNC_RSLT_CD <![CDATA[ <> ]]> 'RR' THEN
+		                               (
+		                                SELECT COUNT(*)
+		                                FROM   (
+		                                        SELECT BIZ_AREA_CD
+		                                             , BIZ_ODER
+		                                             , APLY_NO
+		                                             , DLTNC_RSLT_CD
+		                                          FROM (
+		                                               SELECT P.*
+		                                                    , ROW_NUMBER() OVER(PARTITION BY BIZ_AREA_CD, APLY_NO ORDER BY EXMN_ODER DESC) AS RIDX
+		                                                 FROM TB_PRPT_EXMN P
+		                                        )
+		                                         WHERE RIDX = 1
+		                                       ) AA
+		                                     , TB_RELIEF BB
+		                                     , TB_IDNTFC CC
+		                                 WHERE AA.BIZ_AREA_CD   = B.BIZ_AREA_CD
+		                                   AND AA.DLTNC_RSLT_CD = B.DLTNC_RSLT_CD
+		                                   AND AA.BIZ_ODER      = B.BIZ_ODER
+		                                   AND AA.APLY_NO       = BB.APLY_NO
+		                                   AND BB.SUFRER_NO     = CC.SUFRER_NO
+		                                   AND CC.IDNTFC_ID     NOT IN (
+		                                                                SELECT IDNTFC_ID
+		                                                                  FROM TB_PRPT_EXMN AA
+		                                                                     , TB_RELIEF BB
+		                                                                     , TB_IDNTFC CC
+		                                                                 WHERE AA.BIZ_AREA_CD   = B.BIZ_AREA_CD
+		                                                                   AND AA.BIZ_ODER      <![CDATA[ < ]]> B.BIZ_ODER
+		                                                                   AND AA.APLY_NO       = BB.APLY_NO
+		                                                                   AND BB.SUFRER_NO     = CC.SUFRER_NO
+		                                                                )
+		                                )
+		                            WHEN B.BIZ_ODER <![CDATA[ >= ]]> 2 AND DLTNC_RSLT_CD = 'RR' THEN
+		                                (
+		                                SELECT COUNT(*)
+		                                  FROM TB_RELIEF BB
+		                                     , TB_IDNTFC CC
+		                                 WHERE BB.SUFRER_NO     = CC.SUFRER_NO
+		                                   AND BB.PRGRE_STUS_CD = '04'
+		                                   AND BB.BIZ_AREA_CD   = B.BIZ_AREA_CD
+		                                   AND CC.IDNTFC_ID     NOT IN (
+		                                                                SELECT IDNTFC_ID
+		                                                                  FROM TB_PRPT_EXMN AA
+		                                                                     , TB_RELIEF BB
+		                                                                     , TB_IDNTFC CC
+		                                                                 WHERE AA.BIZ_AREA_CD   = B.BIZ_AREA_CD
+		                                                                   AND AA.BIZ_ODER      <![CDATA[ < ]]> 2
+		                                                                   AND AA.APLY_NO       = BB.APLY_NO
+		                                                                   AND BB.SUFRER_NO     = CC.SUFRER_NO
+		                                                                )
+		                                )
+		                     ELSE
+		                        NULL
+		                     END    AS DUP_CNT
+		                FROM   TB_RELIEF A
+		                     , (
+		                            <!-- 인정/미인정 -->
+		                            SELECT BIZ_AREA_CD
+		                                 , BIZ_ODER
+		                                 , EXMN_ODER
+		                                 , APLY_NO
+		                                 , DLTNC_RSLT_CD
+		                            FROM (
+		                                 SELECT AA.*
+		                                      , ROW_NUMBER() OVER(PARTITION BY BIZ_AREA_CD, BIZ_ODER, APLY_NO ORDER BY EXMN_ODER DESC) AS RIDX
+		                                   FROM TB_PRPT_EXMN AA
+		                            )
+		                            WHERE 0 = 0
+		                              AND RIDX = 1
+
+		                            UNION ALL
+
+		                            <!-- 조사중 -->
+		                            SELECT BIZ_AREA_CD
+		                                 , 2
+		                                 , 0
+		                                 , APLY_NO
+		                                 , 'RR'
+		                              FROM TB_RELIEF
+		                             WHERE 0 = 0
+		                               AND PRGRE_STUS_CD = '04'
+		                       ) B
+		                WHERE A.APLY_NO = B.APLY_NO
+		                  AND B.DLTNC_RSLT_CD IS NOT NULL       <!-- 예비조사 결과 있는것만 -->
+		                GROUP BY ROLLUP(B.BIZ_AREA_CD, B.BIZ_ODER, B.DLTNC_RSLT_CD)
+		            ) R
+		            WHERE BIZ_AREA_CD IS NOT NULL
+		              AND BIZ_ODER IS NOT NULL
+		            GROUP BY ROLLUP(BIZ_AREA_CD, BIZ_ODER)
+		            ORDER BY BIZ_AREA_CD, BIZ_ODER
+		        ) X,
+		        (
+		            SELECT A.BIZ_AREA_CD
+		                 , A.BIZ_ODER
+		                 , COUNT(*) AS NON_CNT
+		              FROM TB_PRPT_EXMN A
+		                 , TB_RELIEF B
+		                 , TB_IDNTFC C
+		             WHERE A.APLY_NO = B.APLY_NO
+		               AND B.SUFRER_NO = C.SUFRER_NO
+		               AND A.BIZ_ODER = 2
+		               AND A.DLTNC_RSLT_CD = 'R1'
+		               AND C.IDNTFC_ID IN (
+		                                    SELECT DISTINCT C.IDNTFC_ID
+		                                      FROM TB_PRPT_EXMN A
+		                                         , TB_RELIEF B
+		                                         , TB_IDNTFC C
+		                                     WHERE A.APLY_NO     = B.APLY_NO
+		                                       AND B.SUFRER_NO   = C.SUFRER_NO
+		                                       AND A.BIZ_ODER    = 1
+		                                       AND A.DLTNC_RSLT_CD = 'R9'
+		                                    )
+		            GROUP BY A.BIZ_AREA_CD, A.BIZ_ODER
+		        ) Y
+		        WHERE X.BIZ_AREA_CD IS NOT NULL
+		          AND X.BIZ_ODER <![CDATA[ <> ]]> '소계'
+		          AND X.BIZ_AREA_CD = Y.BIZ_AREA_CD(+)
+		          AND X.BIZ_ODER = Y.BIZ_ODER(+)
+		        GROUP BY ROLLUP(X.BIZ_AREA_CD, X.BIZ_ODER)
+		    ) Z
+		)
+		, T_EXMN AS (
+		    SELECT COUNT(DISTINCT A.SUFRER_NO) AS DTH_CNT
+		         , A.BIZ_AREA_CD
+		      FROM TB_RELIEF A
+		         , TB_IDNTFC B
+		     WHERE A.SUFRER_NO = B.SUFRER_NO
+		       AND A.DTH_YN = 'Y'
+		       AND A.SUFRER_NO IN (SELECT AA.SUFRER_NO
+		                             FROM TB_RELIEF AA
+		                                , TB_PRPT_EXMN BB
+		                            WHERE AA.APLY_NO = BB.APLY_NO
+		                              AND BB.DLTNC_RSLT_CD = 'R1')
+		    GROUP BY A.BIZ_AREA_CD
+		)
+		SELECT S.BIZ_AREA_CD       AS "bizAreaCd"
+		     ,NVL((SELECT BIZ_AREA || ' ' || BIZ_DTL_AREA
+		             FROM TB_BIZ_MNG
+		            WHERE BIZ_AREA_CD = S.BIZ_AREA_CD
+		           ),'계')         AS "bizAreaNm"
+		     , SUM(DUP_REQ_CNT)    AS "reqCnt"   <!-- 신청 -->
+		     , SUM(DUP_R1_CNT)     AS "apprCnt"  <!-- 인정 -->
+		     , SUM(LIVE_CNT)       AS "liveCnt"  <!-- (인정)생존 -->
+		     , SUM(DTH_CNT)        AS "dthCnt"   <!-- (인정)사망 -->
+		     , SUM(DUP_R9_CNT)     AS "rjctCnt"  <!-- 미인정 -->
+		     , SUM(DUP_RR_CNT)     AS "exmnCnt"  <!-- 조사중 -->
+		  FROM (
+		        SELECT S1.BIZ_AREA_CD
+		             , NVL(S1.DUP_REQ_CNT, S1.REQ_CNT)    AS DUP_REQ_CNT
+		             , NVL(S1.DUP_R1_CNT, S1.R1_CNT)      AS DUP_R1_CNT
+		             , NVL(S1.DUP_R1_CNT, S1.R1_CNT)-S2.DTH_CNT     AS LIVE_CNT
+		             , S2.DTH_CNT
+		             , NVL(S1.DUP_R9_CNT, S1.R9_CNT)      AS DUP_R9_CNT
+		             , NVL(S1.DUP_RR_CNT, S1.RR_CNT)      AS DUP_RR_CNT
+		          FROM T_REL S1
+		             , T_EXMN S2
+		         WHERE S1.BIZ_AREA_CD = S2.BIZ_AREA_CD(+)
+		           AND S1.BIZ_ODER = 'SUB_TOT'
+		           AND S1.BIZ_AREA_CD IS NOT NULL
+		) S
+		GROUP BY ROLLUP(BIZ_AREA_CD)
+		<!-- 2022.01.18 총계를 최상단으로 변경처리  -->
+		ORDER BY DECODE(BIZ_AREA_CD, NULL, '0', BIZ_AREA_CD)
+    </select>
+
+    <!-- 지역별 피해구제 신청현황 조회 (대구) -->
+    <select id="viewReliefAplyA0001" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		WITH T_EXAM AS (
+		    SELECT A.BIZ_AREA_CD
+		         , A.BIZ_ODER
+		         , A.DLTNC_RSLT_CD
+		         , B.SUFRER_NO
+		         , A.APLY_NO
+		         , A.EXMN_ODER
+		      FROM TB_PRPT_EXMN A
+		         , TB_RELIEF B
+		     WHERE A.APLY_NO        = B.APLY_NO
+		       AND A.BIZ_AREA_CD    = 'A0001'
+
+		    UNION ALL
+
+		    SELECT BIZ_AREA_CD
+		         , 2
+		         , 'RR'
+		         , SUFRER_NO
+		         , APLY_NO
+		         , 0
+		      FROM TB_RELIEF
+		     WHERE 0 = 0
+		       AND PRGRE_STUS_CD    = '04'
+		       AND BIZ_AREA_CD      = 'A0001'
+		)
+		SELECT NVL(A.ODER1_ALL,0)   AS "aplyT0T" <!-- 전체인원 -->
+		     , NVL(A.ODER1_ALL,0)   AS "aplyT01" <!-- 1차사업 -->
+		     , NVL(A.ODER1_R1 ,0)   AS "aplyR01" <!-- 1차인정 -->
+		     , NVL(A.ODER1_R9 ,0)   AS "aplyD01" <!-- 1차불인정 -->
+		  FROM (
+		        SELECT SUM(CASE WHEN BIZ_ODER = 1 AND GBN = 'A' THEN CNT END)                  AS ODER1_ALL
+		             , SUM(CASE WHEN BIZ_ODER = 1 AND GBN = 'B' AND ITEM = 'R1' THEN CNT END)  AS ODER1_R1
+		             , SUM(CASE WHEN BIZ_ODER = 1 AND GBN = 'B' AND ITEM = 'R9' THEN CNT END)  AS ODER1_R9
+		          FROM (
+		            SELECT 'A' AS GBN
+		                 , BIZ_ODER
+		                 , ''  AS ITEM
+		                 , COUNT(DISTINCT SUFRER_NO) AS CNT
+		              FROM T_EXAM T
+		             WHERE 0 = 0
+		             <!-- AND DLTNC_RSLT_CD <> 'RR' -->
+		             GROUP BY BIZ_ODER
+
+		             UNION ALL
+
+		            SELECT 'B'
+		                 , BIZ_ODER
+		                 , DLTNC_RSLT_CD
+		                 , COUNT(DISTINCT SUFRER_NO)
+		              FROM (
+		                   SELECT P.*
+		                        , ROW_NUMBER() OVER(PARTITION BY BIZ_AREA_CD, APLY_NO ORDER BY EXMN_ODER DESC) AS RIDX
+		                     FROM T_EXAM P
+		              ) T
+		             WHERE 0 = 0
+		               AND RIDX = 1
+		               AND NOT EXISTS (
+		                            SELECT 1
+		                              FROM TB_PRPT_EXMN AA
+		                                 , TB_RELIEF BB
+		                             WHERE AA.APLY_NO       = BB.APLY_NO
+		                               AND AA.BIZ_AREA_CD   = T.BIZ_AREA_CD
+		                               AND AA.BIZ_ODER      = DECODE(T.BIZ_ODER, 1, 2, 1)
+		                               AND BB.SUFRER_NO     = T.SUFRER_NO
+		                            )
+		             GROUP BY T.BIZ_ODER, T.DLTNC_RSLT_CD
+		        )
+		    ) A
+    </select>
+
+    <!-- 지역별 피해구제 신청현황 조회 (서천)-->
+    <select id="viewReliefAplyA0002" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		WITH T_EXAM AS (
+		    SELECT A.BIZ_AREA_CD
+		         , A.BIZ_ODER
+		         , A.DLTNC_RSLT_CD
+		         , B.SUFRER_NO
+		         , A.APLY_NO
+		         , A.EXMN_ODER
+		      FROM TB_PRPT_EXMN A
+		         , TB_RELIEF B
+		     WHERE A.APLY_NO        = B.APLY_NO
+		       AND A.BIZ_AREA_CD    = 'A0002'
+
+		    UNION ALL
+
+		    SELECT BIZ_AREA_CD
+		         , 2
+		         , 'RR'
+		         , SUFRER_NO
+		         , APLY_NO
+		         , 0
+		      FROM TB_RELIEF
+		     WHERE 0 = 0
+		       AND PRGRE_STUS_CD    = '04'
+		       AND BIZ_AREA_CD      = 'A0002'
+		)
+		SELECT (NVL(A.ODER1_ALL, 0) +
+		        NVL(A.ODER2_R1 , 0) +
+		        NVL(A.ODER2_R9 , 0)) AS "aplyT0T"     <!-- 전체인원 -->
+		     ,  NVL(A.ODER1_ALL, 0)  AS "aplyT01"     <!-- 1차사업 -->
+		     ,  NVL(A.ODER2_ALL, 0)  AS "aplyT02"     <!-- 2차사업 -->
+		     ,  NVL(A.ODER1_R1 , 0)  AS "aplyR01"     <!-- 1차인정 -->
+		     ,  NVL(A.ODER2_R1 , 0)  AS "aplyR02"     <!-- 1차인정 -->
+		     ,  NVL(A.ODER1_R9 , 0)  AS "aplyD01"     <!-- 1차불인정 -->
+		     ,  NVL(A.ODER2_R9 , 0)  AS "aplyD02"     <!-- 2차불인정 -->
+		     ,  NVL(B.R1_R1    , 0)  AS "aplyR01R02"  <!-- R1_R1: 1차인정,2차인정 -->
+		     ,  NVL(B.R9_R9    , 0)  AS "aplyD01D02"  <!-- R9_R9: 1차불인정,2차불인정 -->
+		     ,  NVL(B.R1_X     , 0)  AS "aplyR01D02"  <!-- R1_X : 1차인정,2차불인정 -->
+		     ,  NVL(B.X_R1     , 0)  AS "aplyD01R02"  <!-- X_R1 : 1차불인정,2차인정 -->
+		  FROM (
+		    SELECT SUM(CASE WHEN BIZ_ODER = 1 AND GBN = 'A' THEN CNT END)                  AS ODER1_ALL
+		         , SUM(CASE WHEN BIZ_ODER = 2 AND GBN = 'A' THEN CNT END)                  AS ODER2_ALL
+		         , SUM(CASE WHEN BIZ_ODER = 1 AND GBN = 'B' AND ITEM = 'R1' THEN CNT END)  AS ODER1_R1
+		         , SUM(CASE WHEN BIZ_ODER = 2 AND GBN = 'B' AND ITEM = 'R1' THEN CNT END)  AS ODER2_R1
+		         , SUM(CASE WHEN BIZ_ODER = 1 AND GBN = 'B' AND ITEM = 'R9' THEN CNT END)  AS ODER1_R9
+		         , SUM(CASE WHEN BIZ_ODER = 2 AND GBN = 'B' AND ITEM = 'R9' THEN CNT END)  AS ODER2_R9
+		      FROM (
+		            SELECT 'A' AS GBN
+		                 , BIZ_ODER
+		                 , ''  AS ITEM
+		                 , COUNT(DISTINCT SUFRER_NO) AS CNT
+		              FROM T_EXAM T
+		             WHERE DLTNC_RSLT_CD <![CDATA[ <> ]]> 'RR'
+		             GROUP BY BIZ_ODER
+
+		             UNION ALL
+
+		            SELECT 'B'
+		                 , BIZ_ODER
+		                 , DLTNC_RSLT_CD
+		                 , COUNT(*)
+		              FROM (
+		                   SELECT P.*
+		                        , ROW_NUMBER() OVER(PARTITION BY BIZ_AREA_CD, APLY_NO ORDER BY EXMN_ODER DESC) AS RIDX
+		                     FROM T_EXAM P
+		              ) T
+		             WHERE 0 = 0
+		               AND RIDX = 1
+		               AND NOT EXISTS (
+		                            SELECT 1
+		                              FROM TB_PRPT_EXMN AA
+		                                 , TB_RELIEF BB
+		                             WHERE AA.APLY_NO       = BB.APLY_NO
+		                               AND AA.BIZ_AREA_CD   = T.BIZ_AREA_CD
+		                               AND AA.BIZ_ODER      = DECODE(T.BIZ_ODER, 1, 2, 1)
+		                               AND BB.SUFRER_NO     = T.SUFRER_NO
+		                            )
+		             GROUP BY T.BIZ_ODER, T.DLTNC_RSLT_CD
+		            )
+		    ) A
+		    , (
+		    SELECT SUM(CASE WHEN ODER1 = 'R1' AND ODER2 = 'R1' THEN 1 ELSE 0 END) AS R1_R1
+		         , SUM(CASE WHEN ODER1 = 'R9' AND ODER2 = 'R9' THEN 1 ELSE 0 END) AS R9_R9
+		         , SUM(CASE WHEN ODER1 = 'R1' AND ODER2 = 'R9' THEN 1 ELSE 0 END) AS R1_X
+		         , SUM(CASE WHEN ODER1 = 'R9' AND ODER2 = 'R1' THEN 1 ELSE 0 END) AS X_R1
+		      FROM (
+		            SELECT SUFRER_NO
+		                 , TRIM(REGEXP_SUBSTR(LIST_DLTNC_RSLT_CD, '[^,]+', 1, 1))   AS ODER1
+		                 , TRIM(REGEXP_SUBSTR(LIST_DLTNC_RSLT_CD, '[^,]+', 1, 2))   AS ODER2
+		              FROM (
+		                    SELECT SUFRER_NO
+		                         , LISTAGG(BIZ_ODER, ',') WITHIN GROUP(ORDER BY BIZ_ODER)       AS LIST_BIZ_ODER
+		                         , LISTAGG(DLTNC_RSLT_CD, ',') WITHIN GROUP(ORDER BY BIZ_ODER)  AS LIST_DLTNC_RSLT_CD
+		                      FROM T_EXAM T
+		                    HAVING COUNT(*) <![CDATA[ > ]]> 1
+		                     GROUP BY SUFRER_NO
+		                   )
+		            )
+		    ) B
+    </select>
+
+    <!-- 지역별 피해구제 신청현황 조회 (김포) -->
+    <select id="viewReliefAplyA0003" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		WITH T_EXAM AS (
+		    SELECT A.BIZ_AREA_CD
+		         , A.BIZ_ODER
+		         , A.DLTNC_RSLT_CD
+		         , B.SUFRER_NO
+		         , A.APLY_NO
+		         , A.EXMN_ODER
+		      FROM TB_PRPT_EXMN A
+		         , TB_RELIEF B
+		     WHERE A.APLY_NO        = B.APLY_NO
+		       AND A.BIZ_AREA_CD    = 'A0003'
+
+		    UNION ALL
+
+		    SELECT BIZ_AREA_CD
+		         , 2
+		         , 'RR'
+		         , SUFRER_NO
+		         , APLY_NO
+		         , 0
+		      FROM TB_RELIEF
+		     WHERE 0 = 0
+		       AND PRGRE_STUS_CD    = '04'
+		       AND BIZ_AREA_CD      = 'A0003'
+		)
+		SELECT NVL(A.ODER2_ALL,0)      AS "aplyT0T" <!-- 전체인원 -->
+		     , NVL(A.ODER1_ALL,0)      AS "aplyT01" <!-- 1차사업 -->
+		     , NVL(A.ODER2_ALL,0)      AS "aplyT02" <!-- 2차사업 -->
+		     , NVL(A.ODER2_R1 ,0)      AS "aplyR02" <!-- 2차인정 -->
+		     , NVL(A.ODER2_R9 ,0)      AS "aplyD02" <!-- 2차불인정 -->
+		     , NVL(A.ODER2_RR ,0)      AS "aplyE02" <!-- 2차조사중 -->
+             , NVL(B.R1_R1    ,0)      AS "aplyR01R02" <!-- 1차인정,2차인정 -->
+		  FROM (
+		        SELECT SUM(CASE WHEN BIZ_ODER = 1 AND GBN = 'A' THEN CNT END)                  AS ODER1_ALL
+		             , SUM(CASE WHEN BIZ_ODER = 2 AND GBN = 'A' THEN CNT END)                  AS ODER2_ALL
+		             , SUM(CASE WHEN BIZ_ODER = 2 AND GBN = 'B' AND ITEM = 'R1' THEN CNT END)  AS ODER2_R1
+		             , SUM(CASE WHEN BIZ_ODER = 2 AND GBN = 'B' AND ITEM = 'R9' THEN CNT END)  AS ODER2_R9
+		             , SUM(CASE WHEN BIZ_ODER = 2 AND GBN = 'B' AND ITEM = 'RR' THEN CNT END)  AS ODER2_RR
+		          FROM (
+		            SELECT 'A' AS GBN
+		                 , BIZ_ODER
+		                 , ''  AS ITEM
+		                 , COUNT(DISTINCT SUFRER_NO) AS CNT
+		              FROM T_EXAM T
+		             WHERE 0 = 0
+		             <!-- AND DLTNC_RSLT_CD <> 'RR' -->
+		             GROUP BY BIZ_ODER
+
+		             UNION ALL
+
+		            SELECT 'B'
+		                 , BIZ_ODER
+		                 , DLTNC_RSLT_CD
+		                 , COUNT(DISTINCT SUFRER_NO)
+		              FROM (
+		                   SELECT P.*
+		                        , ROW_NUMBER() OVER(PARTITION BY BIZ_AREA_CD, APLY_NO ORDER BY EXMN_ODER DESC) AS RIDX
+		                     FROM T_EXAM P
+		              ) T
+		             WHERE 0 = 0
+		               AND RIDX = 1
+		               AND NOT EXISTS (
+		                            SELECT 1
+		                              FROM TB_PRPT_EXMN AA
+		                                 , TB_RELIEF BB
+		                             WHERE AA.APLY_NO       = BB.APLY_NO
+		                               AND AA.BIZ_AREA_CD   = T.BIZ_AREA_CD
+		                               AND AA.BIZ_ODER      = DECODE(T.BIZ_ODER, 1, 2, 1)
+		                               AND BB.SUFRER_NO     = T.SUFRER_NO
+		                            )
+		             GROUP BY T.BIZ_ODER, T.DLTNC_RSLT_CD
+		        )
+		    ) A
+		    , (
+		        SELECT SUM(CASE WHEN ODER1 = 'R1' AND ODER2 = 'R1' THEN 1 ELSE 0 END)   AS R1_R1
+		          FROM (
+		                SELECT SUFRER_NO
+		                     , TRIM(REGEXP_SUBSTR(LIST_DLTNC_RSLT_CD, '[^,]+', 1, 1))   AS ODER1
+		                     , TRIM(REGEXP_SUBSTR(LIST_DLTNC_RSLT_CD, '[^,]+', 1, 2))   AS ODER2
+		                  FROM (
+		                        SELECT SUFRER_NO
+		                             , LISTAGG(BIZ_ODER, ',') WITHIN GROUP(ORDER BY BIZ_ODER)       AS LIST_BIZ_ODER
+		                             , LISTAGG(DLTNC_RSLT_CD, ',') WITHIN GROUP(ORDER BY BIZ_ODER)  AS LIST_DLTNC_RSLT_CD
+		                          FROM T_EXAM T
+		                        HAVING COUNT(*) > 1
+		                         GROUP BY SUFRER_NO
+		                       )
+		               )
+		    ) B
+    </select>
+
+    <!-- 사업별 구제급여 지급현황 조회 -->
+    <select id="listAreaReliefGive" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT CASE WHEN S1.BIZ_AREA_CD IS NULL
+		             AND S1.BIZ_ODER    IS NULL
+		            THEN 'TOTAL'
+		            WHEN S1.BIZ_AREA_CD IS NULL
+		            THEN 'SUBTOT'
+		            ELSE S1.BIZ_AREA_CD
+		       END                          AS "bizAreaCd"
+		     , CASE WHEN S1.BIZ_AREA_CD IS NULL
+		             AND S1.BIZ_ODER    IS NULL
+		            THEN '계'
+		            WHEN S1.BIZ_AREA_CD IS NULL
+		            THEN S1.BIZ_ODER || '차 사업'
+		            ELSE (SELECT BIZ_AREA || ' ' || BIZ_DTL_AREA
+		                    FROM TB_BIZ_MNG
+		                   WHERE BIZ_AREA_CD = S1.BIZ_AREA_CD)
+		       END                          AS "bizAreaNm"
+		     , S1.BIZ_ODER                  AS "bizOder"
+		     , SUM(NVL(MCP_AMT,0))
+		       +SUM(NVL(FNRL_AMT,0))
+		       +SUM(NVL(BRVFM_AMT,0))
+		       +SUM(NVL(PRPRTY_AMT,0))
+		       +SUM(NVL(LVLH_AMT,0))        AS "giveTot"  <!-- 소계 -->
+		     , SUM(MCP_AMT)                 AS "giveAmt1" <!-- 의료비 -->
+		     , SUM(FNRL_AMT)                AS "giveAmt3" <!-- 장의비 -->
+		     , SUM(BRVFM_AMT)               AS "giveAmt4" <!-- 유족보상비 -->
+		     , SUM(PRPRTY_AMT)              AS "giveAmt5" <!-- 재산피해보상비 -->
+		     , SUM(LVLH_AMT)                AS "giveAmt2" <!-- 요양생활수당 -->
+		  FROM (
+		        SELECT BIZ_AREA_CD
+		             , BIZ_ODER
+		             , SUM(GIVE_AMT)                AS MCP_AMT
+		             , SUM(FNRL_CST_AMT)            AS FNRL_AMT
+		             , SUM(BRVFM_RWRD_AMT)          AS BRVFM_AMT
+		             , SUM(PRPRTY_DMGE_RWRD_AMT)    AS PRPRTY_AMT
+		          FROM TB_MNSVY
+		         WHERE 0 = 0
+		         GROUP BY BIZ_AREA_CD, BIZ_ODER
+		  ) S1,
+		  (
+                <!--
+                2022.11.14 [ntarget] : TB_RCPER_LVLH_MNG 테이블 삭제                  
+                 -->
+                <!--           
+                SELECT A.BIZ_AREA_CD
+                     , A.BIZ_ODER
+                     , SUM(A.RCPER_LVLH_ALLWNC_AMT) AS LVLH_AMT
+                  FROM TB_RCPER_LVLH_MNG A
+                     , TB_RCPER_LVLH_DTLS B
+                 WHERE A.APLY_NO    = B.APLY_NO(+)
+                   AND A.EXMN_ODER  = B.EXMN_ODER(+)
+                   AND A.GIVE_YR    = B.GIVE_YR(+)
+                 GROUP BY A.BIZ_AREA_CD, A.BIZ_ODER
+                -->
+                SELECT B.BIZ_AREA_CD
+                     , B.BIZ_ODER
+                     , SUM(B.GIVE_AMT) AS LVLH_AMT
+                  FROM TB_RCPER_LVLH_DTLS B
+                 WHERE 0 = 0
+                 GROUP BY B.BIZ_AREA_CD, B.BIZ_ODER 
+		  ) S2
+		 WHERE 0 = 0
+		   AND S1.BIZ_AREA_CD   = S2.BIZ_AREA_CD(+)
+		   AND S1.BIZ_ODER      = S2.BIZ_ODER(+)
+		 GROUP BY ROLLUP(S1.BIZ_ODER, S1.BIZ_AREA_CD)
+		<!-- 2022.01.18 총계를 최상단으로 변경처리  -->
+		 ORDER BY DECODE(S1.BIZ_ODER, NULL, '0', S1.BIZ_ODER), 
+		          S1.BIZ_AREA_CD
+    </select>
+
+    <!-- 연도별 구제급여 지급현황 조회 -->
+    <select id="listYearReliefGive" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		WITH T_MSY AS (
+		    SELECT BIZ_AREA_CD
+		         , GIVE_YR
+		         , SUFRER_NO
+		         , COUNT(DISTINCT SUFRER_NO)
+		         , SUM(RCOGN_AMT)              AS RCOGN_AMT
+		         , SUM(GIVE_AMT)               AS GIVE_AMT
+		         , MAX(GIVE_ACTNO)             AS GIVE_ACTNO
+		         , MAX(TOT_ACTNO_CNT)          AS TOT_ACTNO_CNT
+		         , MAX(ACTNO_CNT)              AS ACTNO_CNT
+		      FROM (
+		            SELECT A.BIZ_AREA_CD
+		                 , B.SUFRER_NO
+		                 , NVL(A.RCOGN_AMT, 0)      AS RCOGN_AMT
+		                 , NVL(A.GIVE_AMT, 0)       AS GIVE_AMT
+		                 , A.GIVE_ACTNO
+		                 , SIGN(DECODE(NVL(A.GIVE_ACTNO, '0'), '0', 0, 1)) AS ACTNO_CNT
+		                 , SIGN(COUNT(A.GIVE_ACTNO) OVER(PARTITION BY B.SUFRER_NO)) AS TOT_ACTNO_CNT
+		                 , SUBSTR(MAX(A.GIVE_YMD) OVER(PARTITION BY A.BIZ_AREA_CD, A.EXMN_ODER), 0, 4) AS GIVE_YR
+		                 , A.EXMN_ODER
+		              FROM TB_MNSVY A
+		                 , TB_RELIEF B
+		                 , TB_IDNTFC C
+		             WHERE 0 = 0
+		               AND A.APLY_NO        = B.APLY_NO
+		               AND B.SUFRER_NO      = C.SUFRER_NO
+		           )
+		     GROUP BY BIZ_AREA_CD, GIVE_YR, SUFRER_NO
+		), T_LVLH AS (
+            <!--
+            2022.11.14 [ntarget] : TB_RCPER_LVLH_MNG 테이블 삭제                  
+             -->
+            <!--         
+            SELECT A.BIZ_AREA_CD
+                 , A.EXMN_ODER
+                 , A.GIVE_YR
+                 , A.RCPER_LVLH_ALLWNC_AMT
+              FROM TB_RCPER_LVLH_MNG A
+                 , TB_RCPER_LVLH_DTLS B
+             WHERE A.APLY_NO        = B.APLY_NO(+)
+               AND A.EXMN_ODER      = B.EXMN_ODER(+)
+               AND A.GIVE_YR        = B.GIVE_YR(+)
+            -->
+            SELECT B.BIZ_AREA_CD
+                 , B.EXMN_ODER
+                 , B.GIVE_YR
+                 , B.GIVE_AMT
+              FROM TB_RCPER_LVLH_DTLS B
+             WHERE 0 = 0 
+		)
+		SELECT X2.BIZ_AREA_CD              AS "bizAreaCd"
+		     , X1.GIVE_YR                  AS "giveYear"
+		     , NVL(X1.EXT_CNT,0)           AS "giveAllCnt" <!-- 인원 -->
+		     , CASE WHEN X1.EXT_CNT <![CDATA[ <> ]]> X1.EXT_ZERO_CNT
+		            THEN NVL(X1.EXT_ZERO_CNT,0)
+		            ELSE 0
+		       END                         AS "giveFltCnt" <!-- 인원(중복제외) -->
+		     , NVL(X1.GIVE_AMT        ,0)  AS "giveAllAmt" <!-- 지급액 -->
+		     , NVL(X2.TOT_EXT_CNT     ,0)  AS "giveAllTot" <!-- 인원(합계) -->
+		     , NVL(X2.TOT_EXT_ZERO_CNT,0)  AS "giveFltTot" <!-- 인원(중복제외)(합계) -->
+		     , NVL(X2.TOT_GIVE_AMT    ,0)  AS "giveAmtTot" <!-- 지급액(합계) -->
+		  FROM (
+		        SELECT S1.BIZ_AREA_CD
+		             , S1.GIVE_YR
+		             , S1.TOT_CNT           AS EXT_CNT
+		             , S1.EXT_ZERO_CNT      AS EXT_ZERO_CNT
+		             , NVL(S1.GIVE_AMT,0) + NVL(S2.RCPER_LVLH_ALLWNC_AMT,0)    AS GIVE_AMT
+		          FROM (
+		                SELECT BIZ_AREA_CD
+		                     , GIVE_YR
+		                     , CASE WHEN EXT_CNT1 > 0 THEN
+		                            CNT - EXT_CNT2
+		                       ELSE
+		                            CNT
+		                       END              AS TOT_CNT
+		                     , LEAST(EXT_ZERO_CNT1, EXT_ZERO_CNT2) AS EXT_ZERO_CNT
+		                     <!--, EXT_CNT1 -->
+		                     <!--, EXT_CNT2 -->
+		                     , GIVE_AMT         AS GIVE_AMT
+		                  FROM (
+		                        SELECT BIZ_AREA_CD
+		                             , MAX(GIVE_YR)         AS GIVE_YR
+		                             , SUM(GIVE_AMT)        AS GIVE_AMT
+		                             , SUM(SIGN(GIVE_AMT))  AS EXT_ZERO_CNT1
+		                             , SUM(SIGN(ACTNO_CNT)) AS EXT_ZERO_CNT2
+		                             , COUNT(*)             AS CNT
+		                             , SUM(CASE WHEN RCOGN_AMT <![CDATA[ > ]]> 0 AND TOT_ACTNO_CNT = 0 THEN 1
+		                                   ELSE 0
+		                                   END)             AS EXT_CNT1
+		                             , SUM(CASE WHEN RCOGN_AMT <![CDATA[ > ]]> 0 AND GIVE_ACTNO IS NULL THEN 1
+		                                   ELSE 0
+		                                   END)             AS EXT_CNT2
+
+		                          FROM T_MSY
+		                         WHERE 0 = 0
+		                         GROUP BY BIZ_AREA_CD, GIVE_YR
+		                       )
+		               ) S1,
+		               (
+		                SELECT BIZ_AREA_CD
+		                     , GIVE_YR
+                             <!--  
+                             2022.11.14 ntarget  : TB_RCPER_LVLH_MNG 테이블 삭제
+                             -->                             
+                             <!-- , SUM(RCPER_LVLH_ALLWNC_AMT)        AS RCPER_LVLH_ALLWNC_AMT  -->                             
+		                     , SUM(GIVE_AMT)        AS RCPER_LVLH_ALLWNC_AMT
+		                  FROM T_LVLH
+		                 GROUP BY BIZ_AREA_CD, GIVE_YR
+		               ) S2
+		         WHERE 0 = 0
+		           AND S1.BIZ_AREA_CD   = S2.BIZ_AREA_CD(+)
+		           AND S1.GIVE_YR       = S2.GIVE_YR(+)
+		     ) X1,
+		     (
+		        SELECT NVL(S1.BIZ_AREA_CD, 'TOT')   AS BIZ_AREA_CD
+		             , SUM(S1.TOT_EXT_CNT)          AS TOT_EXT_CNT
+		             , SUM(S1.TOT_EXT_ZERO_CNT)     AS TOT_EXT_ZERO_CNT
+		             , SUM(NVL(S1.TOT_GIVE_AMT,0) + NVL(S2.RCPER_LVLH_ALLWNC_AMT,0)) AS TOT_GIVE_AMT
+		          FROM (
+		                SELECT BIZ_AREA_CD  AS BIZ_AREA_CD
+		                     , SUM(CASE WHEN MAX_RCOGN_AMT <![CDATA[ > ]]> 0 AND MAX_GIVE_ACTNO IS NULL THEN 0
+		                           ELSE 1
+		                           END)             AS TOT_EXT_CNT
+		                     , SUM(SIGN(GIVE_AMT))  AS TOT_EXT_ZERO_CNT
+		                     , SUM(GIVE_AMT)        AS TOT_GIVE_AMT
+		                  FROM (
+		                        SELECT BIZ_AREA_CD
+		                             , SUFRER_NO
+		                             , MAX(RCOGN_AMT)   AS MAX_RCOGN_AMT
+		                             , MAX(GIVE_AMT)    AS MAX_GIVE_AMT
+		                             , MAX(GIVE_ACTNO)  AS MAX_GIVE_ACTNO
+		                             , SUM(RCOGN_AMT)   AS RCOGN_AMT
+		                             , SUM(GIVE_AMT)    AS GIVE_AMT
+		                          FROM T_MSY
+		                         WHERE 0 = 0
+		                         GROUP BY BIZ_AREA_CD, SUFRER_NO
+		                       )
+		                 GROUP BY BIZ_AREA_CD
+		               ) S1
+		             , (
+		                SELECT BIZ_AREA_CD
+                             <!--  
+                             2022.11.14 ntarget  : TB_RCPER_LVLH_MNG 테이블 삭제
+                             -->                             
+                             <!-- , SUM(RCPER_LVLH_ALLWNC_AMT)        AS RCPER_LVLH_ALLWNC_AMT  -->                        
+                             , SUM(GIVE_AMT)        AS RCPER_LVLH_ALLWNC_AMT
+		                  FROM T_LVLH
+		                 GROUP BY BIZ_AREA_CD
+		               ) S2
+		         WHERE S1.BIZ_AREA_CD = S2.BIZ_AREA_CD(+)
+		           AND S1.BIZ_AREA_CD IS NOT NULL
+		         GROUP BY ROLLUP(S1.BIZ_AREA_CD)
+		     ) X2
+		 WHERE X2.BIZ_AREA_CD   = X1.BIZ_AREA_CD(+)
+		 ORDER BY X2.BIZ_AREA_CD, 
+		          X1.GIVE_YR
+    </select>
+
+    <!-- 인정질환별 인정자 현황 조회 -->
+    <select id="listDissRcogn" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+        WITH T_STS AS (
+            SELECT ITEM_CD
+                 , CONNECT_BY_ROOT ITEM_CD AS UP_ITEM_CD
+                 , CONNECT_BY_ROOT ITEM_NM AS UP_ITEM_NM
+                 , LEVEL AS LVL
+              FROM TB_STATS_SCKWND A
+             WHERE STATS_CL_CD      = 'ST03'
+               AND USE_YN           = 'Y'
+               AND INSTR(ITEM_ETC_CN, #{bizAreaCd}) > 0
+           CONNECT BY PRIOR ITEM_CD = UP_ITEM_CD
+             START WITH UP_ITEM_CD  = 'NONE'
+        ), T_MCP AS  (
+            SELECT B.SUFRER_NO
+                 , A.SCKWND_CD
+              FROM TB_MCP_DTLS A
+                 , TB_RELIEF B
+             WHERE A.APLY_NO        = B.APLY_NO
+               AND A.BIZ_AREA_CD    = #{bizAreaCd}
+               AND A.RCOGN_STUS_CD  = '01'
+             GROUP BY B.SUFRER_NO, A.SCKWND_CD
+        )
+        SELECT #{bizAreaCd}        AS "bizAreaCd" <!-- 지역코드 -->
+             , S1.UP_ITEM_CD       AS "dissClCd"  <!-- 질병분류코드 -->
+             , S1.UP_ITEM_NM       AS "dissClNm"  <!-- 질병분류명칭 -->
+             , NVL(S1.CNT, 0)      AS "rcognCnt"  <!-- 인정자인원 -->
+          FROM (
+                SELECT S.UP_ITEM_CD
+                     , S.UP_ITEM_NM
+                     , COUNT(DISTINCT M.SUFRER_NO) AS CNT
+                  FROM T_STS S
+                     , T_MCP M
+                 WHERE 0 = 0
+                   AND SUBSTR(M.SCKWND_CD,0,3) = S.ITEM_CD
+                 GROUP BY S.UP_ITEM_CD, S.UP_ITEM_NM
+               ) S1
+         ORDER BY S1.UP_ITEM_CD
+    </select>
+
+    <!-- 인정질환별 의료비 현황 조회 -->
+    <select id="listDissMcp" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+        WITH T_STS AS (
+            /* 통계 항목 */
+            SELECT
+                   REGEXP_SUBSTR(SUBSTR(SYS_CONNECT_BY_PATH(TRIM(A.ITEM_NM), '/'), 2),'[^/]+', 1, 1)  AS FST_ITEM_NM
+                 , REGEXP_SUBSTR(SUBSTR(SYS_CONNECT_BY_PATH(TRIM(A.ITEM_NM), '/'), 2),'[^/]+', 1, 2)  AS SCD_ITEM_NM
+                 , REGEXP_SUBSTR(SUBSTR(SYS_CONNECT_BY_PATH(TRIM(A.ITEM_SCOPE_CN), '/'), 2),'[^/]+', 1, 1)  AS FST_ITEM_SCOPE
+                 , REGEXP_SUBSTR(SUBSTR(SYS_CONNECT_BY_PATH(TRIM(A.ITEM_SCOPE_CN), '/'), 2),'[^/]+', 1, 2)  AS SCD_ITEM_SCOPE
+                 , ITEM_CD
+                 , ITEM_NM
+              FROM TB_STATS_SCKWND A
+             WHERE STATS_CL_CD      = 'ST03'
+               AND USE_YN           = 'Y'
+               AND LEVEL = 3
+           CONNECT BY PRIOR ITEM_CD = UP_ITEM_CD
+             START WITH UP_ITEM_CD  = 'NONE'
+        ), T_MCP AS (
+            /* 인정질환별 의료비 */
+            SELECT A.BIZ_AREA_CD
+                 , A.APLY_NO
+                 , A.BIZ_ODER
+                 , A.EXMN_ODER
+                 , A.SCKWND_CD
+                 , SUM(A.SELF_ALOTM)    AS SELF_AMT
+                 , (SELECT SUFRER_NO FROM TB_RELIEF WHERE APLY_NO = A.APLY_NO) AS SUFRER_NO
+              FROM TB_MCP_DTLS A
+                 , TB_MNSVY B
+             WHERE 0 = 0
+               AND A.BIZ_AREA_CD    = B.BIZ_AREA_CD
+               AND A.APLY_NO        = B.APLY_NO
+               AND A.BIZ_ODER       = B.BIZ_ODER
+               AND A.EXMN_ODER      = B.EXMN_ODER
+               AND A.RCOGN_STUS_CD  = '01'
+               AND B.DLTNC_RSLT_CD  = 'R1'
+               AND B.GIVE_YMD       IS NOT NULL
+             GROUP BY A.BIZ_AREA_CD, A.BIZ_ODER, A.EXMN_ODER, A.APLY_NO, A.SCKWND_CD
+             ORDER BY A.SCKWND_CD, A.BIZ_AREA_CD, A.APLY_NO
+        )
+        SELECT FST_ITEM_NM                                                                 AS "clssClNm"
+             , SCD_ITEM_NM                                                                 AS "dissClNm"
+             , SCD_ITEM_SCOPE                                                              AS "dissClCd"
+             , SUM(NVL(SUM_01_CNT, 0))+SUM(NVL(SUM_02_CNT, 0))+SUM(NVL(SUM_03_CNT, 0))     AS "cntTOTAL"
+             , SUM(NVL(SUM_01_CNT, 0))                                                     AS "cntA0001"
+             , SUM(NVL(SUM_02_CNT, 0))                                                     AS "cntA0002"
+             , SUM(NVL(SUM_03_CNT, 0))                                                     AS "cntA0003"
+             , SUM(NVL(SUM_01_AMT, 0))+SUM(NVL(SUM_02_AMT, 0))+SUM(NVL(SUM_03_AMT, 0))     AS "amtTOTAL"
+             , SUM(NVL(SUM_01_AMT, 0))                                                     AS "amtA0001"
+             , SUM(NVL(SUM_02_AMT, 0))                                                     AS "amtA0002"
+             , SUM(NVL(SUM_03_AMT, 0))                                                     AS "amtA0003"
+          FROM (
+                SELECT  FST_ITEM_NM
+                     , SCD_ITEM_NM
+                     , SCD_ITEM_SCOPE
+                     , CASE WHEN BIZ_AREA_CD = 'A0001' THEN
+                            APLY_CNT
+                       END AS SUM_01_CNT
+                     , CASE WHEN BIZ_AREA_CD = 'A0001' THEN
+                            SELF_AMT
+                       END AS SUM_01_AMT
+                     , CASE WHEN BIZ_AREA_CD = 'A0002' THEN
+                            APLY_CNT
+                       END AS SUM_02_CNT
+                     , CASE WHEN BIZ_AREA_CD = 'A0002' THEN
+                            SELF_AMT
+                       END AS SUM_02_AMT
+                     , CASE WHEN BIZ_AREA_CD = 'A0003' THEN
+                            APLY_CNT
+                       END AS SUM_03_CNT
+                     , CASE WHEN BIZ_AREA_CD = 'A0003' THEN
+                            SELF_AMT
+                       END AS SUM_03_AMT
+                  FROM (
+                        SELECT B.BIZ_AREA_CD
+                             , B.SCKWND_CD
+                             , A.FST_ITEM_NM||' ('||MAX(A.FST_ITEM_SCOPE)||')' AS FST_ITEM_NM
+                             , A.SCD_ITEM_NM
+                             , MAX(A.SCD_ITEM_SCOPE) AS SCD_ITEM_SCOPE
+                             , COUNT(B.APLY_NO)   AS APLY_CNT
+                             , COUNT(DISTINCT B.SUFRER_NO) AS DUP_CNT     /* 중복제거 */
+                             , SUM(B.SELF_AMT)  AS SELF_AMT
+                          FROM T_STS A
+                             , T_MCP B
+                         WHERE 0 = 0
+                           AND A.ITEM_CD    = SUBSTR(B.SCKWND_CD, 0 , 3)
+                         GROUP BY A.FST_ITEM_NM, A.SCD_ITEM_NM, B.BIZ_AREA_CD, B.SCKWND_CD
+                       )
+          )
+        GROUP BY FST_ITEM_NM, SCD_ITEM_NM, SCD_ITEM_SCOPE
+        ORDER BY SCD_ITEM_SCOPE
+    </select>
+
+    <!-- TODO. [연도별실적] 찾아가는 서비스 통계 조회 -->
+    <select id="listYearVisitService" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+    	SELECT 'PP01'    AS "dtySeCd"    -- 업무구분(PP01:구제급여,PP02:소송지원)
+    	     , '2021'    AS "servYear"
+    	     , 0         AS "servOutCnt" -- 현장지원건수
+    	     , 0         AS "servAllCnt" -- 전체지원건수
+    	     , 0         AS "servAllMen" -- 전체지원인원
+    	  FROM DUAL
+    	 <!-- 조건
+    	      srchStYear: 시작년도 (2021)
+    	      srchEnYear: 종료년도 (2021)
+    	  -->
+    </select>
+
+    <!-- TODO. [서비스제공율] 찾아가는 서비스 통계 조회 -->
+    <select id="listRateVisitService" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+    	SELECT 'PP01'    AS "dtySeCd"    -- 업무구분(PP01:구제급여,PP02:소송지원)
+    	     , '2021'    AS "servYear"
+    	     , 0         AS "servSplyCnt" -- 서비스제공자 인원
+    	     , 0         AS "servAplyCnt" -- 피해구제신청인 인원
+    	  FROM DUAL
+    	 <!-- 조건
+    	      srchStYear: 시작년도 (2021)
+    	      srchEnYear: 종료년도 (2021)
+    	  -->
+    </select>
+</mapper>

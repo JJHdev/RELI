@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BizMng">
+	<resultMap id="bizMngMap"
+		type="business.com.biz.service.BizMngVO">
+
+		<result property="bizAreaCd" column="BIZ_AREA_CD" />
+		<result property="bizArea" column="BIZ_AREA" />
+		<result property="bizDtlArea" column="BIZ_DTL_AREA" />
+		<result property="bizOder" column="BIZ_ODER" />
+		<result property="bizCn" column="BIZ_CN" />
+		<result property="useYN" column="USE_YN" />
+		<result property="rgtrNo" column="RGTR_NO" />
+		<result property="regYmd" column="REG_YMD" />
+		<result property="mdfrNo" column="MDFR_NO" />
+		<result property="mdfcnYmd" column="MDFCN_YMD" />
+
+	</resultMap>
+
+	<sql id="Sql-Where">
+		<if test="@common.util.CommUtils@isNotEmpty(srchBizArea)">
+			AND A.BIZ_AREA_CD = #{srchBizArea}
+		</if>
+		<if test="@common.util.CommUtils@isNotEmpty(srchBizOder)">
+			AND B.BIZ_ODER = #{srchBizOder}
+		</if>
+	</sql>
+
+	<sql id="sql_Column">
+		SELECT
+		  A.BIZ_AREA_CD       AS "bizAreaCd"
+		, A.BIZ_AREA          AS "bizArea"
+		, A.BIZ_DTL_AREA      AS "bizDtlArea"
+		, B.BIZ_ODER          AS "bizOder"
+		, A.BIZ_CN            AS "bizCn"
+		, A.USE_YN            AS "useYN"
+		, A.RGTR_NO           AS "rgtrNo"
+		, A.REG_YMD           AS "regYmd"
+		, A.MDFR_NO           AS "mdfrNo"
+		, A.MDFCN_YMD         AS "mdfcnYmd"
+		, B.POLUSRC_CN        AS "polusrcCn"
+		, B.HRMFLNS_FACTR_EXPSR_CN        AS "hrmflns"
+		, B.HEALTH_DMGE_CN    AS "healthDmgeCn"
+		, B.AFFC_SCOPE_CN     AS "affcScopeCn"
+		, B.EXPSR_WHL_CN      AS "expsrWhlCn"
+		, B.RESI_WHL_CN       AS "resiWhlCn"
+		, B.BIZ_USE_YN        AS "bizUseYn"
+	</sql>
+ <!-- 사업 목록 가져오기 -->
+	<select id='getListBizMng'
+		resultType="business.com.biz.service.BizMngVO">
+		<include refid="sql_Column" />
+
+		FROM TB_BIZ_MNG A , TB_BIZ_ODER B
+		WHERE 1=1
+		AND A.BIZ_AREA_CD=B.BIZ_AREA_CD(+)
+		<include refid="Sql-Where" />
+		AND A.USE_YN = 'Y'
+		AND B.BIZ_USE_YN = 'Y'
+		ORDER BY A.BIZ_AREA_CD
+	</select>
+ <!-- 페이징 -->
+	<select id='getListBizMngCount'
+		parameterType="business.com.biz.service.BizMngVO" resultType="int">
+		SELECT
+		count(1)
+		FROM TB_BIZ_MNG A ,
+		TB_BIZ_ODER B
+		WHERE 1=1
+		AND A.BIZ_AREA_CD=B.BIZ_AREA_CD
+		AND A.USE_YN = 'Y'
+		AND B.BIZ_USE_YN = 'Y'
+	</select>
+    <!-- 상세보기 -->
+	<select id='viewListBizMng'
+		resultType="business.com.biz.service.BizMngVO">
+		<include refid="sql_Column" />
+		FROM TB_BIZ_MNG A , TB_BIZ_ODER B
+		WHERE 1=1
+		AND
+		A.BIZ_AREA_CD=B.BIZ_AREA_CD(+)
+		AND A.BIZ_AREA_CD = #{bizAreaCd}
+		AND B.BIZ_ODER = #{bizOder}
+		AND A.USE_YN = 'Y'
+		AND B.BIZ_USE_YN = 'Y'
+	</select>
+
+
+	<insert id="saveNewBiz"
+		parameterType="business.com.biz.service.BizMngVO">
+
+		INSERT INTO TB_BIZ_MNG (
+		  BIZ_AREA_CD
+		, BIZ_AREA
+		, BIZ_DTL_AREA
+		, BIZ_CN
+		, USE_YN
+		, RGTR_NO
+		, REG_YMD
+		, MDFR_NO
+		, MDFCN_YMD
+		)
+		VALUES(
+		          (
+		              SELECT  'A'||LPAD(SUBSTR(MAX(NVL(BIZ_AREA_CD, '0')), 2) + 1, 4, '0')
+		              FROM  TB_BIZ_MNG
+		           ),
+		#{bizArea},
+		#{bizDtlArea},
+		#{bizCn},
+		'Y',
+		#{rgtrNo},
+		SYSDATE,
+		null,
+		null
+		)
+
+	</insert>
+
+
+	<select id='searchGernOder' resultType="business.com.biz.service.BizMngVO">
+		SELECT
+			  A.BIZ_AREA_CD     AS "bizAreaCd"
+		    , A.BIZ_AREA        AS "bizArea"
+		    , A.BIZ_DTL_AREA    AS "bizDtlArea"
+	    	, MAX(NVL(B.BIZ_ODER, '0'))+1 AS "bizOder"
+		FROM TB_BIZ_MNG A, TB_BIZ_ODER B
+		WHERE 1=1
+		AND A.BIZ_AREA_CD =B.BIZ_AREA_CD(+)
+		AND A.BIZ_AREA = #{bizArea}
+		AND A.BIZ_DTL_AREA = #{bizDtlArea}
+		AND A.USE_YN = 'Y'
+		AND B.BIZ_USE_YN = 'Y'
+		Group by A.BIZ_AREA_CD,BIZ_AREA, A.BIZ_DTL_AREA
+	</select>
+	
+	
+	<!-- 신규 사업 pk값가져오기 -->
+	<select id='getBizKey' resultType="business.com.biz.service.BizMngVO">
+		SELECT
+		  A.BIZ_AREA_CD       AS "bizAreaCd"
+		, A.BIZ_AREA          AS "bizArea"
+		, A.BIZ_DTL_AREA      AS "bizDtlArea"
+		, A.BIZ_CN            AS "bizCn"
+		, A.USE_YN            AS "useYN"
+		, A.RGTR_NO           AS "rgtrNo"
+		, A.REG_YMD           AS "regYmd"
+		, A.MDFR_NO           AS "mdfrNo"
+		, A.MDFCN_YMD         AS "mdfcnYmd"
+        FROM TB_BIZ_MNG A
+        WHERE 1 = 1
+        AND A.BIZ_AREA     = #{bizArea, javaType=String ,jdbcType=VARCHAR}
+        AND A.BIZ_DTL_AREA = #{bizDtlArea, javaType=String ,jdbcType=VARCHAR}
+		AND A.USE_YN = 'Y'        
+	</select>
+	
+	<insert id="saveOder"
+	parameterType="business.com.biz.service.BizMngVO">
+
+     INSERT INTO TB_BIZ_ODER (
+                               BIZ_AREA_CD
+                             , BIZ_ODER
+                             , BIZ_ODER_NM
+                             , BIZ_BGNG_YMD
+                             , BIZ_END_YMD
+                             , POLUSRC_CN
+                             , HRMFLNS_FACTR_EXPSR_CN
+                             , HEALTH_DMGE_CN
+                             , AFFC_SCOPE_CN
+                             , EXPSR_WHL_CN
+                             , RESI_WHL_CN
+                             , BIZ_USE_YN
+                             , RGTR_NO
+                             , REG_YMD
+                             , MDFR_NO
+                             , MDFCN_YMD
+                             )
+                      VALUES(
+                              #{bizAreaCd}
+                             ,'1'
+                             ,'1차'
+                             ,null
+                             ,null
+                             ,#{polusrcCn}
+                             ,#{hrmflns}
+                             ,#{healthDmgeCn}
+                             ,#{affcScopeCn}
+                             ,#{expsrWhlCn}
+                             ,#{resiWhlCn}
+                             ,'Y'
+                             ,null
+                             ,SYSDATE
+                             ,null
+                             ,null
+                            )
+
+	</insert>
+	
+	
+	
+	<insert id="addAreaOder"
+	parameterType="business.com.biz.service.BizMngVO">
+	
+	     INSERT INTO TB_BIZ_ODER (
+                               BIZ_AREA_CD
+                             , BIZ_ODER
+                             , BIZ_ODER_NM
+                             , BIZ_BGNG_YMD
+                             , BIZ_END_YMD
+                             , POLUSRC_CN
+                             , HRMFLNS_FACTR_EXPSR_CN
+                             , HEALTH_DMGE_CN
+                             , AFFC_SCOPE_CN
+                             , EXPSR_WHL_CN
+                             , RESI_WHL_CN
+                             , BIZ_USE_YN
+                             , RGTR_NO
+                             , REG_YMD
+                             , MDFR_NO
+                             , MDFCN_YMD
+                             )
+                      VALUES(
+                              #{bizAreaCd}
+                             ,#{bizOder}
+                             ,#{bizOderNm}
+                             ,null
+                             ,null
+                             ,null
+                             ,null
+                             ,null
+                             ,null
+                             ,null
+                             ,null
+                             ,'Y'
+                             ,#{rgtrNo}
+                             ,SYSDATE
+                             ,null
+                             ,null
+                            )
+	
+	
+	</insert> 
+	
+
+    <!-- 사업관리 - 사업지역 사업이름 수정 -->
+	<update id="modifyAREA" parameterType="business.com.biz.service.BizMngVO">
+	     UPDATE TB_BIZ_MNG SET       
+                   BIZ_AREA        = #{bizArea}
+                 , BIZ_DTL_AREA    = #{bizDtlArea}
+         WHERE 
+                 BIZ_AREA_CD       = #{bizAreaCd}
+		         AND USE_YN = 'Y'                 
+	</update>
+	
+	
+
+    <!-- 사업관리 - 사업내용수정 -->
+	<update id="modifyBiz" parameterType="business.com.biz.service.BizMngVO">
+	    UPDATE TB_BIZ_ODER SET       
+                   POLUSRC_CN             = #{polusrcCn}
+                 , HRMFLNS_FACTR_EXPSR_CN = #{hrmflns}
+                 , HEALTH_DMGE_CN         = #{healthDmgeCn}
+                 , AFFC_SCOPE_CN          = #{affcScopeCn}
+                 , EXPSR_WHL_CN           = #{expsrWhlCn}
+                 , RESI_WHL_CN            = #{resiWhlCn}
+                 , MDFR_NO                = #{mdfrNo}
+                 , MDFCN_YMD              = SYSDATE              
+         WHERE 
+                 BIZ_AREA_CD = #{bizAreaCd}
+         AND     BIZ_ODER    = #{bizOder}
+         AND     BIZ_USE_YN    = 'Y'    
+		
+	</update>
+	
+    <!-- 사업관리 - 사업차수 삭제 -->
+	<update id="deleteBiz" parameterType="business.com.biz.service.BizMngVO">
+	    UPDATE TB_BIZ_ODER SET   
+	             BIZ_USE_YN   ='N'
+	           , MDFR_NO      = #{mdfrNo}
+               , MDFCN_YMD    = SYSDATE   
+         WHERE 
+                 BIZ_AREA_CD  = #{bizAreaCd}
+         AND     BIZ_ODER     = #{bizOder} 
+         AND     BIZ_USE_YN   = 'Y'           
+		
+	</update>	
+	<!-- 사업관리 - 사업차수 삭제 중 해당사업의 차수가 예비조사 계획의 유뮤 확인 -->
+	<select id="prptExmnCount" resultType="business.com.biz.service.BizMngVO">
+		SELECT
+		    COUNT(*) AS "prptCount"
+        FROM TB_PRPT_EXMN_PLAN A
+        WHERE 1 = 1
+        AND A.BIZ_AREA_CD   = #{bizAreaCd}
+        AND A.BIZ_ODER      = #{bizOder}
+	</select>	
+	
+	    <!-- 사업관리 - 사업차수 확인-->
+	<select id="oderCount" resultType="business.com.biz.service.BizMngVO">
+ 	     SELECT COUNT(*) AS "oderCount"
+	     FROM TB_BIZ_ODER 
+	     WHERE 1 = 1
+	     AND BIZ_USE_YN    = 'Y'
+	     AND BIZ_AREA_CD = #{bizAreaCd}          
+		
+	</select>
+	
+    <!-- 사업관리 - 전체 사업 차수삭제 -->
+	<update id="allDeleteBizOder" parameterType="business.com.biz.service.BizMngVO">
+	    UPDATE TB_BIZ_ODER SET   
+	             BIZ_USE_YN  ='N'
+	           , MDFR_NO     = #{mdfrNo}
+               , MDFCN_YMD   = SYSDATE   
+         WHERE 
+                 BIZ_AREA_CD = #{bizAreaCd} 
+         AND     BIZ_USE_YN  = 'Y'           
+		
+	</update>
+		
+    <!-- 사업관리 - 사업 삭제 -->
+	<update id="allDeleteBiz" parameterType="business.com.biz.service.BizMngVO">
+	    UPDATE TB_BIZ_MNG SET   
+	             USE_YN    ='N'
+	           , MDFR_NO   = #{mdfrNo}
+               , MDFCN_YMD = SYSDATE   
+         WHERE 
+                 BIZ_AREA_CD = #{bizAreaCd} 
+         AND     USE_YN    = 'Y'           
+		
+	</update>		
+	<!-- 사업관리 - 사업차수 삭제 중 해당사업의 차수가 예비조사 계획의 유뮤 확인 -->
+	<select id="allPrptExmnCount" resultType="business.com.biz.service.BizMngVO">
+		SELECT
+		    COUNT(*) AS "prptCount"
+        FROM TB_PRPT_EXMN_PLAN A
+        WHERE 1 = 1
+        AND A.BIZ_AREA_CD   = #{bizAreaCd}
+    
+	</select>			
+</mapper>

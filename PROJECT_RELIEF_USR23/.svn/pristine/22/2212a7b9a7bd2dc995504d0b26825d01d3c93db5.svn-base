@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="JoinInfo">
+
+    <!-- 로그인시 사용자정보 조회 -->
+    <!--
+    TODO. 2021.10.06 비밀번호 유효기한 체크시 필요한 칼럼이나 개발시엔 임시로 주석처리함
+	TRUNC(SYSDATE) - TRUNC(TO_DATE(NVL(NVL(U.PSWD_CHG_YMD, TO_CHAR(U.REG_YMD,'yyyymmdd'))  ,'20000101') ,'yyyymmdd')) AS "diffDays",
+	TRUNC(SYSDATE) - TRUNC(TO_DATE(NVL(U.PSWD_NEXT_YMD, TO_CHAR(SYSDATE,'yyyymmdd')),'yyyymmdd')) AS "diffNextDays"
+     -->
+
+    <!-- 사용자정보 등록 -->
+    <insert id="JoinUserAgree" parameterType="business.sys.user.service.UserInfoVO">
+        <selectKey keyProperty="userNo" resultType="string" order="BEFORE">
+            SELECT SEQ_USER.nextval FROM DUAL
+        </selectKey>
+        INSERT
+          INTO TB_USER
+             ( USER_NO,
+               USER_ID,
+               USER_NM,
+               PSWD,
+               EML_ADDR,
+               TELNO,
+               MBTEL_NO,
+               BRDT,
+               ZIP,
+               ADDR,
+               DADDR,
+               SXDST,
+               DEPT_CD,
+               DEPT_NM,
+               JOIN_YMD,
+               USE_STUS_CD,
+               TEST_USE_YN,
+               RGTR_NO,
+               REG_YMD,
+               MBTEL_RCPTN_AGRE_YN
+             )
+        VALUES
+             ( #{userNo},
+               #{userId},
+               #{userNm},
+               SCP.HASH_B64('73',#{pswd}),
+               #{emlAddr},
+               #{telno},
+               #{mbtelNo},
+               #{brdt},
+               #{zip},
+               #{addr},
+               #{daddr},
+               #{sxdst},
+               #{deptCd},
+               #{deptNm},
+               to_char(sysdate,'yyyymmdd'),
+               NVL(#{useStusCd},'1'),
+               NVL(#{testUseYn},'N'),
+               #{gsUserNo},
+               SYSDATE,
+               #{mbtelRcptnAgreYn}
+             )
+    </insert>
+
+	<!-- 사용자아이디 중복체크 -->
+    <select id="existUserId" resultType="int" parameterType="string">
+        SELECT COUNT(*)
+          FROM TB_USER A
+         WHERE USER_ID = #{userId}
+    </select>
+
+    <!-- 권한 등록 -->
+    <insert id="regiRoleUser" parameterType="business.sys.role.service.RoleVO">
+		INSERT INTO SYS_ROLE_USER
+		(
+			ROLE_ID,
+			USER_NO,
+			RGTR_NO,
+			REG_YMD
+		)
+		VALUES
+		(
+			#{roleId},
+			#{userNo},
+			#{gsUserNo},
+			SYSDATE
+		)
+	</insert>
+
+	 <!-- 역할별사용자 등록여부 확인 -->
+    <select id="existRoleUser" parameterType="business.sys.role.service.RoleVO" resultType="int">
+    	SELECT COUNT(*)
+    	  FROM SYS_ROLE_USER
+         WHERE ROLE_ID = #{roleId}
+           AND USER_NO = #{userNo}
+    </select>
+
+
+    <select id="openMypage" resultType="business.sys.user.service.UserInfoVO">
+    	SELECT
+			FN_FMT_DATA('TEL', TELNO)				AS "telno"
+		,	FN_FMT_DATA('TEL', MBTEL_NO)			AS "mbtelNo"
+  		,	REGEXP_SUBSTR(EML_ADDR, '[^@]+', 1, 1)	AS "eml"
+    	,	REGEXP_SUBSTR(EML_ADDR, '[^@]+', 1, 2)	AS "domain"
+		,	A.USER_NO								AS "userNo"
+		, 	A.USER_ID								AS "userId"
+		, 	A.USER_NM								AS "userNm"
+		, 	A.ZIP									AS "zip"
+		, 	A.ADDR									AS "addr"
+		, 	A.DADDR									AS "daddr"
+		, 	SUBSTR (A.BRDT,1,4)						AS "bryy"
+		, 	SUBSTR (A.BRDT,5,2)						AS "brmm"
+		, 	SUBSTR (A.BRDT,7,2)						AS "brdd"
+		,   A.MBTEL_RCPTN_AGRE_YN                   AS "mbtelRcptnAgreYn"
+	FROM   TB_USER A
+		WHERE A.USER_NO = #{userNo}
+    </select>
+
+    <update id="updateMyInfo" parameterType="business.sys.user.service.UserInfoVO">
+    	UPDATE TB_USER
+           SET
+               <!-- PSWD        = SCP.HASH_B64('73',#{pswd}), -->
+               EML_ADDR    = #{emlAddr},
+               TELNO       = #{telno},
+               ZIP         = #{zip},
+               ADDR        = #{addr},
+               DADDR       = #{daddr},
+               MDFCN_YMD   = SYSDATE,
+               MBTEL_RCPTN_AGRE_YN = #{mbtelRcptnAgreYn}
+         WHERE USER_NO     = #{userNo}
+    </update>
+
+	<select id="searchInfoIntrlck" parameterType="business.sys.user.service.InfoIntrlckVO" resultType="java.util.HashMap">
+		SELECT
+			IDNTFC_ID							AS "idntfcId"
+			, SUFRER_NM							AS "sufrerNm"
+			, 	SUBSTR (SUFRER_BRDT,1,4)		AS "bryy"
+			, 	SUBSTR (SUFRER_BRDT,5,2)		AS "brmm"
+			, 	SUBSTR (SUFRER_BRDT,7,2)		AS "brdd"
+		FROM
+			TB_IDNTFC
+		WHERE
+			SUFRER_NM = #{sufrerNm}
+		AND
+			SCP.DEC_B64('KEY1',SUFRER_RRNO) = #{sufrerRrno}
+		AND
+			SUFRER_MBTEL_NO = #{sufrerMbtelNo}
+	</select>
+
+	<insert id="regiInfoIntrlck" parameterType="business.sys.user.service.InfoIntrlckVO">
+    	<selectKey keyProperty="aplyNo" resultType="string" order="BEFORE">
+    		SELECT 'I' || SUBSTR(SYSDATE, 3,2) || LPAD(SEQ_INFO_INTRLCK.NEXTVAL || '', 7, '0')  FROM DUAL
+    	</selectKey>
+        INSERT
+          INTO TB_INFO_INTRLCK
+             ( APLY_NO,
+               INTRLCK_SE_CD,
+               APLCNT_NO,
+               TRPR_NM,
+               TRPR_IDNTFC_ID,
+               TRPR_BRDT,
+               TELNO,
+               MBTEL_NO,
+               APLY_YMD,
+               REG_YMD,
+               PRGRE_STUS_CD
+             )
+        VALUES
+             ( #{aplyNo},
+               #{intrlckSeCd},
+               #{aplcntNo},
+               #{trprNm},
+               #{trprIdntfcId},
+               #{trprBrdt},
+               #{telNo},
+               #{mbtelNo},
+               TO_CHAR(SYSDATE,'YYYYMMDD'),
+               TO_CHAR(SYSDATE,'YYYYMMDD'),
+               '01'
+             )
+    </insert>
+    
+    <!-- 중복가입자 체크 -->
+    <select id="checkJoinUser" resultType="boolean" parameterType="business.sys.user.service.UserInfoVO">
+        SELECT COUNT(*)
+          FROM TB_USER A
+         WHERE USER_ID = #{userId}
+    </select>
+
+    <!-- 2022.11.09 ntarget : 회원탈퇴처리 -->
+    <update id="updtMembWithdraw" parameterType="business.sys.user.service.UserInfoVO">
+       <!-- 
+        UPDATE TB_USER
+           SET USER_NM              = ''
+             , PSWD                 = ''
+             , EML_ADDR             = ''
+             , TELNO                = ''
+             , MBTEL_NO             = ''
+             , BRDT                 = ''
+             , ZIP                  = ''
+             , ADDR                 = ''
+             , DADDR                = ''
+             , SXDST                = ''
+             , DEPT_CD              = ''
+             , DEPT_NM              = ''
+             , EMPL_NO              = ''
+             , JOIN_YMD             = ''
+             , CNTN_PSBL_IP_ADDR    = ''
+             , PSWD_LOCK_YMD        = ''
+             , PSWD_ERR_CNT         = 0
+             , PSWD_CHG_YMD         = ''
+             , PSWD_NEXT_YMD        = ''
+             , LST_LGN_DT           = null
+             , MBTEL_RCPTN_AGRE_YN  = ''
+             , USE_STUS_CD          = '9'
+             , WHDWL_YMD            = TO_CHAR(SYSDATE,'YYYYMMDD')
+             , MDFR_NO              = #{userNo}
+             , MDFCN_YMD            = SYSDATE
+         WHERE USER_NO      = #{userNo}             
+          -->
+        UPDATE TB_USER          
+           SET USE_STUS_CD          = '9'
+             , WHDWL_YMD            = TO_CHAR(SYSDATE,'YYYYMMDD')
+             , MDFR_NO              = #{userNo}
+             , MDFCN_YMD            = SYSDATE
+         WHERE USER_NO      = #{userNo}
+    </update>
+</mapper>
