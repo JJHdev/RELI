@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AuthProgMenu">
+
+    <!-- 프로그램 정보 -->
+    <select id="getProgInfo" resultType="java.util.HashMap" parameterType="java.util.Map">
+        SELECT PROG_ID                                              AS "progId"
+             , PROG_NM                                              AS "progNm"
+             , PROG_URL                                             AS "progUrl"
+             , PROG_TY                                              AS "progTy"
+             , MENU_ID                                              AS "menuId"
+             , NVL((SELECT MENU_NM
+                    FROM   SYS_MENU
+                    WHERE  MENU_ID = A.MENU_ID), PROG_NM)           AS "titleNm"
+             --, PROG_NM                                            AS "titleNm"
+             , PROG_ORDR                                            AS "progOrdr"
+             , REGEXP_SUBSTR(B.MENU_ID_PATH, '[^,]+', 1, 1)         AS "firstMenuId"
+             , REGEXP_SUBSTR(B.MENU_NM_PATH, '[^,]+', 1, 1)         AS "firstMenuNm"
+             , REGEXP_SUBSTR(B.MENU_ID_PATH, '[^,]+', 1, 2)         AS "secondMenuId"
+             , REGEXP_SUBSTR(B.MENU_NM_PATH, '[^,]+', 1, 2)         AS "secondMenuNm"
+             , REGEXP_SUBSTR(B.MENU_ID_PATH, '[^,]+', 1, 3)         AS "thirdMenuId"
+             , REGEXP_SUBSTR(B.MENU_NM_PATH, '[^,]+', 1, 3)         AS "thirdMenuNm"
+             , B.MENU_NM_PATH                                       AS "menuPath"
+             , B.URL_PATH                                           AS "urlPath"
+             , LPAD((SELECT MENU_LVL
+                       FROM SYS_MENU
+                      WHERE MENU_ID     = A.MENU_ID
+                        AND ROWNUM      = 1), 2, '0')               AS "menuIcon"
+          FROM (SELECT *
+                  FROM SYS_PROG
+                 <!-- 2022.01.09 URL querystring 으로 넘어올경우 대비 조건변경 (이전코드: PROG_URL like #{url}||'%' ) --> 
+                 WHERE REGEXP_LIKE( #{url} , PROG_URL || '*' )
+                   AND PROG_TY     = 'url'
+                   AND USE_YN      = 'Y'
+                   AND ROWNUM      = 1 ) A
+             , (SELECT SUBSTR(MAX(SYS_CONNECT_BY_PATH(TRIM(MENU_ID), ',')), 2)     AS MENU_ID_PATH
+                     , SUBSTR(MAX(SYS_CONNECT_BY_PATH(TRIM(MENU_NM), ',')), 2)     AS MENU_NM_PATH
+                     , SUBSTR(MAX(SYS_CONNECT_BY_PATH(TRIM(TRGT_URL), ',')), 2)    AS URL_PATH
+                  FROM (SELECT ROWNUM num
+                             , MENU_ID
+                             , MENU_NM
+                             , TRGT_URL
+                          FROM (SELECT MENU_ID
+                                     , MENU_NM
+                                     , TRGT_URL
+                                  FROM SYS_MENU A
+                               CONNECT BY PRIOR UP_MENU_ID = MENU_ID
+                                 START WITH MENU_ID = (SELECT DISTINCT MENU_ID
+                                                         FROM SYS_PROG
+                                                        <!-- 2022.01.09 URL querystring 으로 넘어올경우 대비 조건변경 (이전코드: PROG_URL like #{url}||'%' ) -->
+                                                        WHERE REGEXP_LIKE( #{url} , PROG_URL || '*' )
+                                                          AND USE_YN    = 'Y')
+                                 ORDER BY ROWNUM DESC ) )
+                 START WITH num = 1
+               CONNECT BY PRIOR num = num - 1 ) B
+         WHERE ROWNUM = 1
+    </select>
+
+    <!-- 탑메뉴, 좌측메뉴 정보 -->
+    <select id="getMenuList" resultType="java.util.HashMap" parameterType="java.util.Map">
+        SELECT DISTINCT
+               A.MENU_ID                                           AS "menuId"
+             , A.UP_MENU_ID                                        AS "upMenuId"
+             , A.MENU_LVL                                          AS "menuLvl"
+             , A.MENU_ORDR                                         AS "menuOrdr"
+             , TRIM(A.MENU_NM)                                     AS "menuNm"
+             , TRIM(A.TRGT_URL)                                    AS "trgtUrl"
+             , A.POPUP_YN                                          AS "popupYn"
+             , LEVEL                                               AS "level"
+             , REGEXP_SUBSTR(SUBSTR(SYS_CONNECT_BY_PATH(TRIM(A.MENU_ID), ','), 2),'[^,]+', 1, 1) AS "firstMenuId"
+             , CASE WHEN MAX(MENU_LVL) OVER() = MENU_LVL THEN 'true'
+               ELSE 'false'
+               END                                                 AS "isLast"
+             , DECODE(CONNECT_BY_ISLEAF, 0, 1, 0)                  AS "isSubLast"
+             , LEAD(A.MENU_LVL, 1,0) OVER(ORDER BY A.MENU_LVL, A.MENU_ORDR)      AS "nextMenuLvl"
+          FROM (
+                SELECT sm.*, srm.ROLE_ID
+                  FROM SYS_MENU sm
+                     , SYS_ROLE_MENU srm
+                     , SYS_ROLE sr
+                 WHERE sm.USE_YN       = 'Y'
+                   AND sm.SYS_SE_CD    = #{sysCd}
+                   AND sm.MENU_ID      = srm.MENU_ID
+                   /*AND sm.MENU_LVL     <![CDATA[<=]]> 10*/
+                   AND srm.ROLE_ID     = sr.ROLE_ID
+                   AND srm.ROLE_ID IN (
+                                        SELECT REGEXP_SUBSTR(ALL_ROLL_ID, '[^,]+', 1, LEVEL)    AS ROLE_ID
+                                          FROM (
+                                                SELECT #{roleId}  AS ALL_ROLL_ID
+                                                  FROM DUAL
+                                               )
+                                       CONNECT BY LEVEL <![CDATA[<=]]> LENGTH(REGEXP_REPLACE(ALL_ROLL_ID, '[^,]+')) + 1
+                                       )
+                ) A
+          WHERE 
+        <if test="@common.util.CommUtils@isEmpty(menuLvl)"   > LEVEL <![CDATA[<=]]> 3 </if>
+        <if test="@common.util.CommUtils@isNotEmpty(menuLvl)"> LEVEL <![CDATA[<=]]> #{menuLvl} </if>
+        <if test="@common.util.CommUtils@isNotEmpty(notId)">
+            AND A.MENU_ID <![CDATA[<>]]> #{notId}
+        </if>
+        CONNECT BY PRIOR A.MENU_ID = A.UP_MENU_ID
+          START WITH 
+        <if test="@common.util.CommUtils@isEmpty(upMenuId)"   > A.UP_MENU_ID  = 'NONE' </if>
+        <if test="@common.util.CommUtils@isNotEmpty(upMenuId)"> A.UP_MENU_ID  = #{upMenuId} </if>
+          ORDER BY A.MENU_LVL, A.MENU_ORDR
+    </select>
+
+</mapper>

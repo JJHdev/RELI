@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="DmgeGrd">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(dmgeGrdYr)">
+            AND A.DMGE_GRD_YR = #{dmgeGrdYr}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(dmgeGrdCd)">
+            AND A.DMGE_GRD_CD = #{dmgeGrdCd}
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.DMGE_GRD_YR                                 AS "dmgeGrdYr",
+        A.DMGE_GRD_CD                                 AS "dmgeGrdCd",
+        A.CRTR_INCOME_AMT                             AS "crtrIncomeAmt",
+        A.SVRTY_BGNG_SCRE                             AS "svrtyBgngScre",
+        A.SVRTY_END_SCRE                              AS "svrtyEndScre",
+        A.GRD_RATE                                    AS "grdRate",
+        A.GRD_AMT                                     AS "grdAmt",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 피해등급관리 목록조회 -->
+    <select id="listDmgeGrd" resultType="java.util.HashMap" parameterType="business.com.exmn.service.DmgeGrdVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_DMGE_GRD_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.DMGE_GRD_YR,
+               A.DMGE_GRD_CD
+    </select>
+    <select id="listDmgeGrdCount" resultType="int" parameterType="business.com.exmn.service.DmgeGrdVO">
+        SELECT COUNT(1) 
+          FROM TB_DMGE_GRD_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 피해등급관리 상세조회 -->
+    <select id="viewDmgeGrd" resultType="business.com.exmn.service.DmgeGrdVO" parameterType="business.com.exmn.service.DmgeGrdVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_DMGE_GRD_MNG  A
+         WHERE DMGE_GRD_YR = #{dmgeGrdYr}
+           AND DMGE_GRD_CD = #{dmgeGrdCd}
+    </select>
+
+    <!-- 피해등급관리 등록 -->
+    <insert id="regiDmgeGrd" parameterType="business.com.exmn.service.DmgeGrdVO">
+        INSERT 
+          INTO TB_DMGE_GRD_MNG 
+             ( DMGE_GRD_YR,
+               DMGE_GRD_CD,
+               CRTR_INCOME_AMT,
+               SVRTY_BGNG_SCRE,
+               SVRTY_END_SCRE,
+               GRD_RATE,
+               GRD_AMT,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{dmgeGrdYr},
+               #{dmgeGrdCd},
+               #{crtrIncomeAmt},
+               #{svrtyBgngScre},
+               #{svrtyEndScre},
+               #{grdRate},
+               #{grdAmt},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 피해등급관리 수정 -->
+    <update id="updtDmgeGrd" parameterType="business.com.exmn.service.DmgeGrdVO">
+        UPDATE TB_DMGE_GRD_MNG 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(crtrIncomeAmt)"> CRTR_INCOME_AMT = #{crtrIncomeAmt},</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(svrtyBgngScre)"> SVRTY_BGNG_SCRE = #{svrtyBgngScre},</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(svrtyEndScre )"> SVRTY_END_SCRE  = #{svrtyEndScre },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(grdRate      )"> GRD_RATE        = #{grdRate      },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(grdAmt       )"> GRD_AMT         = #{grdAmt       },</if>
+  		       MDFCN_YMD   = SYSDATE  
+         WHERE DMGE_GRD_YR = #{dmgeGrdYr}
+           AND DMGE_GRD_CD = #{dmgeGrdCd}
+    </update>
+
+    <!-- 피해등급관리 삭제 -->
+    <delete id="deltDmgeGrd" parameterType="business.com.exmn.service.DmgeGrdVO">
+        DELETE 
+          FROM TB_DMGE_GRD_MNG 
+         WHERE DMGE_GRD_YR = #{dmgeGrdYr}
+           AND DMGE_GRD_CD = #{dmgeGrdCd}
+    </delete> 
+
+    <!-- 피해등급관리 년도별 목록 조회 -->
+    <select id="listDmgeGrdGroup" resultType="java.util.HashMap">
+        SELECT A.DMGE_GRD_YR      AS "dmgeGrdYr",
+               A.CRTR_INCOME_AMT  AS "crtrIncomeAmt",
+               COUNT(*)           AS "dmgeGrdCnt"
+          FROM TB_DMGE_GRD_MNG A
+         GROUP BY
+               A.DMGE_GRD_YR,
+               A.CRTR_INCOME_AMT
+         ORDER BY
+               A.DMGE_GRD_YR,
+               A.CRTR_INCOME_AMT
+    </select>
+
+    <!-- 피해등급관리 년도별 상세조회 -->
+    <select id="viewDmgeGrdGroup" resultType="business.com.exmn.service.DmgeGrdVO" parameterType="business.com.exmn.service.DmgeGrdVO">
+        SELECT DISTINCT
+               A.DMGE_GRD_YR      AS "dmgeGrdYr",
+               A.CRTR_INCOME_AMT  AS "crtrIncomeAmt"
+          FROM TB_DMGE_GRD_MNG    A
+         WHERE A.DMGE_GRD_YR      = #{dmgeGrdYr}
+           AND ROWNUM             = 1
+    </select>
+
+</mapper>

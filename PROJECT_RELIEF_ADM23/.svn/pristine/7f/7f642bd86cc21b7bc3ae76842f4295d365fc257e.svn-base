@@ -1,0 +1,137 @@
+/* EBI-퍼블리싱 */
+@import url("reset.css");
+@import url("common.css");
+@import url("common-ani.css");
+@import url("layerpopup.css");
+@import url("layout.css");
+@import url("design.css");
+@import url("design_new.css");
+@import url("ol.css");
+@import url("main.css");
+
+/* 사이드바 */
+.sidenav {
+  background-color: #f1f1f1;
+  position: fixed;
+  width: 280px;
+  height: calc(100vh - 135px);
+  margin-left: 0;
+  /* margin-top:50px; */
+  /* padding-bottom:120px; */
+  overflow-y:auto; 
+  z-index: 1020; /* 2022.01.03 LSH 레이어 겹침 조정 */
+  transition:all .3s;
+}
+/* 본문 */
+.page {
+ /* margin-top:50px; */
+ margin-left: 280px;
+ padding:20px 30px;
+ transition:all .3s;
+}
+
+/* footer */
+footer {
+  background-color: #555;
+  color: white;
+  padding: 15px;
+}
+.page-title{
+	font-size: 20px; 
+	font-weight: bold; 
+	color: green; 
+	padding: 10px 0;
+}
+.content-title {font-size: 20px; font-weight: bold; color: green; padding: 10px 0; }
+.content-body  {margin: 10px 0 10px 20px;}
+
+
+.search-form     { display: flex; width: 100%; }
+.search-form .search-label  { float: left; padding-left:10px; font-weight:600; margin-top:3px; }
+.search-form .search-column { float: left; padding-left:10px; padding-right: 10px; }
+.search-form .search-button {  padding-left:10px; text-align: right; }
+.page-title      {font-size: 20px; font-weight: bold; color: green; padding: 10px 0;}
+
+.page-form .column-title { padding: 10px; width: 150px; }
+.page-form .column-input { padding: 10px; }
+.inline-column {display: inline; }
+
+.system-form td { padding: 5px; }
+.row-no-padding { margin-left: 0; margin-right: 0;}
+
+
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+
+/* .modal-header { background: #303843; } */
+.modal-header {padding:80px 50px 30px; border-bottom:0;}
+/* .modal-header .bootstrap-dialog-title { font-size: 17px; color: #fff; } */
+.modal-header .bootstrap-dialog-close-button .close { color: #fff; opacity: 1; }
+.modal-content { border-radius: 50px; }
+.modal-body {padding:50px; padding-top:0;}
+.modal-header .bootstrap-dialog-title {font-size:24px; color:#000;font-weight:600; text-align:center;}
+.modal-header .bootstrap-dialog-close-button .close {position:absolute; right:30px; top:30px; width:40px; height:40px; color:#000;}
+/* .modal-header .bootstrap-dialog-close-button .close {position:absolute; right:30px; top:30px; width:40px; height:40px;background:url(../../design/usr/images/common/i-close.svg)center /10px no-repeat;} */
+
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+/* ******************************************************************************************* */
+
+body {background:#F2F6FA}
+
+/* ****************** header *************** */
+
+.userInfo {float:right;padding-top:20px;}
+/* .userInfo {position:absolute; right:30px; top:20px;} */
+.userInfo p {display:inline-block; vertical-align:middle; font-size:400; font-size:12px; color:#fff;line-height:40px;}
+.userInfo p.usr {padding:0 15px 0 48px; background:url(../../images/common/i-usr.svg)0 50% no-repeat;}
+.userInfo p b {font-weight:600; font-size:18px; line-height:1;}
+.userInfo p a {display:block; width:80px; height:28px; line-height:26px; font-size:13px; font-weight:500; color:#fff; border:1px solid; border-radius:15px; text-align:center;}
+
+.textbox-button {width:65px; height:35px; line-height:35px; color:#fff !important; background-color:#96D019 !important; border:0; border-radius:5px; vertical-align:middle; font-size:13px; font-weight:500;}
+.textbox-button.blue {background-color:#2E68FF;}
+.textbox-button.black {background-color:#000;}
+
+.sidenav {background:#fff;}
+.navbar-inverse {min-height:80px; background:#1E7BA9; position:fixed; margin-bottom:0; border:0;}
+.navbar-inverse .navbar-brand {margin-left:0 !important; height:auto; padding:18px 0 0;}
+ul.nav-menu-list-style .nav-header {padding:0 20px; cursor:pointer; position:relative; font-size:18px; line-height:50px;}
+ul.nav-menu-list-style .nav-header .menu-collapsible-icon {right:20px; top:50%; transform:translateY(-50%);}
+ul.nav-menu-list-style .nav-header .menu-collapsible-icon:before {font-size:14px;}
+ul.nav-menu-list-style .nav-header.on .menu-collapsible-icon {transform:translateY(-50%) rotate(180deg);}
+ul.nav-menu-list-style> li a {font-size:16px; line-height:42px; padding:0 20px 0 40px; color:#1E7BA9;}
+
+.btn.right {position:absolute; right:0; bottom:10px;}
+
+/* =================== 2022.10.04 (세션 남은시간) ========================== */
+.sessionInfo {display:inline-block; float:right; padding-top:30px; padding-right:30px; vertical-align:middle; font-size:15px; color:#fff;line-height:40px;}
+.sessionInfo .leftTimeInfo {color: #9dff9d;}
+.sessionInfo a {color:#00d500; padding-left:10px; }
+
+/* =================== 2022.12.13 Sidebar Folding Design ========================== */
+.sidebtn {
+	position:fixed; left:280px; top:50%; transform:translateY(-50%);
+	background:#fff; border-radius:0 5px 5px 0; width:25px; height:50px;
+	border-left:1px solid #e5e5e5; transition:all .3s;
+	box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+.sidebtn img {width:100%; height:100%; object-fit:scale-down; transform:rotate(-180deg)}
+.sidenav.on {transform:translateX(-100%);}
+.sidebtn.on {left:0;}
+.sidebtn.on img {transform:rotate(0);}
+
+.page.on {margin-left:0;}
+
+/* =================== 2023.01.16 신청서류화면 ========================== */
+.tabWrap.type3 ul li {float:left; box-shadow:0 0 4px rgba(0,0,0,.1); white-space:nowrap;}
+.tabWrap.type3 ul.li-8 li {width:calc((100% - 60px)/7);}
+

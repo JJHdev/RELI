@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="32px" height="38.75px" viewBox="0 0 32 38.75" enable-background="new 0 0 32 38.75" xml:space="preserve">
+<path fill="#D7D6D6" d="M20,34.5c0,1.934-1.791,3.5-4,3.5s-4-1.566-4-3.5s1.791-3.5,4-3.5S20,32.566,20,34.5"/>
+<ellipse fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" cx="16" cy="34.5" rx="4" ry="3.5"/>
+<path fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" d="M26,16
+	c0-5.523-4.477-10-10-10C10.478,6,6,10.477,6,16c0,3.699,2.014,6.921,5,8.65V29h10v-4.35C23.986,22.921,26,19.699,26,16z"/>
+<rect x="11" y="29" fill="#D7D6D6" width="10" height="3"/>
+<rect x="11" y="29" fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" width="10" height="3"/>
+<rect x="11" y="32" fill="#D7D6D6" width="10" height="3"/>
+<rect x="11" y="32" fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" width="10" height="3"/>
+<line fill="none" x1="16" y1="3" x2="16" y2="0"/>
+<line fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" x1="16" y1="3" x2="16" y2="0"/>
+<line fill="none" x1="6.808" y1="6.808" x2="4.687" y2="4.687"/>
+<line fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" x1="6.808" y1="6.808" x2="4.687" y2="4.687"/>
+<line fill="none" x1="3" y1="16" x2="0" y2="16"/>
+<line fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" x1="3" y1="16" x2="0" y2="16"/>
+<line fill="none" x1="6.808" y1="25.191" x2="4.687" y2="27.313"/>
+<line fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" x1="6.808" y1="25.191" x2="4.687" y2="27.313"/>
+<line fill="none" x1="25.191" y1="25.191" x2="27.314" y2="27.313"/>
+<line fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" x1="25.191" y1="25.191" x2="27.314" y2="27.313"/>
+<line fill="none" x1="29" y1="16" x2="32" y2="16"/>
+<line fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" x1="29" y1="16" x2="32" y2="16"/>
+<line fill="none" x1="25.191" y1="6.808" x2="27.314" y2="4.687"/>
+<line fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" x1="25.191" y1="6.808" x2="27.314" y2="4.687"/>
+<path fill="#FFFFFF" d="M16,10c3.314,0,6,2.687,6,6"/>
+<path fill="none" stroke="#000000" stroke-width="1.5" stroke-linejoin="bevel" stroke-miterlimit="10" d="M16,10
+	c3.314,0,6,2.687,6,6"/>
+</svg>

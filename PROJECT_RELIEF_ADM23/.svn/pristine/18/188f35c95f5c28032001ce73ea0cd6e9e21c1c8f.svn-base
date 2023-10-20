@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Menu">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchSysCd)">
+            AND A.SYS_SE_CD = #{srchSysCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchNotId)">
+            AND A.MENU_ID <![CDATA[<>]]> #{srchNotId}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchUpId)">
+            AND(A.MENU_ID    = #{srchUpId}
+             OR A.UP_MENU_ID = #{srchUpId})
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchText)">
+            AND(A.MENU_ID  LIKE '%' || #{srchText} || '%'
+             OR A.MENU_NM  LIKE '%' || #{srchText} || '%'
+             OR A.TRGT_URL LIKE '%' || #{srchText} || '%')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRoleId)">
+            AND NOT EXISTS (
+                SELECT 1
+                  FROM SYS_ROLE_MENU
+                 WHERE MENU_ID = A.MENU_ID
+                   AND ROLE_ID = #{srchRoleId}
+                )
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+		A.MENU_ID                                      AS "menuId",
+        A.UP_MENU_ID                                   AS "upMenuId",
+        A.MENU_NM                                      AS "menuNm",
+        A.MENU_LVL                                     AS "menuLvl",
+        A.MENU_ORDR                                    AS "menuOrdr",
+        A.TRGT_URL                                     AS "trgtUrl",
+        A.POPUP_YN                                     AS "popupYn",
+        A.USE_YN                                       AS "useYn",
+        A.SYS_SE_CD                                    AS "sysCd",
+        FN_GET_CODENM('CT003', A.SYS_SE_CD)            AS "sysNm",
+        A.RGTR_NO                                      AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        A.MDFR_NO                                      AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+    </sql>
+
+    <!-- 메뉴관리 목록조회 -->
+    <select id="listMenu" resultType="java.util.HashMap" parameterType="business.sys.menu.service.MenuVO">
+        SELECT LEVEL-1   AS "level",
+               A.MENU_ID AS "code",
+               A.MENU_NM AS "text",
+               <include refid="Sql-Column"/>
+          FROM SYS_MENU A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+       CONNECT BY PRIOR A.MENU_ID    = A.UP_MENU_ID
+         START WITH     A.UP_MENU_ID = 'NONE'
+         ORDER BY A.MENU_LVL, A.MENU_ORDR
+    </select>
+    
+    <select id="listMenuCount" resultType="int" parameterType="business.sys.menu.service.MenuVO">
+        SELECT COUNT(1) 
+          FROM SYS_MENU A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 메뉴관리 상세조회 -->
+    <select id="viewMenu" resultType="business.sys.menu.service.MenuVO" parameterType="business.sys.menu.service.MenuVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM SYS_MENU A
+         WHERE MENU_ID = #{menuId}
+    </select>
+
+    <!-- 메뉴관리 등록 -->
+    <insert id="regiMenu" parameterType="business.sys.menu.service.MenuVO">
+        INSERT 
+          INTO SYS_MENU 
+             ( MENU_ID,
+               UP_MENU_ID,
+               MENU_NM,
+               MENU_LVL,
+               MENU_ORDR,
+               TRGT_URL,
+               POPUP_YN,
+               SYS_SE_CD,
+               USE_YN,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( UPPER(#{menuId}),
+               UPPER(NVL(#{upMenuId}, 'NONE')),
+               #{menuNm},
+               #{menuLvl},
+               NVL(#{menuOrdr}, (
+                   SELECT NVL(MAX(B.MENU_ORDR), 0) + 1
+                     FROM SYS_MENU B
+                    WHERE UP_MENU_ID = UPPER(NVL(#{upMenuId}, 'NONE'))
+               )),
+               #{trgtUrl},
+               NVL(#{popupYn}, 'N'),
+               #{sysCd},
+               NVL(#{useYn}, 'Y'),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 메뉴관리 수정 -->
+    <update id="updtMenu" parameterType="business.sys.menu.service.MenuVO">
+        UPDATE SYS_MENU 
+           SET UP_MENU_ID           = UPPER(NVL(#{upMenuId}, 'NONE')),
+               MENU_NM              = #{menuNm},
+               MENU_LVL             = #{menuLvl},
+               MENU_ORDR            = NVL(#{menuOrdr}, (
+                                          SELECT NVL(MAX(B.MENU_ORDR), 0) + 1
+                                            FROM SYS_MENU B
+                                           WHERE UP_MENU_ID = UPPER(NVL(#{upMenuId}, 'NONE'))
+                                      )),
+               TRGT_URL             = #{trgtUrl},
+               POPUP_YN             = NVL(#{popupYn}, 'N'),
+               USE_YN               = NVL(#{useYn},   'Y'),
+               SYS_SE_CD            = #{sysCd},
+               MDFR_NO              = #{gsUserNo},
+               MDFCN_YMD            = SYSDATE
+         WHERE MENU_ID = #{menuId}
+    </update>
+
+    <!-- 메뉴관리 삭제 -->
+    <delete id="deltMenu" parameterType="business.sys.menu.service.MenuVO">
+        DELETE 
+          FROM SYS_MENU 
+         WHERE MENU_ID = #{menuId}
+    </delete> 
+
+    <!-- 메뉴 중복확인(하위코드) -->
+    <select id="confLowerMenu" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+          FROM SYS_MENU
+         WHERE UP_MENU_ID = #{menuId}
+    </select>
+
+    <!-- 메뉴 팝업 조회 -->
+    <select id="getListMenuPopup" parameterType="business.sys.menu.service.MenuVO" resultType="java.util.HashMap">
+        SELECT A.MENU_ID                            AS "menuId"
+             , A.MENU_NM                            AS "menuNm"
+             , SUBSTR(SYS_CONNECT_BY_PATH(TRIM(A.MENU_NM), ' > '), 4) AS "menuPath"
+             , FN_GET_CODENM('CT006', A.SYS_SE_CD)  AS "sysNm"
+             , A.TRGT_URL                           AS "trgtUrl"
+             , LEVEL-1                              AS "Level"
+          FROM SYS_MENU A
+         WHERE 0 = 0
+           AND SYS_SE_CD          = #{sysCd}
+       CONNECT BY PRIOR A.MENU_ID = A.UP_MENU_ID
+         START WITH A.UP_MENU_ID  = 'NONE'
+         ORDER SIBLINGS BY A.MENU_LVL, A.MENU_ORDR
+    </select>
+    
+</mapper>

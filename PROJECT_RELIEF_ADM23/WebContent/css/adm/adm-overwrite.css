@@ -1,0 +1,317 @@
+@charset "utf-8";
+
+/* 개발관련 사용자정의 css */
+.app-blue-btn {padding: 0 20px;color:#fff !important;background-color:#012863 !important; border-radius: 5px;font-size: 15px;font-weight: 500; margin-left: 10px; margin-right: 10px;}
+.app-term-btn+label { width: 60px; padding-left: 15px !important; }
+.app-term-date  { width: 210px; }
+.app-term-month { width:  87px; margin-left:2px; }
+.app-term-year  { width: 121px; }
+.app-term-year0 { width: 210px; }
+.formLayout .cal .cal-date input { padding-right: 0 !important; }
+
+.app-term-radio { width: 100px !important; }
+.app-term-radio label {cursor:pointer;}
+.app-term-radio input[type='text'] {-webkit-appearance: none; border:1px solid #e5e5e5;}
+.app-term-radio input[type='radio'] {position:absolute; left:-999999px;}
+.app-term-radio input[type='radio']+label {display:inline-block;margin-right:15px; color:#000; line-height:35px; padding-left:30px; background:url(../../images/common/agree.svg)0 50% /15px no-repeat; cursor:pointer;}
+.app-term-radio input[type='radio']:checked+label {background-image:url(../../images/common/agree-on.svg);}
+.app-term-radio input[type='radio']+label:last-child {margin:0;}
+
+.app-search-layout {padding:20px; border-radius:10px; background:#F1F3F9;}
+.app-search-label  {width:auto !important; padding-right:10px; }
+
+.app-form-layout {position:relative;}
+.app-form-layout label {cursor:pointer;}
+.app-form-layout input[type="text"].w100 {width:100%;}
+.app-form-layout textarea.w100 {width:100%;}
+.app-form-layout button,
+.app-form-layout input[type="text"],
+.app-form-layout input[type="password"] {padding:0 10px; height:35px; line-height:33px; border-radius:5px; border:1px solid #D4D4D4;background-color:#fff; color:#484848;}
+.app-form-layout input[type="checkbox"]+label,
+.app-form-layout input[type="radio"]+label {line-height:33px; padding-right:10px;}
+.app-form-layout textarea {border-radius:5px; border:1px solid #D4D4D4;background-color:#fff; color:#484848;}
+.app-form-layout .formGroup {padding:5px 0;}
+.app-form-layout .formGroup.middle>*{vertical-align:middle;}
+.app-form-layout .formGroup.top>*{vertical-align:top;}
+.app-form-layout .formGroup p {display:inline-block; padding-left:10px; width:150px; color:#171717; font-size:15px; font-weight:500;}
+.app-form-layout .formGroup span.label {display:inline-block; padding-left:10px; color:#171717; font-size:15px; font-weight:500; line-height:1.2;}
+.app-form-layout .formGroup .inputWrap {display:inline-block;}
+.app-form-layout .formGroup .inputWrap span {display:inline-block;padding:0 20px;color:#171717; font-size:15px; font-weight:500;}
+.app-form-layout .formGroup .inputWrap span.bar {padding:0; width:20px; color:#ABB8BC; font-size:15px; font-weight:500; text-align:center;}
+.app-form-layout .formGroup .inputWrap+.inputWrap {margin-left:30px ;}
+.app-form-layout .formGroup .inputWrap .btn {padding:0 20px; color:#fff; background:#96D019; border:0;}
+.app-form-layout .formGroup .inputWrap .btn.blue {background:#2E68FF;}
+.app-form-layout .formGroup .inputWrap .btn.black {background:#000;}
+.app-form-layout .cal>div {display:inline-block;}
+.app-form-layout .cal .cal-date {position:relative;}
+.app-form-layout .cal .cal-date input {padding-right:40px;}
+.app-form-layout .cal .cal-date input::disabled {background:inherit;}
+.app-form-layout .cal .cal-date a {position:absolute; right:0; top:0;width:35px; height:100%; background:url(../../images/common/i-cal.svg)center no-repeat;}
+.app-form-layout .btnCheck input[type="radio"],
+.app-form-layout .btnCheck input[type="checkbox"] {position:absolute; left:-999999999px;}
+.app-form-layout .btnCheck input[type="radio"]+label,
+.app-form-layout .btnCheck input[type="checkbox"]+label {padding:10px 15px; font-size:13px; font-weight:500; color:#BCC7CA; border:1px solid; border-radius:5px; line-height:1; cursor:pointer; display:inline-block;}
+.app-form-layout .btnCheck input[type="radio"]:checked+label,
+.app-form-layout .btnCheck input[type="checkbox"]:checked+label {color:#2E68FF;}
+
+/*
+.app-search-btn {padding-top:30px;}
+.app-search-btn {text-align:right; }
+.app-search-btn a {display:inline-block; padding:5px 15px; border:1px solid #ddd; background:#1E7BA9; color:#fff; border-radius:8px; text-align:center; }
+.app-search-btn a+a {margin-left:2px;}
+.app-left-menu {float:left; width:270px; height:calc(100vh - 80px); overflow-y:auto;}
+.app-left-menu>ul>li>a {display:block; padding:0 20px 0 30px; line-height:50px; border-bottom:1px solid #e5e5e5; font-size:17px; color:#000;}
+.app-left-menu>ul>li>a:hover {background:#f9f9f9;}
+.app-left-menu>ul>li.on>a {background:#004181;color:#fff;border-color:transparent;}
+.app-left-menu>ul>li>ul {background:#f5f5f5;}
+.app-left-menu>ul>li>ul>li>a {display:block; padding:0 20px 0 50px; line-height:42px; border-bottom:1px solid #e5e5e5; font-size:15px; position:relative;}
+.app-left-menu>ul>li>ul>li>a:before {content:''; display:block; width:3px; height:3px; background:#666; position:absolute; left:40px; top:20px;}
+.app-left-menu>ul>li>ul>li.on>a {color:#004181;}
+.app-left-menu>ul>li>ul>li.on>a:before {background:#004181;}
+*/
+
+/* viewWrap 응용 */
+.app-view         {background-color:#fff; border:1px solid #e5e5e5;}
+.app-view>div     {position:relative; display:table; width:100%; }
+.app-view>div>*   {display:table-cell; vertical-align:middle; padding:10px 20px;}
+.app-view>div+div {border-top:1px solid #e5e5e5;}
+.app-view>div b   {width:150px;font-weight:500; color:#444;text-align:center;background:#f9f9f9;}
+
+
+.app-small-grid .datagrid-toolbar span {padding:0 !important; }
+.app-small-grid .panel-body {font-size: 13px;}
+.app-small-grid .panel-title {font-size: 13px; height: 30px;line-height: 30px;}
+.app-small-grid .datagrid-mask-msg {height: 16px;}
+.app-small-grid .datagrid-empty {height: 30px; line-height: 30px;}
+.app-small-grid .datagrid-btn-separator {height: 30px;}
+.app-small-grid .datagrid-header-row,
+.app-small-grid .datagrid-row { height: 34px;}
+.app-small-grid .datagrid-cell,
+.app-small-grid .datagrid-cell-group,
+.app-small-grid .datagrid-header-rownumber,
+.app-small-grid .datagrid-cell-rownumber { height: 30px; line-height: 30px;  font-size: 13px;}
+.app-small-grid .datagrid-view .datagrid-editable-input { font-size: 13px;}
+.app-small-grid .pagination-btn-separator {height: 30px;}
+.app-small-grid .l-btn-text { line-height: 30px;}
+
+.app-small-grid .l-btn span span .l-btn-empty { height: 30px;}
+.app-small-grid input[type="text"] { height: 30px; line-height:30px; }
+
+.app-edit-grid .datagrid-row-editing .textbox { color: black !important; }
+
+/* 2021.10.25 레이어팝업의 z-index 수정 : 달력 등의 컴포넌트 레이어와의 충돌문제 해결 */
+.layerPop {z-index:110000;}
+/* 사용자 design.css 에서 추가한 CSS */
+.trgtWrap.off {display:none;}
+.tableWrap table {border-collapse:collapse; width: 100%; max-width: 100%; background:#fff; }
+
+/* 구제급여신청관련 START */
+.relief-table input {padding:0 8px;}
+.relief-table input,
+.relief-table textarea,
+.relief-table select {height:30px; line-height:28px; border:1px solid #7A828B; border-radius:5px; font-size:13px;}
+.relief-table select {/*width:100px;*/ padding:0 30px 0 8px; background:#F1F3F9 url(../../images/common/applyArrow.svg)calc(100% - 10px) 50% no-repeat;}
+.relief-table .mark {font-size:10px; color:#7A828B;font-weight:400;}
+.relief-table input[type="checkbox"] {position:absolute; left:-9999999999999px;}
+.relief-table input[type="checkbox"]+label {padding-left:24px; padding-right:15px; background:url(../../images/common/i-check.svg)0 50% no-repeat;}
+.relief-table input[type="checkbox"]:checked+label {background-image:url(../../images/common/i-check-on.svg);}
+.relief-table label:last-child {padding-right:0;}
+.relief-table.tableWrap table tr .th {color:#75818F; font-size:12px; font-weight:400;}
+.relief-table.tableWrap table tr .th b {color:#000; font-size:18px; font-weight:500; display:block;}
+.relief-table td {white-space:nowrap;}
+.relief-table.tableWrap.type1 table tr>*+*{border-left:1px solid #958C8A;}
+.relief-table.tableWrap.type3 table tr {text-align: left; }
+.relief-table .address div+div {margin-top:7px;}
+.relief-table .address div button { width:76px; height:30px; line-height:30px; background:#2D7BE3; border-radius:5px; color:#fff; font-size:14px;}
+.relief-table select[name="email"] {background-color:#fff;}
+/* tableWrap::type4 (2021.11.02) */
+.relief .tableWrap.type4 table {text-align:center;border-top:2px solid #000; }
+.relief .tableWrap.type4 tr {border-bottom:1px solid #958C8A;}
+.relief .tableWrap.type4 tr>* {padding:10px 20px; font-weight:400; color:#000; border-bottom:1px solid #958C8A; border-right:1px solid #958C8A;}
+.relief .tableWrap.type4 tr>*.left {text-align:left;}
+.relief .tableWrap.type4 tr>*:last-child {border-right:0;}
+.relief .tableWrap.type4 thead tr th {color:#000; background:#F1F3F9; font-size:15px; font-weight:600;}
+.relief .tableWrap.type4 tbody tr th {color:#000; background:#F1F1F1; font-size:15px; font-weight:600;}
+
+.relief .filebox {overflow:hidden;}
+.relief .filebox input.upload-name {float:left; width:calc(100% - 160px); border:0; background:transparent;}
+.relief .filebox label {float:right; width:76px;}
+.relief .filebox .del {float:right; width:76px;}
+/* 구제급여신청관련 END */
+
+input[type="checkbox"].app-check {position:relative !important; left:0 !important; }
+/* *** 디자인적용 중 라디오박스 문제 수정 *** */
+.relief input[type="radio"] {position:absolute; left:-9999999999999px;}
+.relief input[type="radio"]+label {margin-right:0; padding-left:24px; padding-right:15px; background:url(../../images/common/input-radio.svg)0 50% /18px no-repeat;}
+.relief input[type="radio"]:checked+label {background-image:url(../../images/common/input-radio-on.svg);}
+.relief input[type="radio"]:checked+label {background-image:url(../../images/common/input-radio-on.svg);}
+.relief input[type=radio].disabled+label  {background-image:url(../../images/common/input-radio-disabled.svg);}
+.relief input[type=radio][disabled]+label {background-image:url(../../images/common/input-radio-disabled.svg);}
+
+/* design.css 에 중복됨
+.apply {padding-bottom:100px; position:relative;}
+.apply .apply-tit {font-size:24px; color:#000; line-height:1; padding-bottom:13px; font-weight:600;}
+.apply .apply-space {height:50px;}
+
+.relief-agree {padding:24px 26px; border:1px solid #ddd; border-radius:20px; position:relative;}
+.relief-agree p {line-height:1.8; font-size:15px; color:#000;}
+.relief-agree div {margin-left:calc(100% - 120px)}
+.relief-agree div input[type="checkbox"] { position:absolute; left:-999999px;}
+.relief-agree div input[type="checkbox"]+label {display:block; padding:0; background:#eee; border-radius:15px; width:120px; height:30px; line-height:30px; font-size:14px; color:#202020; text-align:center;}
+.relief-agree div input[type="checkbox"]:checked+label {color:#fff; background:#8EC31F;}
+a.hoverColor1.on, a.hoverColor1:hover {background-color:#008B8B !important; color:#fff !important;}
+a.hoverColor2.on, a.hoverColor2:hover {background-color:#96D019 !important; color:#fff !important;}
+td.must {position:relative;}
+td.must span {display:inline-block; position:relative; padding-right:10px;}
+td.must span:after {content:'*'; color:#f00; position:absolute; right:0; top:0; line-height:1;}
+*/
+.inputWrap input[type="radio"] {position:absolute; left:-999999999px;}
+.inputWrap input[type='radio']+label {padding-left:30px; background: url(../../images/common/agree.svg)0 50% /18px no-repeat;}
+.inputWrap input[type='radio']:checked+label {background-image: url(../../images/common/agree-on.svg);}
+
+/* 기간박스 버튼 */
+.btnCheck input[type="radio"] {position:absolute; left:-999999999px;}
+.btnCheck input[type="radio"]+label {background:none !important;}
+.btnCheck input[type="radio"]:checked+label {background-image:none !important;}
+.btnCheck label {margin-left:2px !important;margin-right:0 !important;}
+
+/* layout.css 에 중복됨
+.filebox input[type="file"] {position: absolute;width: 1px;height: 1px;padding: 0;margin: -1px;overflow: hidden;clip:rect(0,0,0,0);border: 0;}
+.filebox label {display:inline-block;padding:.2em .75em;vertical-align: middle;cursor: pointer;border:1px solid #2E68FF;border-radius: .25em; color:#2E68FF;font-size:14px;}
+.filebox .del {display:inline-block;padding:.2em .75em;vertical-align: middle;cursor: pointer;border:1px solid #ddd;border-radius: .25em; color:#fff;font-size:14px; background:#7A828B;}
+.filebox label+.del {margin-right:5px;}
+.filebox .upload-name {display: inline-block;padding: .5em .75em;font-size: inherit;font-family: inherit;line-height: normal;vertical-align: middle;background-color: #f5f5f5;border: 1px solid #ebebeb;border-bottom-color: #e2e2e2;border-radius: .25em;-webkit-appearance: none;-moz-appearance: none;appearance: none;}
+*/
+
+/* EasyUI CSS overwrite START */
+.datebox .combo-arrow {background-image: url(../../images/common/i-cal.svg);background-position: center center;}
+.datagrid-toolbar, .datagrid-pager { background: #F4F5F6; }
+.panel-header, .panel-body { border-color: #C9E1E8; }
+/* grid line 명확히 변경 작업
+.datagrid-body   td {border-color: #C9E1E8; color:#484848;}
+.datagrid-footer td {border-color: #C9E1E8; color:#484848;}
+.datagrid-header td {border-color: #C9E1E8; color:#171717; font-weight:500;}
+*/
+.datagrid-body   td {border-color: #9cb1bd; color:#484848;}
+.datagrid-footer td {border-color: #9cb1bd; color:#484848;}
+.datagrid-header td {border-color: #9cb1bd; color:#171717; font-weight:500;}
+.datagrid-header, .datagrid-td-rownumber {
+  background-color: #E1EDF9;
+  background: -webkit-linear-gradient(top,#E1EDF9 0,#E1EDF9 100%);
+  background: -moz-linear-gradient(top,#E1EDF9 0,#E1EDF9 100%);
+  background: -o-linear-gradient(top,#E1EDF9 0,#E1EDF9 100%);
+  background: linear-gradient(to bottom,#E1EDF9 0,#E1EDF9 100%);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#E1EDF9,endColorstr=#E1EDF9,GradientType=0);
+}
+.datagrid-body .datagrid-row-selected td {color: #fff !important;}
+.cal-date input[type="text"] { border:none; font-size: 15px; }
+/* EasyUI CSS overwrite END */
+
+.datebox .combo-arrow {background-color:#fff; width:35px !important; height:35px !important; }
+.datebox .combo-arrow:hover {background-color:#fff;}
+/*
+select {padding:0 30px 0 10px; min-width:110px; background-image:url(../../images/common/board_select_arrow.svg); background-position:right 20px center;  background-color:#fff; height:auto; background-repeat:no-repeat;}
+select {height:30px; line-height:28px; border:1px solid #7A828B; border-radius:5px; font-size:13px;}
+select {width:120px; padding:0 30px 0 8px; background:#F1F3F9 url(../../images/common/applyArrow.svg)calc(100% - 10px) 50% no-repeat;}
+*/
+select {
+	padding:0 40px 0 10px;
+    -webkit-appearance: none; /* 네이티브 외형 감추기 */
+    -moz-appearance: none;
+    border:1px solid #D4D4D4;
+    appearance: none; cursor:pointer; height:35px; line-height:33px; border-radius:5px;
+    background:#FFFFFF url(../../images/common/selectArrow.svg) no-repeat right 20px center; /* 화살표 모양의 이미지 */
+}
+
+select.bgWhite {background-color:#fff;}
+select::-ms-expand {display: none;} /* IE 10, 11의 네이티브 화살표 숨기기 */
+select::focus {outline:none}
+/*
+.c_red {color:#d71729 !important;}
+.c_blue {color:#00a4e0 !important;}
+
+a.btn {padding:12px 24px;  position:absolute; top:0; left:0; line-height:1;background:#fff; color:#012863; border:1px solid; border-radius:10px;}
+a.btn.right {left:auto;right:0;}
+a.btn.blue {color:#fff; background:#012863;}
+*/
+
+/* 버튼 */
+.btnWrap {position:relative;}
+.btnWrap.right {text-align:right !important;}
+/* 버튼::type1 */
+/* 2021.11.04 type0을 type1로 대체
+.btnWrap.type1 {text-align:center; font-size:0; margin-top:14px;}
+.btnWrap.type1 a {display:inline-block; padding:12px 32px; font-size:15px; font-weight:500;line-height:1;border:1px solid; border-radius:10px;background:#fff; color:#012863;}
+.btnWrap.type1 a.blue { color:#fff; background:#012863; }
+*/
+.btnWrap.type1 {text-align:center; font-size:0; margin-top:14px;}
+.btnWrap.type1 a {display:inline-block; padding:12px 32px; font-size:15px; font-weight:500;line-height:1;border:1px solid; border-radius:10px;background:#fff; color:#012863;}
+.btnWrap.type1 a.blue { color:#fff; background:#012863 !important; }
+
+/* 버튼::type2 */
+.btnWrap.type2 {text-align:center; font-size:0; margin-top:20px;}
+.btnWrap.type2 a {display:inline-block; padding:18px 55px; font-size:16px; font-weight:400; color:#000; background:#F1F3F9; line-height:1;border:1px solid #ddd; border-radius:8px;}
+.btnWrap.type2 a:hover {background:#2E68FF; color:#fff;}
+
+.btnWrap.type2 {text-align:right; font-size:0;}
+.btnWrap.type2 a {display:inline-block; width:206px; padding:18px 0; border:1px solid #ddd; background:#F1F3F9; color:#000; font-size:17px; border-radius:8px; line-height:1;text-align:center; font-weight:500;}
+.btnWrap.type2 a+a {margin-left:10px;}
+.btnWrap.type2 a.blue {background:#1E7BA9; color:#fff;}
+
+/*
+.btnDiv {position:relative; height:50px;}
+.btnDiv a.btn {position:static; float:right;}
+.btnDiv a.btn+a.btn {margin-right:5px;}
+.btnDiv.type2 {position:absolute; right:0; top:0; height:auto;}
+.btnDiv.type3 {font-size:0; text-align:center; padding-top:30px; border-top:1px solid #ABB8BC; height:auto;}
+.btnDiv.type3 a.btn {display:inline-block; margin:5px; float:none; position:static; font-size:16px;}
+*/
+.formLayout .formGroup .inputWrap span.textbox { padding: 0; }
+/* EasyUI input box prompt color
+.textbox .textbox-prompt {color: #aaa !important; }
+ */
+.layerPop .datagrid-view2 { position: relative; }
+
+.dialogPop .layerPop-wrap { padding:100px 60px 50px; max-width:calc(100% - 40px); position:absolute; left:50%; top:50%; background:#fff;transform:translate(-50%,-50%); border-radius:50px; border:2px solid #e4e4e4; box-shadow:20px 20px 20px rgba(0,0,0,.05);}
+.dialogPop .layerPop-wrap .close {position:absolute; right:30px; top:30px; width:40px; height:40px;background:url(../../images/common/i-close.svg)center /10px no-repeat;}
+.dialogPop .layerPop-inner {max-width:100%;}
+.dialogPop .layerPop-inner h3 {font-size:24px; color:#000;font-weight:600; text-align:center;}
+.dialogPop .layerPop-inner>* {max-width:100%;}
+.dialogPop .layerPop-inner h4 {color:#000; font-weight:600; font-size:19px; padding-bottom:12px;}
+.dialogPop .layerPop-inner span.call {padding-left:20px; margin-top:20px; display:inline-block; font-size:12px;color:#958C8A; background:url(../../images/apply/i-call.svg)0 50% no-repeat;}
+.dialogPop .layerPop-inner span.call b {color:#2e68ff; font-weight:600; }
+.dialogPop .layerPop-inner span.mail {padding-left:20px; margin-top:10px; display:inline-block; font-size:12px;color:#958C8A; background:url(../../images/apply/i-call.svg)0 50% no-repeat;}
+.dialogPop .layerPop-inner span.mail b {font-weight:500; color:#000;}
+.dialogPop .layerPop-inner p.err {color:#f00; text-align:center;}
+.dialogPop .layerPop-inner p.blue {font-size:16px; color:#2E68FF; text-align:center;}
+.dialogPop .layerPop-inner p b {font-size:18px; font-weight:700; color:#000;}
+.dialogPop .layerPop-inner p.success {color:#000; font-weight:600; font-size:24px; text-align:center;}
+.dialogPop .layerPop-inner .btnWrap.one {position:relative; margin-top:20px;}
+.dialogPop .layerPop-inner .btnWrap.one:before {content:''; display:block; width:120%; height:1px; border-top:2px dashed #ddd; position:absolute; left:50%; top:0; transform:translateX(-50%);}
+.dialogPop .layerPop-inner .btnWrap.one a {display:block; width:100%; padding:0; margin:0;}
+.dialogPop .layerPop-inner .btnWrap.type0 a {height:42px; line-height:42px;}
+.dialogPop .datagrid-view2 { position: relative; }
+.dialogPop.form h3 {padding-bottom:20px;}
+.dialogPop.type2 .layerPop-wrap {border-radius:25px;}
+.dialogPop.type2 .layerPop-inner .btnWrap a {color:#000; width:206px; height:56px; line-height:56px; border-radius:8px;font-size:16px;}
+.dialogPop.type2 .layerPop-inner .btnWrap a:hover {background:#2E68FF; color:#fff;}
+.dialogPop.type3 {text-align:center;}
+.dialogPop.type3 .layerPop-wrap {padding:50px 60px 50px;border-radius:25px; border-color:#2D7BE3;}
+.dialogPop.type3 .layerPop-wrap .close {top:10px; right:10px;}
+.dialogPop.type3 .layerPop-inner p {color:#000; font-weight:600; font-size:18px;}
+.dialogPop.type3 .layerPop-inner p.err {color:#f00;}
+.dialogPop.type3 .layerPop-inner p.success {color:#000; font-weight:600; font-size:24px;}
+.dialogPop.type3 .layerPop-inner .btnWrap {padding-top:20px;}
+.dialogPop.type3 .layerPop-inner .btnWrap a {color:#000; width:206px; height:56px; line-height:56px; border-radius:8px;font-size:16px;}
+.dialogPop.type3 .layerPop-inner .btnWrap a:hover {background:#2E68FF; color:#fff;}
+.dialogPop.type4 .layerPop-wrap {padding:70px 60px 50px; border-radius:25px;}
+.dialogPop.type4 .layerPop-inner .btnWrap {padding-top:50px; text-align:center; font-size:0;}
+.dialogPop.type4 .layerPop-inner .btnWrap a {margin:0 5px; display:inline-block; color:#000; padding:0 50px; height:56px; line-height:56px; background:#F1F3F9; border-radius:8px;font-size:16px; border:1px solid #ddd;}
+.dialogPop.type4 .layerPop-inner .btnWrap a:hover {background:#2E68FF; color:#fff;}
+
+/* 2022.01.09 SMS 전송이력 체크박스버튼 크기떄문에 overwrite 함 */
+.smsWrap .smsItem .smsRecipientNum input { width: auto; }
+
+/* 2023.02.06 파일목록 버튼간 간격일치를 위해 overwrite 함 */
+.tableWrap.type1 tr td a.detail { margin-left: 5px; }

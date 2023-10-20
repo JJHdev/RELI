@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Splemnt">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(sn)">
+            AND A.SN = #{sn}
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.SN                                           AS "sn",
+        A.APLY_NO                                      AS "aplyNo",
+        A.APLY_ODER                                    AS "aplyOder",
+        A.PRCS_STUS_CD                                 AS "prcsStusCd",
+        FN_GET_CODENM('CT037',A.PRCS_STUS_CD)          AS "prcsStusNm",
+        A.SPLEMNT_DMND_SE_CD                           AS "splemntDmndSeCd",
+        FN_GET_CODENM('CT004',A.SPLEMNT_DMND_SE_CD)    AS "splemntDmndSeNm",
+        FN_FMT_STRTODATE(A.SPLEMNT_DMND_YMD,'-')       AS "splemntDmndYmd",
+        FN_FMT_STRTODATE(A.SPLEMNT_TERM_YMD,'-')       AS "splemntTermYmd",
+        FN_FMT_STRTODATE(A.SPLEMNT_PRCS_YMD,'-')       AS "splemntPrcsYmd",
+        A.SPLEMNT_DMND_CN                              AS "splemntDmndCn",
+        A.RGTR_NO                                      AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        A.MDFR_NO                                      AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+    </sql>
+
+    <!-- 보완요청 목록조회 -->
+    <select id="listSplemnt" resultType="java.util.HashMap" parameterType="business.com.biz.service.SplemntVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_SPLEMNT A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.SN DESC
+    </select>
+    <select id="listSplemntCount" resultType="int" parameterType="business.com.biz.service.SplemntVO">
+        SELECT COUNT(1) 
+          FROM TB_SPLEMNT A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 보완요청 상세조회 -->
+    <select id="viewSplemnt" resultType="business.com.biz.service.SplemntVO" parameterType="business.com.biz.service.SplemntVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_SPLEMNT A
+         WHERE SN = #{sn}
+    </select>
+
+    <!-- 보완요청 등록 -->
+    <insert id="regiSplemnt" parameterType="business.com.biz.service.SplemntVO">
+        INSERT 
+          INTO TB_SPLEMNT 
+             ( SN,
+               APLY_NO,
+               APLY_ODER,
+               SPLEMNT_DMND_SE_CD,
+               SPLEMNT_DMND_YMD,
+               SPLEMNT_TERM_YMD,
+               SPLEMNT_PRCS_YMD,
+               SPLEMNT_DMND_CN,
+               PRCS_STUS_CD,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( SEQ_SPLEMNT.NEXTVAL,
+               #{aplyNo},
+               #{aplyOder},
+               #{splemntDmndSeCd},
+               FN_FMT_STRTODATE(#{splemntDmndYmd},''),
+               FN_FMT_STRTODATE(#{splemntTermYmd},''),
+               FN_FMT_STRTODATE(#{splemntPrcsYmd},''),
+               #{splemntDmndCn},
+               #{prcsStusCd},
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 보완요청 수정 -->
+    <update id="updtSplemnt" parameterType="business.com.biz.service.SplemntVO">
+        UPDATE TB_SPLEMNT 
+           SET MDFR_NO   = #{gsUserNo},
+		 <if test="@common.util.CommUtils@isNotEmpty(aplyNo)"         > APLY_NO            = #{aplyNo},</if>
+		 <if test="@common.util.CommUtils@isNotEmpty(aplyOder)"       > APLY_ODER          = #{aplyOder},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(splemntDmndSeCd)"> SPLEMNT_DMND_SE_CD = #{splemntDmndSeCd},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(splemntDmndYmd)" > SPLEMNT_DMND_YMD   = #{splemntDmndYmd},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(splemntTermYmd)" > SPLEMNT_TERM_YMD   = #{splemntTermYmd},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(splemntDmndCn)"  > SPLEMNT_DMND_CN    = #{splemntDmndCn},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(splemntPrcsYmd)" > SPLEMNT_PRCS_YMD   = #{splemntPrcsYmd},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(prcsStusCd)"     > PRCS_STUS_CD       = #{prcsStusCd},</if>
+               MDFCN_YMD = SYSDATE
+         WHERE SN = #{sn}
+    </update>
+
+    <!-- 보완요청 삭제 -->
+    <delete id="deltSplemnt" parameterType="business.com.biz.service.SplemntVO">
+        DELETE 
+          FROM TB_SPLEMNT 
+         WHERE SN = #{sn}
+    </delete> 
+
+    <!-- 보완요청 중인 최종건 조회 -->
+    <select id="viewSplemntLast" resultType="business.com.biz.service.SplemntVO" parameterType="business.com.biz.service.SplemntVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_SPLEMNT A
+         WHERE SN = (SELECT MAX(B.SN)
+                       FROM TB_SPLEMNT B
+                      WHERE B.APLY_NO      = A.APLY_NO
+                        AND B.APLY_ODER    = A.APLY_ODER
+                        AND B.APLY_NO      = #{aplyNo}
+                        AND B.APLY_ODER    = #{aplyOder}
+                        AND B.PRCS_STUS_CD = #{prcsStusCd}
+                    )
+    </select>
+
+</mapper>

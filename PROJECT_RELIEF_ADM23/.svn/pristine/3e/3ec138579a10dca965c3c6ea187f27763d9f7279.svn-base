@@ -1,0 +1,413 @@
+package business.com.cmm.web;
+
+import java.io.File;
+import java.net.URLEncoder;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.clipsoft.clipreport.oof.OOFDocument;
+import com.clipsoft.clipreport.oof.OOFFile;
+import com.clipsoft.clipreport.server.service.ReportUtil;
+
+import business.com.CommBizUtils;
+import business.com.CommConst;
+import business.com.cmm.service.AddressVO;
+import business.com.cmm.service.CommService;
+import business.com.support.service.LwstVO;
+import common.base.BaseController;
+import common.file.FileDirectory;
+import common.util.CommUtils;
+import egovframework.rte.fdl.cmmn.exception.EgovBizException;
+
+/**
+ *  [컨트롤러클래스] - 공통 팝업 Controller
+ *
+ * @class   : PopupController
+ * @author  : LSH
+ * @since   : 2021.10.05
+ * @version : 1.0
+ *
+ *   수정일     수정자             수정내용
+ *  --------   --------    ---------------------------
+ *
+ */
+
+@Controller
+@SuppressWarnings({"all"})
+public class PopupController extends BaseController {
+
+    @Resource(name="CommService")
+    protected CommService commService;
+
+    /**
+     * 2021.08.05 공통 주소검색 (팝업창)
+     * 행정안전부 개발자센터 OPEN 팝업 API 사용
+     */
+    @RequestMapping("/com/cmm/popupAddress.do")
+    public String popupAddress(HttpServletRequest request, ModelMap model
+            , @ModelAttribute AddressVO addressVO) throws Exception {
+    	
+    	// 행정안전부 개발자센터에서 신청승인한 승인키 정의
+    	// : 운영 처리시 별도의 승인키를 다음의 URL에서 발급받아 사용하도록 한다.
+    	// 다음의 URL에서 API 연계신청을 완료하여 발급받은 승인키를 입력하여 사용하도록 한다.
+    	// https://www.juso.go.kr/addrlink/devAddrLinkRequestWrite.do?returnFn=write&cntcMenu=URL
+    	if (!"Y".equals(addressVO.getInputYn())) {
+    		
+        	String context = CommBizUtils.getDomain(request)+request.getContextPath();
+    		
+        	// [1차신청] 2021.07.30 임시로 신청한 개발용 승인키
+        	// [1차신청] devU01TX0FVVEgyMDIxMDczMDEzNDEzNTExMTQ3MjI=
+        	// [1차신청] 사용기한: 2021.07.30 ~ 2021.10.28
+    		// [1차신청] addressVO.setConfmKey  ("devU01TX0FVVEgyMDIxMDczMDEzNDEzNTExMTQ3MjI=");
+        	// [2차신청] 2021.10.30 임시로 신청한 개발용 승인키 (개발시엔 필요하므로 함부로 지우지 말것)
+        	// [2차신청] devU01TX0FVVEgyMDIxMTAzMDEzMDUyMTExMTgyNDA=
+        	// [2차신청] 사용기한: 2021.10.30 ~ 2022.01.28
+
+        	 
+            /*
+             * 2021.12.16 LSH 행정안전부 주소검색 관련 설정값
+        	 * [1차신청] 2021.07.30 임시로 신청한 개발용 승인키
+        	 * [1차신청] devU01TX0FVVEgyMDIxMDczMDEzNDEzNTExMTQ3MjI=
+        	 * [1차신청] 사용기한: 2021.07.30 ~ 2021.10.28
+        	 * [1차신청] addressVO.setConfmKey  ("devU01TX0FVVEgyMDIxMDczMDEzNDEzNTExMTQ3MjI=");
+        	 * [2차신청] 2021.10.30 임시로 신청한 개발용 승인키 (개발시엔 필요하므로 함부로 지우지 말것)
+        	 * [2차신청] devU01TX0FVVEgyMDIxMTAzMDEzMDUyMTExMTgyNDA=
+        	 * [2차신청] 사용기한: 2021.10.30 ~ 2022.01.28
+             */
+        	addressVO.setConfmKey  (CommConst.ADDRESS_CERT_KEY);
+    		addressVO.setReturnUrl (context + CommConst.ADDRESS_RETURN_URL);
+    		addressVO.setResultType(CommConst.ADDRESS_RETURN_TYPE);
+    	}
+    	model.addAttribute("address", addressVO);
+        return "com/cmm/popupAddress";
+    }
+
+    /**
+     * 2021.12.23 공통 주소검색
+     * 
+     * 1) mode == SEARCH  : 자체DB 주소검색 사용
+     * 2) mode == OPENAPI : 행정안전부 개발자센터 OPEN 검색 API 사용
+     */
+    @RequestMapping("/com/cmm/getListAddress.do")
+    @ResponseBody
+    public Map getListAddress(HttpServletRequest request
+    		, ModelMap model
+    		, HttpServletResponse response) throws Exception {
+    	
+        Map paramMap = getParameterMap(request, true);
+        // -------------------- Default Setting End -----------------------//
+        
+        String mode = (String)paramMap.get("mode");
+        
+        // 키워드 필터링 처리
+        String keyword = (String)paramMap.get("srchText");
+        String prefix = (String)paramMap.get("prefix");
+        String postfix = (String)paramMap.get("postfix");
+        
+        if (CommUtils.isEmpty(keyword))
+        	throw new EgovBizException("주소 검색어가 입력되지 않았습니다.");
+        
+        // 특수문자체크
+        Pattern pattern = Pattern.compile("[%=><]");
+        if (pattern.matcher(keyword).find())
+        	throw new EgovBizException("주소 검색어는 특수문자를 입력 할수 없습니다.");
+        
+        // SQL예약어 체크
+        String[] sqlKeywords = {
+			"SELECT", "INSERT" , "DELETE"  , "UPDATE", 
+			"CREATE", "DROP"   , "EXEC"    , "UNION" , 
+			"FETCH" , "DECLARE", "TRUNCATE", "OR" 
+        };
+        
+        for (String key : sqlKeywords) {
+        	if (keyword.matches("(?i).*"+key+".*")) {
+        		throw new EgovBizException("\"" + key+"\"와(과) 같은 특정문자로 검색할 수 없습니다.");
+        	}
+        }
+        // 검색용 OPEN API 사용인 경우
+        if ("OPENAPI".equals(mode)) {
+        	return _getAddressOpenApi(paramMap);
+        }
+        // 자체DB 주소검색인 경우
+        else {
+        	return _getAddressZipAdrs(paramMap);
+        }
+    }
+
+    /**
+     * 2021.12.23 LSH
+     * 자체DB 주소검색 결과 반환
+     */
+    private Map _getAddressZipAdrs(Map paramMap) throws Exception {
+    	
+    	// TRIM 처리
+    	paramMap.put("srchText", CommUtils.nvlTrim((String)paramMap.get("srchText")));
+    	
+    	String srchText = (String)paramMap.get("srchText");
+    	if (srchText.indexOf(" ") > 0) {
+    		paramMap.put("srchText", srchText.substring(0, srchText.indexOf(" ")));
+    		String subText  = srchText.substring(srchText.indexOf(" "));
+    		if (subText.indexOf("-") > 0) {
+        		String[] subArr = CommUtils.split(subText, "-");
+    			paramMap.put("srchMnnm", subArr[0]);
+    			paramMap.put("srchSlno", subArr[1]);
+    		}
+    		else {
+    			paramMap.put("srchMnnm", subText);
+    		}
+    	}
+        int  page = CommUtils.getInt(paramMap, "page");
+        int  size = CommUtils.getInt(paramMap, "rows");
+        List list = commService.listAddress(paramMap, page, size);
+		// 페이징정보가 담긴 데이터맵을 반환한다.
+		// (BaseController에 정의되어 있음)
+		return getPaginatedResult(list);
+    }
+    
+    /**
+     * 2021.12.23 LSH
+     * 행정안전부 개발자센터 검색용 OPEN API 검색결과 반환
+     */
+    private Map _getAddressOpenApi(Map paramMap) throws Exception {
+        int  page = CommUtils.getInt(paramMap, "page");
+        int  size = CommUtils.getInt(paramMap, "rows");
+        String keyword = (String)paramMap.get("srchText");
+        String charset = "UTF-8";
+		String apiUrl = CommConst.ADDRESS_SEARCH_API; // OPEN API 호출 URL 정보 설정
+		apiUrl += "?currentPage="+page; //요청 변수 설정 (현재 페이지. currentPage : n > 0)
+		apiUrl += "&countPerPage="+size; //요청 변수 설정 (페이지당 출력 개수. countPerPage 범위 : 0 < n <= 100)
+		apiUrl += "&resultType="+CommConst.ADDRESS_SEARCH_JSON; //요청 변수 설정 (검색결과형식 설정, json)
+		apiUrl += "&confmKey="+CommConst.ADDRESS_SEARCH_KEY; //요청 변수 설정 (승인키)
+		apiUrl += "&keyword="+URLEncoder.encode(keyword, charset); //요청 변수 설정 ((키워드)
+		
+		// API 연결 결과 받기
+		String json = CommBizUtils.getJsonOpenApi(apiUrl, charset);
+    	
+		// JSON 결과를 AddressVO 객체로 변환 
+    	AddressVO result = new AddressVO();
+    	result.buildFromJson(json);
+    	
+    	return result.getPaginatedResult();
+    }
+    
+    /**
+     * 2021.09.28 CLIP Report 뷰어 (팝업창)
+     * 
+     * mode = SPLEMNT  : 구제급여 보안요청 리포트 양식
+     * mode = MNSVYDTH : 본조사 사망원인조사 리포트 양식
+     */
+    @RequestMapping("/com/cmm/popupReport.do")
+    public String popupReport(HttpServletRequest request
+    		, @RequestParam Map<String,String> paramMap
+    		, ModelMap model) throws Exception {
+    	
+    	logger.debug("REPORT PARAMATER ===> " + paramMap.toString());
+
+    	String mode    = (String)paramMap.get("mode");
+    	String crfName = "";
+    	// 2022.02.24 사인파일 저장경로
+    	String signDir = FileDirectory.SIGNATURE.getRealPath();
+    	// 2022.02.24 사인파일 전체경로 (파일명포함)
+		String signCn = (String)paramMap.get("signCn");
+        // 2022.01.14 LSH 사인경로포함 파일정보 정의
+        if (CommUtils.isNotEmpty(signCn)) {
+        	signCn = signDir + File.separator + signCn;
+        }
+    	
+    	OOFDocument oof = OOFDocument.newOOF();
+    	
+    	// ----------------------------------------------
+    	// 2022.01.04 LSH
+    	// 리포트의 매개변수 및 리포트 파일명 설정
+    	
+    	// 구제급여 보안요청 공문양식인 경우 
+    	if ("SPLEMNT".equals(mode)) {
+    		// 리포트 파일명
+    		crfName = "/crf/listReliefRcpt.crf";
+    		// 리포트 매개변수 정의
+    		
+    		oof.addField("aplyNo"         , paramMap.get("aplyNo"         )); // 신청번호
+    		oof.addField("idntfcId"       , paramMap.get("idntfcId"       )); // 식별ID
+    		oof.addField("aplcntNm"       , paramMap.get("aplcntNm"       )); // 신청인 성명
+    		oof.addField("sufrerNm"       , paramMap.get("sufrerNm"       )); // 피해자 성명
+    		oof.addField("splemntDmndYmd" , paramMap.get("splemntDmndYmd" )); // 보완요청일자
+    		oof.addField("splemntDmndSeCd", paramMap.get("splemntDmndSeCd")); // 보완요청구분
+    		oof.addField("splemntTermYmd" , paramMap.get("splemntTermYmd" )); // 제출기한일자
+    		oof.addField("splemntDmndCn"  , paramMap.get("splemntDmndCn"  )); // 보완요청내용
+    	}
+    	// 본조사 사망원인조사 인쇄인 경우
+    	else if ("MNSVYDTH".equals(mode)) {
+    		// 리포트 파일명
+    		crfName = "/crf/listMnsvyDth.crf";
+    		// 리포트 매개변수 정의
+    		oof.addField("bizAreaCd", paramMap.get("bizAreaCd")); // 피해지역코드
+    		oof.addField("bizOder"  , paramMap.get("bizOder"  )); // 사업차수
+    		oof.addField("exmnOder" , paramMap.get("exmnOder" )); // 조사차수
+    		oof.addField("aplyNo"   , paramMap.get("aplyNo"   )); // 신청번호
+    	}
+    	// 취약계층 소송지원 신청서
+    	else if ("LWST".equals(mode)) {
+    		// 리포트 파일명
+    		crfName = "/crf/listLwst.crf";
+    		// 리포트 매개변수 정의
+    		//신청 번호
+    		oof.addField("aplyNo", paramMap.get("aplyNo")); 
+    		//신청인 성명
+    		oof.addField("aplcntNm" , paramMap.get("aplcntNm" ));
+    		//신청인 사업자등록번호
+    		oof.addField("aplcntBrno"   , paramMap.get("aplcntBrno"   ));
+    		//신청인 생년월일
+    		oof.addField("aplcntBrdt"   , paramMap.get("aplcntBrdt"   ));
+    		//신청인 주소 (소재지)
+    		oof.addField("aplcntAddrLwst"   , paramMap.get("aplcntAddrLwst"   ));
+    		//신청인 유선전화번호
+    		oof.addField("aplcntTelNo"   , paramMap.get("aplcntTelNo"   ));
+    		//신청인 휴대전화번호
+    		oof.addField("aplcntMbtelNo"   , paramMap.get("aplcntMbtelNo"   ));
+    		//신청인 이메일 주소
+    		oof.addField("aplcntEmlAddr"   , paramMap.get("aplcntEmlAddr"   ));
+    		//피신청인 성명
+    		oof.addField("respdntNm"   , paramMap.get("respdntNm"   ));
+    		//피신청인 사업자등록번호
+    		oof.addField("respdntBrno"   , paramMap.get("respdntBrno"   ));
+    		//피신청인 생년월일
+    		oof.addField("respdntBrdt"   , paramMap.get("respdntBrdt"   ));
+    		//피신청인 주소 (소재지)
+    		oof.addField("respdntAddrLwst"   , paramMap.get("respdntAddrLwst"   ));
+    		//피신청인 유선전화번호
+    		oof.addField("respdntTelno"   , paramMap.get("respdntTelno"   ));
+    		//피신청인 휴대전화번호
+    		oof.addField("respdntMbtelNo"   , paramMap.get("respdntMbtelNo"   ));
+    		//피신청인 이메일 주소
+    		oof.addField("respdntEmlAddr"   , paramMap.get("respdntEmlAddr"   ));
+    		//피해발생장소
+    		oof.addField("dmgeOcrnPlce"   , paramMap.get("dmgeOcrnPlce"   ));
+    		//피해일자
+    		oof.addField("dmgeYmd"   , paramMap.get("dmgeYmd"   ));
+    		//피해내용
+    		oof.addField("dmgeCn"   , paramMap.get("dmgeCn"   ));
+    		//피해금액
+    		oof.addField("dmgeAmt"   , paramMap.get("dmgeAmt"   ));
+    		//신청취지내용
+    		oof.addField("aplyObjetCn"   , paramMap.get("aplyObjetCn"   ));
+    		//신청 내용
+    		oof.addField("aplyCn"   , paramMap.get("aplyCn"   ));
+    		//신청 금액
+    		oof.addField("aplyAmt"   , paramMap.get("aplyAmt"   ));
+    		//신청일자
+    		oof.addField("aplyYmd"   , paramMap.get("aplyYmd"   ));
+    		//진행상태명
+    		oof.addField("prgreStusNm"   , paramMap.get("prgreStusNm"   ));
+    		//신청구분 리스트
+    		oof.addField("aplySeCd"   , paramMap.get("aplySeCd"   ));
+    		//지원 구분 리스트
+    		oof.addField("sprtSeCd"   , paramMap.get("sprtSeCd"   ));
+    		//지원구분명
+    		oof.addField("sprtSeNm"   , paramMap.get("sprtSeNm"   ));
+    		//전자서명
+    		oof.addField("signCn"    , signCn);
+    		//신청날짜 (리포트툴)
+    		oof.addField("aplyYmdReport"   , paramMap.get("aplyYmdReport"   ));
+    	}
+    	// 온라인설문지 인쇄인 경우
+    	else if ("SURVEY".equals(mode)) {
+    		// 리포트 파일명
+    		crfName = "/crf/listSurvey.crf";
+    		
+    		// 리포트 매개변수 정의
+    		oof.addField("rspnsMngNo", paramMap.get("rspnsMngNo")); // 답변관리번호
+    		oof.addField("qstnnMngNo", paramMap.get("qstnnMngNo")); // 설문관리번호
+    		oof.addField("aplyNo"    , paramMap.get("aplyNo"    )); // 신청번호
+    		oof.addField("rgtrNm"    , paramMap.get("rgtrNm"    )); // 신청인이름
+    		oof.addField("regDate"   , paramMap.get("regDate"   )); // 작성일자(yyyy년 mm월 dd일)
+    		oof.addField("signCn"    , signCn                    ); // 서명파일명(경로포함)
+    	}
+    	// 구제급여 선지급 신청서 인쇄인 경우
+    	else if ("ADVNCPYMNTFRM".equals(mode)) {
+    		// 리포트 파일명
+    		crfName = "/crf/advancePaymentForm.crf";
+    		// 리포트 매개변수 정의
+    		//신청 번호
+    		oof.addField("aplyNo", paramMap.get("aplyNo"));
+    	}
+    	// 개인기록카드 인쇄인 경우
+    	else if ("PDCARD".equals(mode)) {
+    		// 리포트 파일명
+    		crfName = "/crf/prntPerDtlHist.crf";
+    		// 리포트 매개변수 정의
+    		//신청 번호
+    		oof.addField("idntfcId", 	paramMap.get("idntfcId"));
+    		oof.addField("itemCd1", 	paramMap.get("itemCd1"));
+    		oof.addField("itemCd2", 	paramMap.get("itemCd2"));
+    		oof.addField("rvwBgngYmd", 	paramMap.get("rvwBgngYmd"));
+    		oof.addField("rvwEndYmd", 	paramMap.get("rvwEndYmd"));
+    		oof.addField("totalAmt", 	paramMap.get("totalAmt"));
+    	}
+    	// 그외
+    	else {
+    		// 리포트 파일명 (샘플)
+    		crfName = "/crf/CLIP.crf";
+    	}
+    	// ----------------------------------------------
+    	
+    	OOFFile file = oof.addFile("crf.root", CommConst.getClipReportDir()+crfName);
+    	String propertyPath = CommConst.getClipReportProperty();
+    	
+    	// 1. DB (arg1:데이터셋명, arg2:DataConnection.properties에 설정한 dbName)
+    	// 모든 쿼리가 같은 DB서버를 바라볼 경우, 데이터셋명을 * 로 사용 
+    	oof.addConnectionData("*","JDBC1");
+
+    	//세션을 활용하여 리포트키들을 관리하지 않는 옵션
+    	//request.getSession().setAttribute("ClipReport-SessionList-Allow", false);
+    	String resultKey =  ReportUtil.createReport(request, oof, "false", "false", request.getRemoteAddr(), propertyPath);
+    	//리포트의 특정 사용자 ID를 부여합니다.
+    	//clipreport5.properties 의 useuserid 옵션이 true 일 때만 적용됩니다. 
+    	//clipreport5.properties 의 useuserid 옵션이 true 이고 기본 예제
+    	//[String resultKey =  ReportUtil.createReport(request, oof, "false", "false", request.getRemoteAddr(), propertyPath);] 
+    	//사용 했을 때 세션ID가 userID로 사용 됩니다.
+    	//String resultKey =  ReportUtil.createReport(request, oof, "false", "false", request.getRemoteAddr(), propertyPath, "userID");
+
+    	//리포트key의 사용자문자열을 추가합니다.(문자숫자만 가능합니다.)
+    	//String resultKey =  ReportUtil.createReport(request, oof, "false", "false", request.getRemoteAddr(), propertyPath, "", "usetKey");
+
+    	//리포트를 저장 스토리지를 지정하여 생성합니다.
+    	//String resultKey =  ReportUtil.createReportByStorage(request, oof, "false", "false", request.getRemoteAddr(), propertyPath, "rpt1");
+    	model.addAttribute("resultKey", resultKey);
+    	
+        return "com/cmm/popupReport";
+    }
+    
+    /**
+     * 2022.02.23 CLIP Report 뷰어 (이기종서버로 전달처리)
+     */
+    @RequestMapping("/com/cmm/popupReportPost.do")
+    public String popupReportPost(HttpServletRequest request
+    		, @RequestParam Map<String,String> paramMap
+    		, ModelMap model) throws Exception {
+    	
+    	String mode    = (String)paramMap.get("mode");
+    	
+    	logger.debug("REPORT PARAMATER ===> " + paramMap.toString());
+    	
+        // 2022.01.14 LSH 사인경로정보 정의
+       	paramMap.put("signDir", FileDirectory.SIGNATURE.getRealPath());
+    	// ----------------------------------------------
+    	model.addAttribute("paramMap", paramMap);
+    	
+        return "com/cmm/popupReportPost";
+    }
+
+}

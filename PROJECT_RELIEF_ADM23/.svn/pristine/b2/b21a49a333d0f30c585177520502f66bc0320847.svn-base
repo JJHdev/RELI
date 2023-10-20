@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BioMfcmm">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchMfcmmRlmCd)">
+            AND A.MFCMM_RLM_CD = #{srchMfcmmRlmCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchMfcmmNm)">
+            AND A.MFCMM_NM LIKE '%'||#{srchMfcmmNm}||'%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchMfcmmOgdpNm)">
+            AND A.MFCMM_OGDP_NM LIKE '%'||#{srchMfcmmOgdpNm}||'%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchCmitSeCd)">
+            AND EXISTS (
+                SELECT 1
+                  FROM TB_BIO_MFCMM_TENURE
+                 WHERE MFCMM_NO   = A.MFCMM_NO
+                   AND CMIT_SE_CD = #{srchCmitSeCd}
+            )
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizAreaCd)">
+            AND EXISTS (
+                SELECT 1
+                  FROM TB_BIO_MFCMM_TENURE
+                 WHERE MFCMM_NO    = A.MFCMM_NO
+                   AND BIZ_AREA_CD = #{srchBizAreaCd}
+            )
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchTenureOder)">
+            AND EXISTS (
+                SELECT 1
+                  FROM TB_BIO_MFCMM_TENURE
+                 WHERE MFCMM_NO   = A.MFCMM_NO
+                   AND TENURE_ODER LIKE '%'||#{srchTenureOder}||'%'
+            )
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.MFCMM_NO                                    AS "mfcmmNo",
+        A.MFCMM_NM                                    AS "mfcmmNm",
+        A.MFCMM_OGDP_NM                               AS "mfcmmOgdpNm",
+        A.MFCMM_RLM_CD                                AS "mfcmmRlmCd",
+        FN_GET_CODENM('CT205', A.MFCMM_RLM_CD)        AS "mfcmmRlmNm",
+        A.MFCMM_RSPOFC_NM                             AS "mfcmmRspofcNm",
+        FN_FMT_DATA('TEL', A.MFCMM_TELNO)             AS "mfcmmTelno",
+        A.MFCMM_BRDT                                  AS "mfcmmBrdt",
+        A.MFCMM_EML_ADDR                              AS "mfcmmEmlAddr",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 위원정보 목록조회 -->
+    <select id="listBioMfcmm" resultType="java.util.HashMap" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_MFCMM A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.MFCMM_NO
+    </select>
+    <select id="listBioMfcmmCount" resultType="int" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT COUNT(1) 
+          FROM TB_BIO_MFCMM A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 위원정보 상세조회 -->
+    <select id="viewBioMfcmm" resultType="business.bio.cmit.service.BioCmitMngVO" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_MFCMM A
+         WHERE MFCMM_NO = #{mfcmmNo}
+    </select>
+
+    <!-- 위원정보 등록 -->
+    <insert id="regiBioMfcmm" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        <selectKey keyProperty="mfcmmNo" resultType="string" order="BEFORE">
+			SELECT SEQ_BIO_MFCMM.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_BIO_MFCMM 
+             ( MFCMM_NO,
+               MFCMM_NM,
+               MFCMM_OGDP_NM,
+               MFCMM_RLM_CD,
+               MFCMM_RSPOFC_NM,
+               MFCMM_TELNO,
+               MFCMM_BRDT,
+               MFCMM_EML_ADDR,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{mfcmmNo},
+               #{mfcmmNm},
+               #{mfcmmOgdpNm},
+               #{mfcmmRlmCd},
+               #{mfcmmRspofcNm},
+               FN_FMT_DATA('NUM', #{mfcmmTelno}),
+               #{mfcmmBrdt},
+               #{mfcmmEmlAddr},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 위원정보 수정 -->
+    <update id="updtBioMfcmm" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        UPDATE TB_BIO_MFCMM 
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(mfcmmNm             )"> MFCMM_NM             = #{mfcmmNm             },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(mfcmmOgdpNm         )"> MFCMM_OGDP_NM        = #{mfcmmOgdpNm         },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(mfcmmRlmCd          )"> MFCMM_RLM_CD         = #{mfcmmRlmCd          },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(mfcmmRspofcNm       )"> MFCMM_RSPOFC_NM      = #{mfcmmRspofcNm       },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(mfcmmTelno          )"> MFCMM_TELNO          = FN_FMT_DATA('NUM', #{mfcmmTelno}),</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(mfcmmBrdt           )"> MFCMM_BRDT           = #{mfcmmBrdt           },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(mfcmmEmlAddr        )"> MFCMM_EML_ADDR       = #{mfcmmEmlAddr        },</if>  
+               MDFCN_YMD = SYSDATE  
+         WHERE MFCMM_NO  = #{mfcmmNo}
+    </update>
+
+    <!-- 위원정보 삭제 -->
+    <delete id="deltBioMfcmm" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        DELETE 
+          FROM TB_BIO_MFCMM 
+         WHERE MFCMM_NO = #{mfcmmNo}
+    </delete> 
+
+    <!-- 등록대상 위원정보 목록조회 -->
+    <sql id="Sql-Where-Target">
+        <if test="@common.util.CommUtils@isNotEmpty(srchMfcmmNm)">
+           AND A.MFCMM_NM LIKE '%'||#{srchMfcmmNm}||'%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchMfcmmOgdpNm)">
+           AND A.MFCMM_OGDP_NM LIKE '%'||#{srchMfcmmOgdpNm}||'%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchCmitSeCd)">
+           AND B.CMIT_SE_CD = #{srchCmitSeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizAreaCd)">
+           AND B.BIZ_AREA_CD = #{srchBizAreaCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchTenureOder)">
+           AND B.TENURE_ODER LIKE '%'||#{srchTenureOder}||'%'
+        </if>
+        <!-- 위원등록대상 검색인 경우 
+        		- 임기차수등록이 되어있고
+				- 입력된 위원회 소속이면서
+				- 입력된 피해지역 이면서
+				- 입력된 위원회에 등록되지 않은 위원 
+        -->
+        <if test="@common.util.CommUtils@isEqual(srchMngYn,'Y')">
+        	<if test="@common.util.CommUtils@isNotEmpty(cmitSeCd)">
+           		AND B.CMIT_SE_CD  = #{cmitSeCd}
+        	</if>
+        	<if test="@common.util.CommUtils@isNotEmpty(bizAreaCd)">
+           		AND B.BIZ_AREA_CD = #{bizAreaCd}
+        	</if>
+            AND NOT EXISTS (
+                SELECT 1
+                  FROM TB_BIO_CMIT_MNG
+                 WHERE TENURE_NO   = B.TENURE_NO
+                   AND CMIT_MNG_NO = #{cmitMngNo}
+            )
+        </if>
+    </sql>
+	<select id="listBioMfcmmTarget" resultType="java.util.HashMap" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT <include refid="Sql-Column"/>,
+               A.MFCMM_NO                                    AS "mfcmmNo",
+               A.MFCMM_NM                                    AS "mfcmmNm",
+               A.MFCMM_OGDP_NM                               AS "mfcmmOgdpNm",
+               A.MFCMM_RLM_CD                                AS "mfcmmRlmCd",
+               FN_GET_CODENM('CT205', A.MFCMM_RLM_CD)        AS "mfcmmRlmNm",
+               A.MFCMM_RSPOFC_NM                             AS "mfcmmRspofcNm",
+               FN_FMT_DATA('TEL', A.MFCMM_TELNO)             AS "mfcmmTelno",
+               A.MFCMM_BRDT                                  AS "mfcmmBrdt",
+               A.MFCMM_EML_ADDR                              AS "mfcmmEmlAddr",
+               B.TENURE_NO                                   AS "tenureNo",
+               B.CMIT_SE_CD                                  AS "cmitSeCd",
+               FN_GET_CODENM('CT204', B.CMIT_SE_CD)          AS "cmitSeNm",
+               B.BIZ_AREA_CD                                 AS "bizAreaCd",
+              (SELECT BIZ_AREA
+                 FROM TB_BIZ_MNG
+                WHERE BIZ_AREA_CD = B.BIZ_AREA_CD
+                  AND USE_YN      = 'Y')                     AS "bizAreaNm",
+               B.TENURE_ODER                                 AS "tenureOder",
+               FN_FMT_STRTODATE(B.TENURE_BGNG_YMD,'-')       AS "tenureBgngYmd",
+               FN_FMT_STRTODATE(B.TENURE_END_YMD ,'-')       AS "tenureEndYmd",
+               A.RGTR_NO                                     AS "rgtrNo",
+               TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		       TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+               A.MDFR_NO                                     AS "mdfrNo",
+               TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		       TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+          FROM TB_BIO_MFCMM        A
+             , TB_BIO_MFCMM_TENURE B
+         WHERE A.MFCMM_NO    = B.MFCMM_NO
+               <include refid="Sql-Where-Target"/>
+         ORDER BY 
+               A.MFCMM_NO
+             , B.TENURE_NO
+	</select>
+    <select id="listBioMfcmmTargetCount" resultType="int" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT COUNT(1) 
+          FROM TB_BIO_MFCMM        A
+             , TB_BIO_MFCMM_TENURE B
+         WHERE A.MFCMM_NO    = B.MFCMM_NO
+               <include refid="Sql-Where-Target"/>
+    </select>
+    
+</mapper>

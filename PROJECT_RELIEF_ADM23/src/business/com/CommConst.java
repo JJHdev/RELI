@@ -1,0 +1,501 @@
+package business.com;
+
+import java.security.SecureRandom;
+import java.util.Arrays;
+
+import common.util.CommUtils;
+import common.util.properties.ApplicationProperty;
+
+/**
+ * [상수클래스] - 공통 상수
+ *
+ * @class   : CommConst
+ * @author  : ntarget
+ * @since   : 2021.02.08
+ * @version : 1.0
+ *
+ *   수정일     수정자             수정내용
+ *  --------   --------    ---------------------------
+ *
+ */
+public class CommConst {
+
+    private CommConst() {};
+
+    public static final String SYSTEM_CODE               = ApplicationProperty.get("system.code");               // 2021.08.26 LSH 사용자 시스템코드
+    public static final String SYSTEM_CODE_USER          = ApplicationProperty.get("system.code");               // 2021.08.26 LSH 사용자 시스템코드
+    public static final String SYSTEM_CODE_ADMIN         = ApplicationProperty.get("system.code.admin");         // 2021.08.26 LSH 관리자 시스템코드
+    public static final String IS_AUTH_CHECK             = ApplicationProperty.get("auth.check");                // 권한체크 사용여부
+    public static final String EXCLUDE_ACC_PROG          = ApplicationProperty.get("exclude.acc.prog");          // 페이지세션에 저장할 페이지 제외 프로그램.
+    public static final String SESS_PAGE_INFO            = ApplicationProperty.get("SESS.PAGEINFO");             // 페이지세션명
+    public static final String SESS_MENU_INFO            = ApplicationProperty.get("SESS.MENUINFO");             // 메뉴세션명
+    public static final String SESS_ACCESS_URL           = ApplicationProperty.get("SESS.ACCESSURL");            // 접근URL세션명 (2021.08.27 LSH 추가)
+    public static final String SESS_SYSTEM_CODE          = ApplicationProperty.get("SESS.SYSTEMCODE");           // 시스템코드세션명 (2021.09.02 LSH 추가)
+    public static final String SESS_MENU_LIST            = ApplicationProperty.get("SESS.MENULIST");             // 메뉴목록세션명 (2021.09.02 LSH 추가)
+    public static final String SESS_RANDOM_NO            = ApplicationProperty.get("SESS.IDNT.RANDOM");          // 식별아이디 인증문자세션명 (2021.11.08 LSH 추가)        
+    public static final String SESS_AUTHENTICATION       = ApplicationProperty.get("SESS.IDNT.AUTH");            // 식별아이디 인증완료세션명 (2021.12.17 LSH 추가)        
+    public static final String SESS_PSWD_RANDOM_NO       = ApplicationProperty.get("SESS.PSWD.RANDOM");          // 비밀번호찾기 인증문자세션명 (2021.11.08 LSH 추가)        
+    public static final String SESS_PSWD_AUTHENTICATION  = ApplicationProperty.get("SESS.PSWD.AUTH");            // 비밀번호찾기 인증완료세션명 (2021.12.17 LSH 추가)        
+
+    public static final String SERVER_NAME               = ApplicationProperty.get("system.servername");         // 서버명
+    public static final String ROLE_RESTRICTED           = ApplicationProperty.get("system.role.restricted");    // 제한된사용자 롤
+    public static final String ROLE_USER                 = ApplicationProperty.get("system.role.user");          // 회원사용자의 권한
+    public static final String ROLE_IDNTFC               = ApplicationProperty.get("system.role.idnt");          // 식별아이디사용자 롤
+
+    public static final String CLIPREPORT_DIR            = ApplicationProperty.get("report.ClipReport.dir");       // 클립리포트 기본경로
+    public static final String CLIPREPORT_PROPERTIES     = ApplicationProperty.get("report.ClipReport.properties");// 클립리포트 설정파일명
+
+    // 2021.11.26 LSH 삭제된파일의 ROOT 디렉토리 - "removed/"
+    public static final String REMOVE_PATH = ApplicationProperty.get("upload.remove.dir");
+    // 2023.02.08 LSH 엑셀다운로드용 템플릿 경로
+    public static final String EXCEL_TEMPLATE_PATH = ApplicationProperty.get("excel.templete.dir");
+    // 2021.11.16 LSH SMS 실제 전송 여부
+    public static final String SMS_ENABLE = ApplicationProperty.get("SMS.ENABLE");
+    // 2021.12.17 LSH 업무용 SMS 전송 여부 (테스트사용자에게 발송되는 SMS 방지용)
+    public static final String SMS_ENABLE_BUSINESS  = ApplicationProperty.get("SMS.ENABLE.BIZ");
+    // 2021.12.17 LSH SMS 발송시 소개이미지 포함 여부
+    public static final String SMS_INCLUDE_IMAGE  = ApplicationProperty.get("SMS.INCLUDE.LOGO");
+    // 2021.12.27 LSH SMS 소개문구 이미지 웹경로포함 파일 
+    // 2022.01.03 LSH SMS MMS 전송시엔 jpg 이미지만 전송가능함
+    public static final String SMS_INTRO_IMAGE = ApplicationProperty.get("SMS.INCLUDE.LOGO.FILE");
+
+    // 2021.10.22 LSH 업무용 SMS 기본발신번호 (11/23 번호변경) - "0222841850"
+    public static final String SMS_TRANSFER_NO = ApplicationProperty.get("SMS.SENDER.NUMBER");
+    // 2021.10.26 LSH 업무용 SMS 기본발신자명 - "환경산업기술원"
+    public static final String SMS_TRANSFER_NM = ApplicationProperty.get("SMS.SENDER.NAME");
+	// LG U+에 등록된 OpenAPI KEY [2021.11.09 개발용 발급키] - "UP-1636355879-5059"
+	public static final String SMS_API_KEY = ApplicationProperty.get("SMS.API.KEY");
+	// LG U+에 등록된 API KEY별로 설정한 암호 [2021.11.09 개발용 발급키] - "ka34046"
+	public static final String SMS_API_SECRET = ApplicationProperty.get("SMS.API.SECRET");
+	// LG U+ SMS 발송 알고리즘 유형 - "1"
+	public static final String SMS_ALGORITHM = ApplicationProperty.get("SMS.API.ALGORITHM");
+    // 2021.11.09 LSH 식별아이디 휴대전화인증 SMS전송시 입력유효시간 (분단위)
+    public static final int    SMS_CERTIFY_MINUTES = 5;
+	// 2021.11.09 LSH 식별아이디 휴대전화인증 SMS전송시 인증문자 랜덤번호 갯수
+	public static final int    SMS_RANDOM_COUNT    = 6;
+    // 2021.10.26 LSH SMS 장문,단문 기준 BYTES 크기
+    public static final int    SMS_SHORT_LENGTH    = 90;
+
+    
+    /*
+     * 2021.11.17 LSH KG 모빌리언스 휴대폰 본인인증 관련 설정값
+     */
+    // 휴대폰 본인인증 - 처리구분 ( 00 : 테스트결제, 10 : 실거래결제 ) - "10"
+    public static final String MOBILIANS_PAYMODE  = ApplicationProperty.get("MOBILIANS.PAYMODE");
+    // 휴대폰 본인인증 - SMS발송 (61:SMS발송  67:SMS미발송) - "61"
+    public static final String MOBILIANS_CIMODE   = ApplicationProperty.get("MOBILIANS.CIMODE");
+    // 휴대폰 본인인증 - 서비스 아이디 - "211020108396"
+    public static final String MOBILIANS_SVCID    = ApplicationProperty.get("MOBILIANS.SVCID");
+    // 휴대폰 본인인증 - 가맹점 도메인 -  "www.ehtis.or.kr"
+    public static final String MOBILIANS_SITEURL  = ApplicationProperty.get("MOBILIANS.SITEURL");
+    // 휴대폰 본인인증 - OK URL (처리결과수신 페이지) - "/com/cmm/okurlMobilians.do"
+    public static final String MOBILIANS_OKURL    = ApplicationProperty.get("MOBILIANS.OKURL");
+    // 휴대폰 본인인증 - NOTI URL (가맹점결과전송 페이지) - "/com/cmm/notiurlMobilians.do"
+    public static final String MOBILIANS_NOTIURL  = ApplicationProperty.get("MOBILIANS.NOTIURL");
+    // 휴대폰 본인인증 - 암호화 사용 여부 - "Y"
+    public static final String MOBILIANS_CRYPTYN  = ApplicationProperty.get("MOBILIANS.CRYPTYN");
+    // 휴대폰 본인인증 - 암호화 Key 구분 (1 or 2 : 가맹점 관리자 등록 후 사용) - "1"
+    public static final String MOBILIANS_KEYGB    = ApplicationProperty.get("MOBILIANS.CRYPTGB");
+    // 휴대폰 본인인증 - 암호화 Key - "relief21"
+    public static final String MOBILIANS_PASSWORD = ApplicationProperty.get("MOBILIANS.PASSOWRD");
+
+
+    /*
+     * 2021.12.16 LSH 행정안전부 주소검색 관련 설정값
+     * 
+	 * [1차신청] 2021.07.30 임시로 신청한 개발용 승인키
+	 * [1차신청] devU01TX0FVVEgyMDIxMDczMDEzNDEzNTExMTQ3MjI=
+	 * [1차신청] 사용기한: 2021.07.30 ~ 2021.10.28
+	 * [1차신청] addressVO.setConfmKey  ("devU01TX0FVVEgyMDIxMDczMDEzNDEzNTExMTQ3MjI=");
+	 * 
+	 * [2차신청] 2021.10.30 임시로 신청한 개발용 승인키 (개발시엔 필요하므로 함부로 지우지 말것)
+	 * [2차신청] devU01TX0FVVEgyMDIxMTAzMDEzMDUyMTExMTgyNDA=
+	 * [2차신청] 사용기한: 2021.10.30 ~ 2022.01.28
+	 * 
+	 * [3차신청] 2021.12.23 임시로 신청한 개발용 승인키 (개발시엔 필요하므로 함부로 지우지 말것)
+	 * [3차신청] devU01TX0FVVEgyMDIxMTIyMzE4NDEyNzExMjA2MzU=
+	 * [3차신청] 사용기한: 2021.12.23 ~ 2022.03.23
+	 * [3차신청] 업체(기관)명	선도소프트	
+	 * [3차신청] URL(IP)	www.sundosoft.co.kr
+	 * [3차신청] 서비스망	인터넷망
+	 * [3차신청] API 유형	도로명주소 검색 API
+     */
+    // 행정안전부 주소검색 - 팝업API 인증키 - "devU01TX0FVVEgyMDIxMTAzMDEzMDUyMTExMTgyNDA="
+    public static final String ADDRESS_CERT_KEY    = ApplicationProperty.get("ADDRESS.POPUP.CERTKEY");
+    // 행정안전부 주소검색 - 팝업API 반환URL - "/com/cmm/popupAddress.do"
+    public static final String ADDRESS_RETURN_URL  = ApplicationProperty.get("ADDRESS.POPUP.RETURNURL");
+    // 행정안전부 주소검색 - 팝업API 반환타입 - "4"
+    public static final String ADDRESS_RETURN_TYPE = ApplicationProperty.get("ADDRESS.POPUP.RETURNTYPE");
+    
+    // 행정안전부 주소검색 - 검색API 인증키 - "devU01TX0FVVEgyMDIxMTIyMzE4NDEyNzExMjA2MzU="
+    public static final String ADDRESS_SEARCH_KEY  = ApplicationProperty.get("ADDRESS.SEARCH.CERTKEY");
+    // 행정안전부 주소검색 - 검색API URL - "https://www.juso.go.kr/addrlink/addrLinkApi.do"
+    public static final String ADDRESS_SEARCH_API  = ApplicationProperty.get("ADDRESS.SEARCH.APIURL");
+    // 행정안전부 주소검색 - 검색API 반환타입 JSON - "json"
+    public static final String ADDRESS_SEARCH_JSON = ApplicationProperty.get("ADDRESS.SEARCH.RETURNTYPE");
+    
+    /*
+     * 2023.01.31 OCR 분석용 API 정보 설정값
+     */
+    // OCR API KEY
+    public static final String OCR_API_KEY     = ApplicationProperty.get("OCR.API.KEY");
+    // OCR SERVER ADDRESS
+    public static final String OCR_API_ADDRESS = ApplicationProperty.get("OCR.SERVER.ADDRESS");
+    // OCR API URL
+    public static final String OCR_API_URL     = OCR_API_ADDRESS + "/sdk/ocr";
+    // OCR API URL (임시파일삭제요청)
+    public static final String OCR_API_DELETE_URL  = OCR_API_ADDRESS + "/sdk/delete/{fid}";
+    // OCR API URL (엔진상태조회)
+    public static final String OCR_API_STATUS_URL  = OCR_API_ADDRESS + "/sdk/monitor";
+    // OCR API CHARSET
+    public static final String OCR_API_CHARSET = "UTF-8";
+    // OCR API MAX PAGES (0 일경우 전체)
+    public static final int OCR_API_MAXPAGES = 200;
+    // 2023.02.02 LSH OCR 분석결과 텍스트 타입
+    public static final String OCR_EXT_TXT = "TXT";
+    // 2023.02.02 LSH OCR 분석결과 엑셀 타입
+    public static final String OCR_EXT_XLS = "XLS";
+    // 2023.02.09 LSH OCR 분석결과 엑셀의 원본(TEXT) 포함여부
+    public static final String OCR_INCLUDE_ORIGINAL = "Y";
+    
+    // 마이페이지 URL 패턴
+    public final static String MYPAGE_URL_PATTERN = "/usr/mypage/";
+    // 관리자 URL 패턴
+    public final static String ADMIN_URL_PATTERN = "/adm/";
+    // 비회원 임시 ID
+    public final static String GUEST_ID = "guest";
+    // 관리자 ROLE 배열
+    public final static String[] ADMIN_ROLES = {"ROLE_AUTH_ADM", "ROLE_AUTH_SYS"};
+    // 2021.11.18 LSH 관리자 기본명칭
+    public final static String ADMIN_NAME = "관리자";
+    
+    
+    // 로그인 여부를 확인하는 함수
+    public static boolean isLogin(String userId) {
+    	if (CommUtils.isNotEmpty(userId) && 
+        	CommConst.GUEST_ID.equals(userId) == false)
+        	return true;
+        return false;
+    }
+    // 관리자인지 확인하는 함수
+    public static boolean isAdminRole(String roleId) {
+    	return Arrays.asList(ADMIN_ROLES).contains(roleId);
+    }
+    // 회원사용자인지 확인하는 함수
+    public static boolean isUserRole(String roleId) {
+    	return ROLE_USER.equals(roleId);
+    }
+    // 식별아이디사용자인지 확인하는 함수
+    public static boolean isIdntfcRole(String roleId) {
+    	return ROLE_IDNTFC.equals(roleId);
+    }
+    
+    public static boolean enableSMS() {
+    	return SMS_ENABLE.equalsIgnoreCase("true");
+    }
+    public static boolean enableBizSMS() {
+    	return SMS_ENABLE_BUSINESS.equalsIgnoreCase("true");
+    }
+    public static boolean includeSMSImage() {
+    	return SMS_INCLUDE_IMAGE.equalsIgnoreCase("true");
+    }
+
+    public static boolean isAuthCheck() {
+    	return IS_AUTH_CHECK.equalsIgnoreCase("true");
+    }
+    // CLIP Report 경로
+    public static String getClipReportDir() {
+    	return CLIPREPORT_DIR;
+    }
+    public static String getClipReportProperty() {
+    	return CLIPREPORT_DIR + CLIPREPORT_PROPERTIES;
+    }
+
+	// 2021.11.08 LSH 인증번호 랜덤번호 생성
+	public static String getSmsRandomNo() {
+		// 2022.01.14 보안취약점 조치
+		SecureRandom secRandom = new SecureRandom();
+		StringBuilder sb = new StringBuilder();
+		for (int i=0; i < SMS_RANDOM_COUNT; i++)
+			sb.append(String.valueOf(secRandom.nextInt(10)));
+		return sb.toString();
+	}
+	/**
+	 * 2021.10.26
+	 * 내용의 문자열 크기에 따라 단문(S),장문(L) 타입을 반환한다.
+	 */
+	public static String getSmsLengthCode(String content) {
+		if (content == null)
+			return CommConst.SMS_LENGTH_SMS;
+		if (content.getBytes().length <= CommConst.SMS_SHORT_LENGTH)
+			return CommConst.SMS_LENGTH_SMS;
+		else
+			return CommConst.SMS_LENGTH_LMS;
+	}
+    
+    public static final String ACT_LOGIN = "LOGIN"; // 2021.12.20 로그인 ACTION
+    public static final String ACT_MAIN  = "MAIN" ; // 2021.12.20 메인 ACTION
+    
+    public final static String INSERT  = "I";  // 등록
+    public final static String UPDATE  = "U";  // 수정
+    public final static String DELETE  = "D";  // 삭제
+    public final static String SAVE    = "S";  // 저장
+    public final static String LOAD    = "L";  // 로드
+    public final static String LIST    = "LIST";  // 목록
+    public final static String VIEW    = "VIEW";  // 상세조회
+    public final static String SUBMIT  = "SUBMIT";  // 제출하기
+    public final static String TMPSAVE = "TMPSAVE"; // 임시저장
+    public final static String OPEN    = "OPEN";  // 오픈
+    public final static String RESULT  = "RESULT";  // 결과
+    
+    public final static String YES = "Y";
+    public final static String NO  = "N";
+
+    public final static String SINGLE = "SINGLE"; // 단일처리모드
+    public final static String MULTPL = "MULTPL"; // 다중처리모드
+
+    // 2021.09.09 LSH 최상위 CODE
+    public final static String ROOT_CODE = "NONE";
+    // 2021.09.09 LSH 최상위 ROLE
+    public final static String ROOT_ROLE = "NONE";
+    // 2021.09.09 LSH 최상위 메뉴
+    public final static String ROOT_MENU = "NONE";
+
+    // 2021.11.25 LSH 업무영역 고유키워드 - 구제급여신청
+    public static final String RELIEF = "RELIEF";
+    // 2021.11.25 LSH 업무영역 고유키워드 - 피해조사
+    public static final String EXMN   = "EXMN";
+    // 2021.11.25 LSH 업무영역 고유키워드 - 취약계층소송지원
+    public static final String LWST   = "LWST";
+    // 2021.11.25 LSH 업무영역 고유키워드 - 게시판
+    public static final String BBS    = "BBS";
+    
+    // 2021.10.12 LSH 기타피해지역 코드
+    public static final String ETC_AREA = "ETC";
+    // 2021.10.12 LSH 구제급여 신청구분(CT010) - 본인
+    public static final String RELIEF_APLY_SELF = "R01";
+    // 2021.10.12 LSH 구제급여 신청구분(CT010) - 대리(생)
+    public static final String RELIEF_APLY_LIVE = "R02";
+    // 2021.10.12 LSH 구제급여 신청구분(CT010) - 대리(사)
+    public static final String RELIEF_APLY_DPTH = "R03";
+    
+    // 2021.11.09 HGJ 정보연동 신청구분 (CT014) - 본인
+    public static final String INTRLCK_APLY_SELF = "R11";
+    // 2021.11.09 HGJ 정보연동 신청구분 (CT014) - 대리인
+    public static final String INTRLCK_APLY_OTHER = "R12";
+
+    // 2021.10.12 LSH 진행상태(CT025) - 임시저장
+    public static final String PRGRE_SAVE     = "01";
+    // 2021.10.12 LSH 진행상태 - 신청
+    public static final String PRGRE_APPLY    = "02";
+    // 2021.10.12 LSH 진행상태 - 재신청
+    public static final String PRGRE_REAPPLY  = "03";
+    // 2021.10.12 LSH 진행상태 - 접수
+    public static final String PRGRE_RECEIPT  = "04";
+    // 2021.10.12 LSH 진행상태 - 예비조사
+    public static final String PRGRE_PREPARE  = "05";
+    // 2021.10.12 LSH 진행상태 - 본조사
+    public static final String PRGRE_MNSVY    = "06";
+    // 2021.10.12 LSH 진행상태 - 지급
+    public static final String PRGRE_GIVE     = "07";
+    // 2021.10.12 LSH 진행상태 - 반려
+    public static final String PRGRE_REJECT   = "99";
+    
+    // 2021.10.25 LSH 업무구분(CT004) - 구제급여
+    public static final String DTY_RELIEF     = "BR01";
+    // 2021.10.25 LSH 업무구분(CT004) - 취약계층소송지원
+    public static final String DTY_LWST       = "BR02";
+    // 2023.01.16 LSH 업무구분(CT004) - 취약계층소송지원
+    public static final String DTY_BIO        = "BR04";
+
+    // 2021.10.12 LSH 서류업무구분(CT034) - 구제급여
+    public static final String PAPE_DTY_RELIEF     = "PP01";
+    // 2021.10.12 LSH 서류업무구분(CT034) - 취약계층소송지원
+    public static final String PAPE_DTY_LWST       = "PP02";
+    // 2021.10.12 LSH 서류업무구분(CT034) - 정보연동
+    public static final String PAPE_DTY_INTRLCK    = "PP03";
+    // 2023.01.16 LSH 서류업무구분(CT034) - 살생물제품 구제급여
+    public static final String PAPE_DTY_BIO        = "PP04";
+    
+    // 2022.12.06 LSH 신청서류그룹(PAPE_CD) - 구제급여신청
+    public static final String PAPE_RELIEF = "D00";
+    // 2021.10.29 LSH 신청서류그룹(PAPE_CD) - 의료비
+    public static final String PAPE_MCP    = "D002";
+    // 2021.10.29 LSH 신청서류그룹(PAPE_CD) - 요양생활수당
+    public static final String PAPE_RCP    = "D003";
+
+    // 2021.10.29 LSH 구제급여신청종류(CT011) - 의료비
+    public static final String APLY_KND_MCP    = "RK1";
+    // 2021.10.29 LSH 구제급여신청종류(CT011) - 요양생활수당
+    public static final String APLY_KND_RCP    = "RK2";
+    // 2023.01.05 LSH 구제급여신청종류(CT011) - 장의비
+    public static final String APLY_KND_DTH    = "RK3";
+    // 2023.01.05 LSH 구제급여신청종류(CT011) - 유족보상비
+    public static final String APLY_KND_BRV    = "RK4";
+    // 2023.01.05 LSH 구제급여신청종류(CT011) - 재산피해보상비
+    public static final String APLY_KND_PRP    = "RK5";
+
+    // 2021.11.24 LSH 피해조사업무구분(CT027) - 예비조사
+    public static final String DTY_EXMN_PRPT    = "01";
+    // 2021.11.24 LSH 피해조사업무구분(CT027) - 본조사
+    public static final String DTY_EXMN_MNSVY   = "02";
+    
+    // 2021.10.13 LSH 처리상태(CT028) - 제출
+    public static final String PRCS_SUBMIT         = "01";
+    // 2021.10.13 LSH 처리상태(CT028) - 미제출
+    public static final String PRCS_UNSUBMIT       = "02";
+    // 2021.10.13 LSH 처리상태(CT028) - 보완필요
+    public static final String PRCS_SUPPLEMENT     = "03";
+
+    // 2021.10.14 LSH 구제급여신청 기본 신청차수
+    public static final String APLY_ODER_RELIEF     = "0";
+    // 2021.10.14 LSH 구제급여신청 기본 사업차수
+    public static final String BIZ_ODER_RELIEF      = "2";
+
+    // 2021.10.15 LSH 구제급여신청 신청종류 공통코드
+    public static final String CODE_APLYKIND       = "CT011";
+
+    // 2021.11.24 LSH 피해조사서류 업무분류(CT039) - 심의회결과
+    public static final String CODE_EXMN_DLT       = "DLT";
+    // 2021.11.24 LSH 피해조사서류 업무분류(CT039) - 의료비
+    public static final String CODE_EXMN_MCP       = "MCP";
+    // 2021.11.24 LSH 피해조사서류 업무분류(CT039) - 요양생활수당
+    public static final String CODE_EXMN_RCP       = "RCP";
+    
+    // 2021.12.14 LSH 심의회심의결과(CT012) - 적합
+    public static final String CODE_DLTNC_YES      = "R1";
+    // 2021.11.24 LSH 심의회심의결과(CT012) - 부적합
+    public static final String CODE_DLTNC_NO       = "R9";
+    
+    // 2021.10.22 LSH SMS메세지 공통코드
+    public static final String CODE_SMSMSG         = "CT036";
+    // 2021.11.08 LSH SMS메세지 식별아이디 인증용 인증번호발송 코드
+    public static final String CODE_SMSMSG_RANDOM  = "BR00001";
+    // 2021.12.17 LSH SMS메세지 사용자ID 찾기용 SMS발송 코드
+    public static final String CODE_SMSMSG_USERID  = "BR00002";
+    // 2021.12.17 LSH SMS메세지 비밀번호 찾기용 인증번호발송 코드
+    public static final String CODE_SMSMSG_PSWD    = "BR00003";
+
+    // 2021.10.22 LSH SMS메세지 구제급여 신청접수 코드
+    public static final String CODE_SMSMSG_RECEIPT = "BR01001";
+    // 2021.10.22 LSH SMS메세지 구제급여 보완요청 코드
+    public static final String CODE_SMSMSG_SPPLMNT = "BR01002";
+    // 2021.11.24 LSH SMS메세지 예비조사 완료 코드
+    public static final String CODE_SMSMSG_PRPTEXMN  = "BR01003";
+    // 2021.11.24 LSH SMS메세지 본조사 완료 코드
+    public static final String CODE_SMSMSG_MNSVY     = "BR01004";
+    
+    // 2023.01.27 LSH SMS메세지 살생물제품 구제급여 신청접수 코드
+    public static final String CODE_SMSMSG_BIO_RECEIPT = "BR04001";
+    
+    // 2021.10.26 LSH 업무용 SMS구분(CT007) - 관리자전송
+    public static final String SMS_SYSTEM_CODE     = "SS99";
+    // 2021.10.26 LSH 업무용 SMS구분(CT007) - 구제급여접수
+    public static final String SMS_RELIEF_RECEIPT  = "SS01";
+    // 2021.10.26 LSH 업무용 SMS구분(CT007) - 구제급여보완요청
+    public static final String SMS_RELIEF_SPLEMNT  = "SS04";
+    // 2021.10.26 LSH 업무용 SMS구분(CT007) - 구제급여심의결과
+    public static final String SMS_RELIEF_RESULT   = "SS02";
+    // 2021.10.26 LSH 업무용 SMS구분(CT007) - 구제급여지급
+    public static final String SMS_RELIEF_GIVE     = "SS03";
+    // 2021.10.26 LSH 업무용 SMS구분(CT007) - 비밀번호전송
+    public static final String SMS_USER_PSW        = "SS05";
+	
+    // 2021.10.26 LSH 장문구분(CT019) - SMS
+    public static final String SMS_LENGTH_SMS   = "S";
+    // 2021.10.26 LSH 장문구분(CT019) - LMS
+    public static final String SMS_LENGTH_LMS   = "L";
+    // 2021.10.26 LSH 장문구분(CT019) - MMS
+    public static final String SMS_LENGTH_MMS   = "M";
+    
+    // 2021.11.23 LSH SMS 전송타입 - 즉시전송
+    public static final String SMS_SEND_NOW     = "S";
+    // 2021.11.23 LSH SMS 전송타입 - 예약전송
+    public static final String SMS_SEND_RSV     = "R";
+
+    // 2021.11.23 LSH SMS 전송결과(CT038) - 발송대기
+    public static final String SMS_RESULT_WAIT    = "0000";
+    // 2021.11.23 LSH SMS 전송결과(CT038) - 전송선공
+    public static final String SMS_RESULT_SUCCESS = "1000";
+    
+    // 2021.10.26 LSH 보완요청처리상태(CT037) - 보완요청
+    public static final String SPLEMNT_APPLY      = "01";
+    // 2021.10.26 LSH 보완요청처리상태(CT037) - 보완처리완료
+    public static final String SPLEMNT_COMPLETE   = "02";
+
+    // 2021.10.29 LSH 게시판구분(CT002) - 공지사항
+    public static final String BBS_NOTICE   = "10";
+    // 2021.10.29 LSH 게시판구분(CT002) - 질의응답
+    public static final String BBS_QNA      = "20";
+    // 2021.10.29 LSH 게시판구분(CT002) - 자료실
+    public static final String BBS_DATA     = "30";
+    // 2021.10.29 LSH 게시판구분(CT002) - 법규정
+    public static final String BBS_STATUTE  = "40";
+    // 2021.10.29 LSH 게시판구분(CT002) - 연구보고서
+    public static final String BBS_RESEARCH = "50";
+    // 2021.10.29 LSH 게시판구분(CT002) - 위원회
+    public static final String BBS_COMMIT   = "60";
+    // 2021.10.29 LSH 게시판구분(CT002) - 자주하는질문
+    public static final String BBS_FAQ      = "70";
+    
+    // 2021.11.30 LSH 본조사 기능구분 (act) - 의료비
+    public static final String MNSVY_MCP  = "MCP";
+    // 2021.11.30 LSH 본조사 기능구분 (act) - 요양생활수당
+    public static final String MNSVY_RCP  = "RCP";
+    // 2021.11.30 LSH 본조사 기능구분 (act) - 장의비/유족보상비
+    public static final String MNSVY_BRV  = "BRV";
+    // 2021.11.30 LSH 본조사 기능구분 (act) - 사망원인조사
+    public static final String MNSVY_DTH  = "DTH";
+    // 2021.11.30 LSH 본조사 기능구분 (act) - 심의회결과
+    public static final String MNSVY_RSLT = "RSLT";
+
+    // 2021.12.06 LSH 구제급여지급 기능구분 (act) - 의료비 지급
+    public static final String GIVE_MCP = "MCP";
+    // 2021.12.06 LSH 구제급여지급 기능구분 (act) - 요양생활수당 결정
+    public static final String GIVE_RCP = "RCP";
+    
+    // 2021.12.01 LSH 요양구분 공통코드
+    public static final String CODE_RCPER   = "CT015";
+    // 2021.12.01 LSH 인정구분 공통코드
+    public static final String CODE_RCOGN   = "CT018";
+    // 2021.12.01 LSH 피해지역 공통코드 (임의정의)
+    public static final String CODE_BIZAREA = "BIZAREA";
+    // 2021.12.01 LSH 질병분류 공통코드 (임의정의)
+    public static final String CODE_DISSCL  = "DISSCL";
+    
+    // 2021.12.29 LSH 구제급여신청 온라인설문지 관리번호
+    public static final String SURVEY_RELIEF_NO  = "SV001";
+    
+    // 2022.01.05 LSH 설문지 가족관계 명칭 배열
+    public static final String[] SURVEY_REL_NAMES = {"1.부","2.모","3.형제/자매","4.자녀"};
+    // 2022.01.20 LSH 설문지 가족관계 코드 배열
+    public static final String[] SURVEY_REL_CODES = {"F","M","B","C"};
+
+	// 2021.10.24 구제급여 보완기한 (15일 이내)
+	// 2022.01.20 구제급여 제출기한 (영업일 기준 30일 이내)
+	public static final int SPLEMNT_LIMIT = 30;
+
+    // 2022.12.05 LSH 이력구분 - 피해자정보수정
+    public static final String HST_SUFRER   = "H3";
+    // 2022.12.05 LSH 이력구분 - 신청인정보수정
+    public static final String HST_APLCNT   = "H4";
+    // 2022.12.05 LSH 이력구분 - 피해내용수정
+    public static final String HST_DAMAGE   = "H5";
+    // 2022.12.05 LSH 이력구분 - 제출서류추가
+    public static final String HST_PAPER    = "H6";
+
+    // 2022.12.29 LSH 요양생활수당 지급구분 - 소급
+    public static final String RCP_GIVE_RTROACT = "01";
+    // 2022.12.29 LSH 요양생활수당 지급구분 - 월지급
+    public static final String RCP_GIVE_MONTHLY = "02";
+    // 2022.12.29 LSH 요양생활수당 지급구분 - 일시지급
+    public static final String RCP_GIVE_LUMPSUM = "03";
+	
+	// 2023.01.17 살생물제품 신청종류 배열 (BIO_PAPE_CDS와 PAIR로 사용됨)
+	public static final String[] BIO_APLY_KNDS = {"BK1","BK2","BK3","BK4","BK5"};
+	// 2023.01.17 살생물제품 서류그룹 배열 (BIO_APLY_KNDS와 PAIR로 사용됨)
+	public static final String[] BIO_PAPE_CDS  = {"D302","D303","D304","D305","D306"};
+
+	// 2023.02.07 LSH 요양급여내역서 서류코드
+	public static final String MEDIC_PAPE_CD = "D00201"; 
+}

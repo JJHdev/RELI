@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Authority">
+
+    <!-- 프로그램 접근 권한 체크 조회 -->
+    <select id="getAuthorityUser" parameterType="java.util.Map" resultType="java.util.HashMap">
+        SELECT CASE WHEN AUTH_CNT = 0 THEN 'X'
+               ELSE 'O'
+               END                                  AS "auth"
+          FROM (SELECT SIGN(COUNT(b.ROLE_ID))       AS AUTH_TRGT_CNT    <!-- 1이면 권한체크 대상. -->
+                     , SIGN(COUNT(c.ROLE_ID))       AS AUTH_CNT         <!-- 1이면 권한 있음, 0이면 권한 없음. -->
+                  FROM SYS_PROG a
+                     , SYS_ROLE_PROG b
+                     , (SELECT ROLE_ID
+                          FROM SYS_ROLE
+                       CONNECT BY PRIOR ROLE_ID = UP_ROLE_ID
+                         START WITH ROLE_ID = #{roleId}) c
+                 WHERE a.PROG_ID            = b.PROG_ID
+                   AND a.PROG_TY            = 'url'
+                   AND a.USE_YN             = 'Y'
+                   AND b.ROLE_ID            = c.ROLE_ID(+)
+                   AND a.SYS_SE_CD          = #{sysCd}
+                   <!-- 2022.01.09 URL querystring 으로 넘어올경우 대비 조건변경 (이전코드 : a.PROG_URL = #{url} )--> 
+                   AND REGEXP_LIKE(#{url}, a.PROG_URL||'*') 
+               )
+         WHERE AUTH_TRGT_CNT > 0
+    </select>
+
+</mapper>

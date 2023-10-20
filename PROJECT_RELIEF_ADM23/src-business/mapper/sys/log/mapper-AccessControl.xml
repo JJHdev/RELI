@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AccessControl">
+
+    <!-- 정보조회이력 등록 -->
+    <insert id="regiInfoLog" parameterType="java.util.Map">
+        INSERT 
+          INTO SYS_INFO_HST 
+             ( SN,
+               USER_NO,
+               CNTN_SE_NM,
+               KEY1,
+               KEY2,
+               KEY3,
+               KEY4,
+               CNTN_DT,
+               IP_ADDR,
+               SRVR_NM,
+               SYS_SE_CD  
+             )
+        VALUES
+             ( SEQ_INFO_HST.NEXTVAL,
+               #{userNo},
+               #{cntnSeNm},
+               #{key1},
+               #{key2},
+               #{key3},
+               #{key4},
+               SYSTIMESTAMP,
+               #{ipAddr},
+               #{srvrNm},
+               #{sysCd}  
+             )
+    </insert>
+
+    <!-- 페이지 접속 로그  -->
+    <insert id="regiAccessLog" parameterType="java.util.Map">
+        INSERT INTO SYS_CNTN_HST (
+              SN
+            , PROG_URL
+            , USER_NO
+            , CNTN_SE_CD
+            , CNTN_YR
+            , CNTN_MM
+            , CNTN_DD
+            , CNTN_DT
+            , IP_ADDR
+            , SRVR_NM
+            , SYS_SE_CD
+        ) VALUES (
+              SEQ_CNTN_HIST.nextval
+            , #{progUrl}
+            , #{userNo}
+            , #{cntnSeCd}
+            , to_char(sysdate, 'yyyy')
+            , to_char(sysdate, 'mm')
+            , to_char(sysdate, 'dd')
+            , systimestamp
+            , #{ipAddr}
+            , #{srvrNm}
+            , #{sysCd}
+        )
+    </insert>
+
+    <!-- 로그인 로그  -->
+    <insert id="regiLoginLog" parameterType="java.util.Map">
+        <selectKey keyProperty="keyNo" resultType="String" order="BEFORE">
+            SELECT SEQ_LGN_HIST.nextval
+            FROM   DUAL
+        </selectKey>
+        INSERT INTO SYS_LGN_HST (
+              SN
+            , USER_NO
+            , LGN_YR
+            , LGN_MM
+            , LGN_DD
+            , LGN_DT
+            , LGN_STUS_CD
+            , IP_ADDR
+            , SRVR_NM
+            , SYS_SE_CD
+        ) VALUES (
+              #{keyNo}
+            , #{userNo}
+            , to_char(sysdate, 'yyyy')
+            , to_char(sysdate, 'mm')
+            , to_char(sysdate, 'dd')
+            , systimestamp
+            , #{lgnStusCd}
+            , #{ipAddr}
+            , #{srvrNm}
+            , #{sysCd}
+        )
+    </insert>
+
+</mapper>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BioMfcmmTenure">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(mfcmmNo)">
+            AND A.MFCMM_NO = #{mfcmmNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(cmitSeCd)">
+            AND A.CMIT_SE_CD = #{cmitSeCd}
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.TENURE_NO                                   AS "tenureNo",
+        A.MFCMM_NO                                    AS "mfcmmNo",
+        A.CMIT_SE_CD                                  AS "cmitSeCd",
+        FN_GET_CODENM('CT204', A.CMIT_SE_CD)          AS "cmitSeNm",
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+       (SELECT BIZ_AREA
+          FROM TB_BIZ_MNG
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND USE_YN      = 'Y')                     AS "bizAreaNm",
+        A.TENURE_ODER                                 AS "tenureOder",
+        FN_FMT_STRTODATE(A.TENURE_BGNG_YMD,'-')       AS "tenureBgngYmd",
+        FN_FMT_STRTODATE(A.TENURE_END_YMD ,'-')       AS "tenureEndYmd",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 위원임기차수 목록조회 -->
+    <select id="listBioMfcmmTenure" resultType="java.util.HashMap" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_MFCMM_TENURE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.TENURE_NO
+    </select>
+    <select id="listBioMfcmmTenureCount" resultType="int" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT COUNT(1) 
+          FROM TB_BIO_MFCMM_TENURE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 위원임기차수 상세조회 -->
+    <select id="viewBioMfcmmTenure" resultType="business.bio.cmit.service.BioCmitMngVO" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_MFCMM_TENURE A
+         WHERE TENURE_NO = #{tenureNo}
+    </select>
+
+    <!-- 위원임기차수 등록 -->
+    <insert id="regiBioMfcmmTenure" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        <selectKey keyProperty="tenureNo" resultType="string" order="BEFORE">
+			SELECT SEQ_BIO_MFCMM_TENURE.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_BIO_MFCMM_TENURE 
+             ( TENURE_NO,
+               MFCMM_NO,
+               CMIT_SE_CD,
+               BIZ_AREA_CD,
+               TENURE_ODER,
+               TENURE_BGNG_YMD,
+               TENURE_END_YMD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{tenureNo},
+               #{mfcmmNo},
+               #{cmitSeCd},
+               #{bizAreaCd},
+               #{tenureOder},
+               FN_FMT_STRTODATE(#{tenureBgngYmd},''),
+               FN_FMT_STRTODATE(#{tenureEndYmd },''),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 위원임기차수 수정 -->
+    <update id="updtBioMfcmmTenure" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        UPDATE TB_BIO_MFCMM_TENURE 
+           SET MDFR_NO         = #{gsUserNo},
+  		<if test="@common.util.CommUtils@isNotEmpty(cmitSeCd )"> CMIT_SE_CD  = #{cmitSeCd },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(bizAreaCd)"> BIZ_AREA_CD = #{bizAreaCd},</if>
+  		       TENURE_BGNG_YMD = FN_FMT_STRTODATE(#{tenureBgngYmd},''),
+  		       TENURE_END_YMD  = FN_FMT_STRTODATE(#{tenureEndYmd },''),  
+  		       TENURE_ODER     = #{tenureOder},
+               MDFCN_YMD       = SYSDATE  
+         WHERE TENURE_NO       = #{tenureNo}
+    </update>
+
+    <!-- 위원임기차수 삭제 -->
+    <delete id="deltBioMfcmmTenure" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        DELETE 
+          FROM TB_BIO_MFCMM_TENURE 
+         WHERE TENURE_NO = #{tenureNo}
+    </delete> 
+</mapper>

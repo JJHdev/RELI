@@ -1,0 +1,311 @@
+package common.user;
+
+import java.io.Serializable;
+
+import business.com.CommConst;
+
+/**
+ * Program Name 	: UserInfo
+ * Description 		:
+ * Programmer Name 	: ntarget
+ * Creation Date 	: 2021-02-08
+ * Used Table 		:
+ */
+
+@SuppressWarnings({"serial"})
+public class UserInfo implements Serializable {
+	
+    // 시스템 공통정보
+    private String userId      = null; // 사용자아이디
+    private String userNm      = null; // 사용자명
+    private String pswd        = null; // 비밀번호
+    private String roleId      = null; // 권한롤
+    private String roleNm      = null; // 권한롤명칭
+    private String ipAddr      = null; // IP주소
+    private String useYn       = null; // 사용여부
+    private String enabled     = null;
+
+    private int    diffDays    = 0;    // 비밀번호변경일수
+    private int    diffNextDays= 0;    // 비밀번호 다음에변경 일수
+
+    /* 사용자정보 */
+    private String userNo      = null; //사용자번호
+    private String useIp       = null; //사용IP
+    private String emlAddr     = null; // 이메일
+    private String telno       = null; // 전화번호
+    private String mbtelNo     = null; // 휴대전화번호
+    private String brdt        = null; // 생년월일
+    private String sxdst       = null; // 성별
+    private String deptCd      = null; // 부서코드
+    private String deptNm      = null; // 부서명
+    private String zip         = null; // 우편번호
+    private String addr        = null; // 주소1
+    private String daddr       = null; // 주소2
+    private String joinYmd     = null; // 가입일자
+    private String pswdLockYmd = null; // 비밀번호잠금일자
+    private String pswdErrCnt  = null; // 비밀번호오류횟수
+    private String pswdChgYmd  = null; // 비밀번호변경일자
+    private String pswdNextYmd = null; // 비밀번호다음일자
+    private String lstLgnDt    = null; // 마지막로그인일시
+    private String useStusCd   = null; // 사용상태
+    private String testUseYn   = null; // 테스트사용여부
+    private String rgtrNo      = null; // 등록자번호
+    private String regDttm     = null; // 등록일시
+    private String regDate     = null; // 등록일자
+    private String mdfrNo      = null; // 수정자번호
+    private String mdfDttm     = null; // 수정일시
+    private String mdfDate     = null; // 수정일자
+    private String mbtelRcptnAgreYn = null; // 휴대전화수신동의여부
+    
+    private String gsUserNo    = null; // 로그인사용자번호 2021.09.09 추가
+    private String mode        = null; // 처리모드 2021.09.09 추가
+    
+    // 2021.08.27 LSH 사용자 로그인 여부
+    public boolean isLogin() {
+    	return CommConst.isLogin(userNo);
+    }
+    // 2021.08.27 LSH 관리자인지 여부
+    public boolean isAdmin() {
+    	return CommConst.isAdminRole(roleId);
+    }
+    // 2021.11.08 LSH 식별아이디사용자인지 여부
+    public boolean isIdntfc() {
+    	return CommConst.isIdntfcRole(roleId);
+    }
+	public String getUserId() {
+		return userId;
+	}
+	public void setUserId(String userId) {
+		this.userId = userId;
+	}
+	public String getUserNm() {
+		return userNm;
+	}
+	public void setUserNm(String userNm) {
+		this.userNm = userNm;
+	}
+	public String getRoleId() {
+		return roleId;
+	}
+	public void setRoleId(String roleId) {
+		this.roleId = roleId;
+	}
+	public String getRoleNm() {
+		return roleNm;
+	}
+	public void setRoleNm(String roleNm) {
+		this.roleNm = roleNm;
+	}
+	public String getIpAddr() {
+		return ipAddr;
+	}
+	public void setIpAddr(String ipAddr) {
+		this.ipAddr = ipAddr;
+	}
+	public String getUseYn() {
+		return useYn;
+	}
+	public void setUseYn(String useYn) {
+		this.useYn = useYn;
+	}
+	public String getEnabled() {
+		return enabled;
+	}
+	public void setEnabled(String enabled) {
+		this.enabled = enabled;
+	}
+	public int getDiffDays() {
+		return diffDays;
+	}
+	public void setDiffDays(int diffDays) {
+		this.diffDays = diffDays;
+	}
+	public int getDiffNextDays() {
+		return diffNextDays;
+	}
+	public void setDiffNextDays(int diffNextDays) {
+		this.diffNextDays = diffNextDays;
+	}
+	public String getUserNo() {
+		return userNo;
+	}
+	public void setUserNo(String userNo) {
+		this.userNo = userNo;
+	}
+	public String getUseIp() {
+		return useIp;
+	}
+	public void setUseIp(String useIp) {
+		this.useIp = useIp;
+	}
+	public String getBrdt() {
+		return brdt;
+	}
+	public void setBrdt(String brdt) {
+		this.brdt = brdt;
+	}
+	public String getSxdst() {
+		return sxdst;
+	}
+	public void setSxdst(String sxdst) {
+		this.sxdst = sxdst;
+	}
+	public String getDeptCd() {
+		return deptCd;
+	}
+	public void setDeptCd(String deptCd) {
+		this.deptCd = deptCd;
+	}
+	public String getDeptNm() {
+		return deptNm;
+	}
+	public void setDeptNm(String deptNm) {
+		this.deptNm = deptNm;
+	}
+	public String getTelno() {
+		return telno;
+	}
+	public void setTelno(String telno) {
+		this.telno = telno;
+	}
+	public String getJoinYmd() {
+		return joinYmd;
+	}
+	public void setJoinYmd(String joinYmd) {
+		this.joinYmd = joinYmd;
+	}
+	public String getTestUseYn() {
+		return testUseYn;
+	}
+	public void setTestUseYn(String testUseYn) {
+		this.testUseYn = testUseYn;
+	}
+	public String getGsUserNo() {
+		return gsUserNo;
+	}
+	public void setGsUserNo(String gsUserNo) {
+		this.gsUserNo = gsUserNo;
+	}
+	public String getMode() {
+		return mode;
+	}
+	public void setMode(String mode) {
+		this.mode = mode;
+	}
+	public String getPswd() {
+		return pswd;
+	}
+	public void setPswd(String pswd) {
+		this.pswd = pswd;
+	}
+	public String getEmlAddr() {
+		return emlAddr;
+	}
+	public void setEmlAddr(String emlAddr) {
+		this.emlAddr = emlAddr;
+	}
+	public String getMbtelNo() {
+		return mbtelNo;
+	}
+	public void setMbtelNo(String mbtelNo) {
+		this.mbtelNo = mbtelNo;
+	}
+	public String getZip() {
+		return zip;
+	}
+	public void setZip(String zip) {
+		this.zip = zip;
+	}
+	public String getAddr() {
+		return addr;
+	}
+	public void setAddr(String addr) {
+		this.addr = addr;
+	}
+	public String getDaddr() {
+		return daddr;
+	}
+	public void setDaddr(String daddr) {
+		this.daddr = daddr;
+	}
+	public String getPswdLockYmd() {
+		return pswdLockYmd;
+	}
+	public void setPswdLockYmd(String pswdLockYmd) {
+		this.pswdLockYmd = pswdLockYmd;
+	}
+	public String getPswdErrCnt() {
+		return pswdErrCnt;
+	}
+	public void setPswdErrCnt(String pswdErrCnt) {
+		this.pswdErrCnt = pswdErrCnt;
+	}
+	public String getPswdChgYmd() {
+		return pswdChgYmd;
+	}
+	public void setPswdChgYmd(String pswdChgYmd) {
+		this.pswdChgYmd = pswdChgYmd;
+	}
+	public String getPswdNextYmd() {
+		return pswdNextYmd;
+	}
+	public void setPswdNextYmd(String pswdNextYmd) {
+		this.pswdNextYmd = pswdNextYmd;
+	}
+	public String getLstLgnDt() {
+		return lstLgnDt;
+	}
+	public void setLstLgnDt(String lstLgnDt) {
+		this.lstLgnDt = lstLgnDt;
+	}
+	public String getUseStusCd() {
+		return useStusCd;
+	}
+	public void setUseStusCd(String useStusCd) {
+		this.useStusCd = useStusCd;
+	}
+	public String getRgtrNo() {
+		return rgtrNo;
+	}
+	public void setRgtrNo(String rgtrNo) {
+		this.rgtrNo = rgtrNo;
+	}
+	public String getRegDttm() {
+		return regDttm;
+	}
+	public void setRegDttm(String regDttm) {
+		this.regDttm = regDttm;
+	}
+	public String getRegDate() {
+		return regDate;
+	}
+	public void setRegDate(String regDate) {
+		this.regDate = regDate;
+	}
+	public String getMdfrNo() {
+		return mdfrNo;
+	}
+	public void setMdfrNo(String mdfrNo) {
+		this.mdfrNo = mdfrNo;
+	}
+	public String getMdfDttm() {
+		return mdfDttm;
+	}
+	public void setMdfDttm(String mdfDttm) {
+		this.mdfDttm = mdfDttm;
+	}
+	public String getMdfDate() {
+		return mdfDate;
+	}
+	public void setMdfDate(String mdfDate) {
+		this.mdfDate = mdfDate;
+	}
+	public String getMbtelRcptnAgreYn() {
+		return mbtelRcptnAgreYn;
+	}
+	public void setMbtelRcptnAgreYn(String mbtelRcptnAgreYn) {
+		this.mbtelRcptnAgreYn = mbtelRcptnAgreYn;
+	}
+
+}
+

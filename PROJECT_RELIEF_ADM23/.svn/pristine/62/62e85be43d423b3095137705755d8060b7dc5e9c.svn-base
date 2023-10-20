@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SurveyRspns">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where-Mng">
+        <if test="@common.util.CommUtils@isNotEmpty(qstnnMngNo)">
+            AND A.QSTNN_MNG_NO = #{qstnnMngNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo)">
+            AND A.APLY_NO = #{aplyNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(signCn)">
+            AND A.SIGN_CN = #{signCn}
+        </if>
+    </sql>
+    <sql id="Sql-Column-Mng">
+        A.RSPNS_MNG_NO                                AS "rspnsMngNo",
+        A.QSTNN_MNG_NO                                AS "qstnnMngNo",
+        A.APLY_NO                                     AS "aplyNo",
+        A.SIGN_CN                                     AS "signCn",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate",
+		TO_CHAR(A.REG_YMD,   'yyyy')                  AS "rgtrYear",
+		TO_CHAR(A.REG_YMD,   'mm')                    AS "rgtrMonth",
+		TO_CHAR(A.REG_YMD,   'dd')                    AS "rgtrDay",
+		(SELECT APLCNT_NM
+		   FROM TB_RELIEF
+		  WHERE APLY_NO = A.APLY_NO)                  AS "rgtrNm"
+    </sql>
+
+    <!-- 설문응답관리 목록조회 -->
+    <select id="listRspnsMng" resultType="business.com.survey.service.SurveyVO" parameterType="business.com.survey.service.SurveyVO">
+        SELECT <include refid="Sql-Column-Mng"/>
+          FROM TB_RSPNS_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where-Mng"/>
+         ORDER BY 
+               A.QSTNN_MNG_NO,
+               A.APLY_NO
+    </select>
+    <select id="listRspnsMngCount" resultType="int" parameterType="business.com.survey.service.SurveyVO">
+        SELECT COUNT(1) 
+          FROM TB_RSPNS_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where-Mng"/>
+    </select>
+
+    <!-- 설문응답관리 상세조회 -->
+    <select id="viewRspnsMng" resultType="business.com.survey.service.SurveyVO" parameterType="business.com.survey.service.SurveyVO">
+        SELECT <include refid="Sql-Column-Mng"/>
+          FROM TB_RSPNS_MNG A
+         WHERE RSPNS_MNG_NO = #{rspnsMngNo}
+    </select>
+
+    <!-- 설문응답관리 상세조회 -->
+    <select id="viewRspnsMngByAplyNo" resultType="business.com.survey.service.SurveyVO" parameterType="string">
+        SELECT <include refid="Sql-Column-Mng"/>
+          FROM TB_RSPNS_MNG A
+         WHERE RSPNS_MNG_NO = (SELECT MAX(RSPNS_MNG_NO)
+                                 FROM TB_RSPNS_MNG
+                                WHERE APLY_NO = #{aplyNo})
+    </select>
+
+    <!-- 설문응답관리 등록 -->
+    <insert id="regiRspnsMng" parameterType="business.com.survey.service.SurveyVO">
+        <selectKey keyProperty="rspnsMngNo" resultType="string" order="BEFORE">
+            SELECT SEQ_RSPNS_MNG.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_RSPNS_MNG 
+             ( QSTNN_MNG_NO,
+               RSPNS_MNG_NO,
+               APLY_NO,
+               SIGN_CN,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{qstnnMngNo},
+               #{rspnsMngNo},
+               #{aplyNo},
+               #{signCn},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 설문응답관리 수정 -->
+    <update id="updtRspnsMng" parameterType="business.com.survey.service.SurveyVO">
+        UPDATE TB_RSPNS_MNG 
+           SET MDFR_NO      = #{gsUserNo},
+               APLY_NO      = #{aplyNo},
+               MDFCN_YMD    = SYSDATE
+         WHERE RSPNS_MNG_NO = #{rspnsMngNo}
+    </update>
+
+    <!-- 설문응답관리 서명파일수정 -->
+    <update id="updtRspnsMngSign" parameterType="business.com.survey.service.SurveyVO">
+        UPDATE TB_RSPNS_MNG 
+           SET MDFR_NO      = #{gsUserNo},
+               SIGN_CN      = #{signCn},
+               MDFCN_YMD    = SYSDATE
+         WHERE RSPNS_MNG_NO = #{rspnsMngNo}
+    </update>
+
+    <!-- 설문응답관리 삭제 -->
+    <delete id="deltRspnsMng" parameterType="business.com.survey.service.SurveyVO">
+        DELETE 
+          FROM TB_RSPNS_MNG 
+         WHERE RSPNS_MNG_NO = #{rspnsMngNo}
+    </delete> 
+
+    <!-- 설문응답상세 목록조회 -->
+    <select id="listRspnsItem" resultType="business.com.survey.service.SurveyVO" parameterType="string">
+        SELECT A.SN                                          AS "sn",
+               A.RSPNS_MNG_NO                                AS "rspnsMngNo",
+               Q.QSTNN_MNG_NO                                AS "qstnnMngNo",
+               A.QESITM_NO                                   AS "qesitmNo",
+               A.ITEM_NO                                     AS "itemNo",
+               Q.QESITM_CN                                   AS "qesitmCn",
+               Q.QESTN_TY                                    AS "qestnTy",
+               A.ANS_CN1                                     AS "ansCn1",
+               A.ANS_CN2                                     AS "ansCn2",
+               A.ANS_CN3                                     AS "ansCn3",
+               A.ANS_CN4                                     AS "ansCn4",
+               A.ANS_CN5                                     AS "ansCn5",
+               A.ANS_CN6                                     AS "ansCn6",
+               A.RGTR_NO                                     AS "rgtrNo",
+               TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		       TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+               A.MDFR_NO                                     AS "mdfrNo",
+               TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		       TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+          FROM TB_RSPNS_DTLS    A,
+               TB_RSPNS_MNG     M,
+               TB_QESITM_MNG    Q
+         WHERE A.QESITM_NO    = Q.QESITM_NO
+           AND A.ITEM_NO      = Q.ITEM_NO
+           AND M.QSTNN_MNG_NO = Q.QSTNN_MNG_NO
+           AND A.RSPNS_MNG_NO = M.RSPNS_MNG_NO
+           AND M.RSPNS_MNG_NO = #{rspnsMngNo}
+         ORDER BY 
+               A.QESITM_NO,
+               A.ITEM_NO,
+               A.SN
+    </select>
+
+    <!-- 설문응답상세 등록 -->
+    <insert id="regiRspnsItem" parameterType="business.com.survey.service.SurveyVO">
+        <selectKey keyProperty="sn" resultType="string" order="BEFORE">
+            SELECT SEQ_RSPNS_DTLS.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_RSPNS_DTLS 
+             ( SN,
+               RSPNS_MNG_NO,
+               QESITM_NO,
+               ITEM_NO,
+               ANS_CN1,
+               ANS_CN2,
+               ANS_CN3,
+               ANS_CN4,
+               ANS_CN5,
+               ANS_CN6,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{sn},
+               #{rspnsMngNo},
+               #{qesitmNo},
+               #{itemNo},
+               #{ansCn1},
+               #{ansCn2},
+               #{ansCn3},
+               #{ansCn4},
+               #{ansCn5},
+               #{ansCn6},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 설문응답상세 수정 -->
+    <update id="updtRspnsItem" parameterType="business.com.survey.service.SurveyVO">
+        UPDATE TB_RSPNS_DTLS A 
+           SET ANS_CN1      = #{ansCn1},
+		       ANS_CN2      = #{ansCn2},
+		       ANS_CN3      = #{ansCn3},
+		       ANS_CN4      = #{ansCn4},
+		       ANS_CN5      = #{ansCn5},
+		       ANS_CN6      = #{ansCn6},  
+               MDFR_NO      = #{gsUserNo},
+               MDFCN_YMD    = SYSDATE
+         WHERE SN           = (SELECT MAX(SN)
+                                 FROM TB_RSPNS_DTLS
+                                WHERE RSPNS_MNG_NO = #{rspnsMngNo}
+                                  AND QESITM_NO    = #{qesitmNo}
+                                  AND ITEM_NO      = #{itemNo}
+                              )
+    </update>
+
+    <!-- 설문응답상세 삭제 -->
+    <delete id="deltRspnsItem" parameterType="business.com.survey.service.SurveyVO">
+        DELETE 
+          FROM TB_RSPNS_DTLS 
+         WHERE SN = #{sn}
+    </delete> 
+
+
+    <!-- 설문응답상세 항목이 있는지 확인 -->
+    <select id="existRspnsItem" resultType="boolean" parameterType="business.com.survey.service.SurveyVO">
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END 
+          FROM TB_RSPNS_DTLS
+         WHERE RSPNS_MNG_NO = #{rspnsMngNo}
+           AND QESITM_NO    = #{qesitmNo}
+           AND ITEM_NO      = #{itemNo}
+    </select>
+
+</mapper>

@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BioAplyFile">
+
+    <!-- ======================== -->
+    <!--  2021.12.11 공통사용 - 제출서류목록               -->
+    <!-- ======================== -->
+    <sql id="Sql-Where-SubmitFile">
+        <if test="@common.util.CommUtils@isNotEmpty(dtySeCd)">
+           AND A.DTY_SE_CD       = #{dtySeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(dcmtNo)">
+           AND A.DCMT_NO         = #{dcmtNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(dtlDcmtNo)">
+           AND A.DTL_DCMT_NO     = #{dtlDcmtNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(papeCd)">
+           AND A.PAPE_CD         = #{papeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(upPapeCd)">
+           AND B.UP_PAPE_CD      = #{upPapeCd}
+        </if>
+    </sql>
+    <sql id="Sql-Column-SubmitFile">
+        A.SN              AS "sn",
+        A.DTY_SE_CD       AS "dtySeCd",
+        A.DCMT_NO         AS "dcmtNo",
+        A.DTL_DCMT_NO     AS "dtlDcmtNo",
+        A.PAPE_CD         AS "papeCd",
+        B.PAPE_NM         AS "papeNm",
+        A.FILE_PATH       AS "filePath",
+        A.STRG_FILE_NM    AS "strgNm",
+        A.FILE_NM         AS "fileNm",
+        A.FILE_SZ         AS "fileSz",
+        A.PRCS_STUS_CD    AS "prcsStusCd",
+        FN_GET_CODENM('CT028', A.PRCS_STUS_CD) AS "prcsStusNm",
+        A.PRCS_CN         AS "prcsCn",
+        A.DEL_YN          AS "delYn",
+        B.UP_PAPE_CD      AS "upPapeCd",
+        (SELECT PAPE_NM
+           FROM TB_PAPE_CODE
+          WHERE PAPE_CD = B.UP_PAPE_CD
+        )                 AS "upPapeNm",
+        A.RGTR_NO                                      AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        A.MDFR_NO                                      AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate",
+		A.MNGR_REG_YN     AS "mngrRegYn"
+    </sql>
+
+    <!-- 2021.12.11 공통사용 - 제출서류목록조회 -->
+    <select id="listBioAplySubmitFile" resultType="java.util.HashMap" parameterType="business.bio.relief.service.BioAplyFileVO">
+        SELECT <include refid="Sql-Column-SubmitFile"/>
+          FROM TB_BIO_APLY_FILE A,
+               TB_PAPE_CODE B
+         WHERE A.PAPE_CD  = B.PAPE_CD
+           AND A.DEL_YN   = 'N'
+               <include refid="Sql-Where-SubmitFile"/>
+         ORDER BY
+               A.SN
+    </select>
+    <select id="listBioAplySubmitFileCount" resultType="int" parameterType="business.bio.relief.service.BioAplyFileVO">
+        SELECT COUNT(1)
+          FROM TB_BIO_APLY_FILE A,
+               TB_PAPE_CODE B
+         WHERE A.PAPE_CD  = B.PAPE_CD
+           AND A.DEL_YN   = 'N'
+               <include refid="Sql-Where-SubmitFile"/>
+    </select>
+
+    <!-- 2021.12.11 공통사용 - 제출서류파일 상세조회 -->
+    <select id="viewBioAplySubmitFile" resultType="business.bio.relief.service.BioAplyFileVO" parameterType="string">
+        SELECT <include refid="Sql-Column-SubmitFile"/>
+		      ,CASE WHEN  A.DTY_SE_CD = 'PP04'
+		            THEN (SELECT I.IDNTFC_ID
+		                    FROM TB_BIO_IDNTFC I,
+		                         TB_BIO_RELIEF R
+		                   WHERE I.SUFRER_NO = R.SUFRER_NO
+		                     AND R.APLY_NO   = A.DCMT_NO
+		                  )
+		            ELSE NULL
+		       END          AS "idntfcId"
+          FROM TB_BIO_APLY_FILE A,
+               TB_PAPE_CODE B
+         WHERE A.PAPE_CD  = B.PAPE_CD
+           AND A.DEL_YN   = 'N'
+           AND A.SN       = #{sn}
+    </select>
+
+    <!-- 신청첨부파일 상세조회 -->
+    <select id="viewBioAplyFile" resultType="business.bio.relief.service.BioAplyFileVO"  parameterType="business.bio.relief.service.BioAplyFileVO">
+        SELECT A.SN                                          AS "sn"         /*번호*/
+             , A.DTY_SE_CD                                   AS "dtySeCd"    /*업무구분*/
+             , FN_GET_CODENM('CT034', A.DTY_SE_CD)           AS "dtySeNm"    /*업무구분명*/
+             , A.DCMT_NO                                     AS "dcmtNo"     /*접수번호*/
+             , B.UP_PAPE_CD                                  AS "upPapeCd"   /*서류분류*/
+             , B1.PAPE_NM                                    AS "upPapeNm"   /*서류분류명*/
+             , A.PAPE_CD                                     AS "papeCd"     /*세부분류코드*/
+             , B.PAPE_NM                                     AS "papeNm"     /*세부분류명*/
+             , FN_FMT_STRTODATE(C.RCPT_YMD,'-')              AS "rcptYmd"    /*접수일자*/
+             , C.SUFRER_NO                                   AS "sufrerNo"   /*피해자번호*/
+             , FN_FMT_DATA('NM',D.SUFRER_NM)                 AS "sufrerNm"   /*피해자명*/
+             , D.IDNTFC_ID                                   AS "idntfcId"   /*식별번호*/
+             , A.FILE_PATH                                   AS "filePath"
+             , A.STRG_FILE_NM                                AS "strgNm"
+             , A.FILE_NM                                     AS "fileNm"
+             , A.FILE_SZ                                     AS "fileSz"
+             , A.PRCS_STUS_CD                                AS "prcsStusCd"
+             , FN_GET_CODENM('CT028', A.PRCS_STUS_CD)        AS "prcsStusNm"
+             , A.DEL_YN                                      AS "delYn"
+             , A.MNGR_REG_YN                                 AS "mngrRegYn" 
+             , A.RGTR_NO                                     AS "rgtrNo"
+             , TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm"
+             , TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate"
+             , A.MDFR_NO                                     AS "mdfrNo"
+             , TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm"
+             , TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+          FROM TB_BIO_APLY_FILE A
+             , TB_PAPE_CODE     B
+             , TB_PAPE_CODE     B1
+             , TB_BIO_RELIEF    C
+             , TB_BIO_IDNTFC    D
+         WHERE A.PAPE_CD      = B.PAPE_CD
+           AND B.UP_PAPE_CD   = B1.PAPE_CD
+           AND A.DCMT_NO      = C.APLY_NO
+           AND C.SUFRER_NO    = D.SUFRER_NO
+           AND A.DEL_YN       = 'N'
+           AND B.USE_YN       = 'Y'
+           AND A.SN           = #{sn}
+    </select>
+
+    <!-- 서류기준 신청파일 조회 -->
+    <select id="listBioAplyFileByPape" parameterType="business.bio.relief.service.BioAplyFileVO" resultType="java.util.HashMap">
+        SELECT A.SN              AS "sn",
+               A.FILE_PATH       AS "filePath",
+               A.STRG_FILE_NM    AS "strgNm",
+               A.FILE_NM         AS "fileNm",
+               A.FILE_SZ         AS "fileSz",
+               A.DTY_SE_CD       AS "dtySeCd",
+               A.PAPE_CD         AS "papeCd",
+               A.DCMT_NO         AS "dcmtNo",
+               A.DTL_DCMT_NO     AS "dtlDcmtNo",
+               A.PRCS_STUS_CD    AS "prcsStusCd",
+               FN_GET_CODENM(
+                  'CT028',
+                  A.PRCS_STUS_CD
+               )                 AS "prcsStusNm",
+               A.PRCS_CN         AS "prcsCn"
+          FROM TB_BIO_APLY_FILE      A
+         WHERE A.DTY_SE_CD       = #{dtySeCd}
+           AND A.PAPE_CD         = #{papeCd}
+           AND A.DCMT_NO         = #{dcmtNo}
+           AND A.DTL_DCMT_NO     = #{dtlDcmtNo}
+           AND A.DEL_YN          = 'N'
+         ORDER BY
+               SN DESC
+    </select>
+ 
+    <!-- 신청첨부파일 등록 -->
+    <insert id="regiBioAplyFile" parameterType="business.bio.relief.service.BioAplyFileVO">
+        <selectKey keyProperty="sn" resultType="string" order="BEFORE">
+            SELECT SEQ_BIO_APLY_FILE.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT
+          INTO TB_BIO_APLY_FILE
+             ( SN,
+               DTY_SE_CD,
+               DCMT_NO,
+               DTL_DCMT_NO,
+               PAPE_CD,
+               FILE_PATH,
+               STRG_FILE_NM,
+               FILE_NM,
+               FILE_SZ,
+               PRCS_STUS_CD,
+               PRCS_CN,
+               DEL_YN,
+               MNGR_REG_YN,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{sn},
+               #{dtySeCd},
+               #{dcmtNo},
+               #{dtlDcmtNo},
+               #{papeCd},
+               #{filePath},
+               #{strgNm},
+               #{fileNm},
+               #{fileSz},
+               #{prcsStusCd},
+               #{prcsCn},
+               #{delYn},
+               #{mngrRegYn},
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 신청첨부파일 수정 -->
+    <update id="updtBioAplyFile" parameterType="business.bio.relief.service.BioAplyFileVO">
+        UPDATE TB_BIO_APLY_FILE
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(dtySeCd)"   > DTY_SE_CD    = #{dtySeCd},   </if>
+        <if test="@common.util.CommUtils@isNotEmpty(dcmtNo)"    > DCMT_NO      = #{dcmtNo},    </if>
+        <if test="@common.util.CommUtils@isNotEmpty(dtlDcmtNo)" > DTL_DCMT_NO  = #{dtlDcmtNo}, </if>
+        <if test="@common.util.CommUtils@isNotEmpty(papeCd)"    > PAPE_CD      = #{papeCd},    </if>
+        <if test="@common.util.CommUtils@isNotEmpty(filePath)"  > FILE_PATH    = #{filePath},  </if>
+        <if test="@common.util.CommUtils@isNotEmpty(strgNm)"    > STRG_FILE_NM = #{strgNm},    </if>
+        <if test="@common.util.CommUtils@isNotEmpty(fileNm)"    > FILE_NM      = #{fileNm},    </if>
+        <if test="@common.util.CommUtils@isNotEmpty(fileSz)"    > FILE_SZ      = #{fileSz},    </if>
+        <if test="@common.util.CommUtils@isNotEmpty(prcsStusCd)"> PRCS_STUS_CD = #{prcsStusCd},</if>
+        <if test="@common.util.CommUtils@isNotEmpty(prcsCn)"    > PRCS_CN      = #{prcsCn},    </if>
+        <if test="@common.util.CommUtils@isNotEmpty(delYn)"     > DEL_YN       = #{delYn},     </if>
+        <if test="@common.util.CommUtils@isNotEmpty(rgtrNo)"    > RGTR_NO      = #{rgtrNo},    </if>
+        <if test="@common.util.CommUtils@isNotEmpty(mngrRegYn)" > MNGR_REG_YN  = #{mngrRegYn}, </if>
+               MDFCN_YMD = SYSDATE
+         WHERE SN        = #{sn}
+    </update>
+
+    <!-- 신청첨부파일 삭제 -->
+    <delete id="deltBioAplyFile" parameterType="business.bio.relief.service.BioAplyFileVO">
+        DELETE
+          FROM TB_BIO_APLY_FILE
+         WHERE SN = #{sn}
+    </delete>
+</mapper>

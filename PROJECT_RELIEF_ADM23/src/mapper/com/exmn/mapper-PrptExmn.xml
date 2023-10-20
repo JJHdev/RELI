@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PrptExmn">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizArea)">
+            AND A.BIZ_AREA_CD = #{srchBizArea}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizOder)">
+            AND A.BIZ_ODER = #{srchBizOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchExmnOder)">
+            AND A.EXMN_ODER = #{srchExmnOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizAreaCd)">
+            AND A.BIZ_AREA_CD = #{bizAreaCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizOder)">
+            AND A.BIZ_ODER = #{bizOder}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnOder)">
+            AND A.EXMN_ODER = #{exmnOder}
+        </if>
+		<if test=" srchType != 'PLAN' "><!-- 2021.12.14 계획대상검색이 아닌 경우 기인정대상자 제외-->
+           AND A.LGCY_EXMN_ODER IS NULL
+		</if>
+        <!-- 2023.01.06 피해자명 검색조건 추가 -->
+        <if test="@common.util.CommUtils@isNotEmpty(srchSufrerNm)">
+            AND C.SUFRER_NM LIKE '%' || #{srchSufrerNm} || '%'
+        </if>
+        <!-- 2023.01.06 신청자명 검색조건 추가 -->
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplcntNm)">
+            AND B.APLCNT_NM LIKE '%' || #{srchAplcntNm} || '%'
+        </if>
+        <!-- 2023.01.06 식별ID 검색조건 추가 -->
+        <if test="@common.util.CommUtils@isNotEmpty(srchIdntfcId)">
+            AND C.IDNTFC_ID LIKE '%' || #{srchIdntfcId} || '%'
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+       (SELECT BIZ_AREA
+          FROM TB_BIZ_MNG
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND USE_YN      = 'Y')                     AS "bizAreaNm",
+        A.BIZ_ODER                                    AS "bizOder",
+       (SELECT BIZ_ODER_NM
+          FROM TB_BIZ_ODER
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND BIZ_ODER    = A.BIZ_ODER
+           AND BIZ_USE_YN  = 'Y')                     AS "bizOderNm",
+        A.EXMN_ODER                                   AS "exmnOder",
+       (SELECT AFFC_SCOPE_CN
+          FROM TB_BIZ_ODER
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND BIZ_ODER    = A.BIZ_ODER
+           AND BIZ_USE_YN  = 'Y')                     AS "affcScopeCn",
+
+        A.APLY_NO                                     AS "aplyNo",
+        C.IDNTFC_ID                                   AS "idntfcId",
+        C.SUFRER_NM                                   AS "sufrerNm",
+        FN_FMT_DATA('NM', C.SUFRER_NM)                AS "sufrerNmMask",
+        B.APLY_SE_CD                                  AS "aplySeCd",
+        FN_GET_CODENM('CT010', B.APLY_SE_CD)          AS "aplySeNm",
+        B.APLY_KND_CD                                 AS "aplyKndCd",
+        FN_MRG_CODENM('CT011', B.APLY_KND_CD)         AS "aplyKndNm",
+        B.APLCNT_NO                                   AS "aplcntNo",
+        B.APLCNT_NM                                   AS "aplcntNm",
+        FN_FMT_DATA('NM', B.APLCNT_NM)                AS "aplcntNmMask",
+        B.APLCNT_MBTEL_NO                             AS "aplcntMbtelNo",
+        B.SUFRER_REL_CD                               AS "sufrerRelCd",
+        FN_GET_CODENM('CT013', B.SUFRER_REL_CD)       AS "sufrerRelNm",
+        B.PRGRE_STUS_CD                               AS "prgreStusCd",
+        FN_GET_CODENM('CT025', B.PRGRE_STUS_CD)       AS "prgreStusNm",
+        FN_FMT_STRTODATE(B.APLY_YMD,'-')              AS "aplyYmd",
+        FN_FMT_STRTODATE(B.RCPT_YMD,'-')              AS "rcptYmd",
+
+        A.SUFRER_OCCP_NM                              AS "sufrerOccpNm",
+        A.AFFC_SCOPE_RESI_YN                          AS "affcScopeResiYn",
+        A.EXPSR_RESI_HST_CN                           AS "expsrResiHstCn",
+        A.RESI_HST_CN                                 AS "resiHstCn",
+        A.RESI_WHL_CNT                                AS "resiWhlCnt",
+        A.EXPSR_WHL_CNT                               AS "expsrWhlCnt",
+        A.VIDO_DATA_REOUT_CN                          AS "vidoDataReoutCn",
+        A.RCOGN_DISS_HOLD_YN                          AS "rcognDissHoldYn",
+        A.LBDY_NDX_YN                                 AS "lbdyNdxYn",
+        A.DLTNC_RSLT_CD                               AS "dltncRsltCd",
+        FN_GET_CODENM('CT012', A.DLTNC_RSLT_CD)       AS "dltncRsltNm",
+        A.DLTNC_RSLT_RESN                             AS "dltncRsltResn",
+        FN_FMT_STRTODATE(A.DLTNC_OPMT_YMD,'-')        AS "dltncOpmtYmd",
+        FN_FMT_STRTODATE(A.EXMN_YMD,'-')              AS "exmnYmd",
+        A.LGCY_EXMN_ODER                              AS "lgcyExmnOder",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 예비조사 목록조회 -->
+    <select id="listPrptExmn" resultType="java.util.HashMap" parameterType="business.com.exmn.service.PrptExmnVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_PRPT_EXMN  A,
+               TB_RELIEF     B,
+               TB_IDNTFC     C
+         WHERE A.APLY_NO     = B.APLY_NO
+           AND B.SUFRER_NO   = C.SUFRER_NO
+               <include refid="Sql-Where"/>
+         ORDER BY 
+         	   C.IDNTFC_ID ASC <!-- 2023.01.06 식별ID 정렬 추가 -->
+             , A.REG_YMD   DESC
+             , B.REG_YMD   DESC
+    </select>
+    <select id="listPrptExmnCount" resultType="int" parameterType="business.com.exmn.service.PrptExmnVO">
+        SELECT COUNT(1) 
+          FROM TB_PRPT_EXMN  A,
+               TB_RELIEF     B,
+               TB_IDNTFC     C
+         WHERE A.APLY_NO     = B.APLY_NO
+           AND B.SUFRER_NO   = C.SUFRER_NO
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 예비조사 상세조회 -->
+    <select id="viewPrptExmn" resultType="business.com.exmn.service.PrptExmnVO" parameterType="business.com.exmn.service.PrptExmnVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_PRPT_EXMN  A,
+               TB_RELIEF     B,
+               TB_IDNTFC     C
+         WHERE A.APLY_NO     = B.APLY_NO
+           AND B.SUFRER_NO   = C.SUFRER_NO
+           AND A.BIZ_AREA_CD = #{bizAreaCd}
+           AND A.BIZ_ODER    = #{bizOder}
+           AND A.EXMN_ODER   = #{exmnOder}
+           AND A.APLY_NO     = #{aplyNo}
+    </select>
+
+    <!-- 예비조사 신청번호 기준 최종 조사차수 조회 -->
+    <select id="getPrptExmnOderLast" resultType="string" parameterType="string">
+    	SELECT MAX(A.EXMN_ODER) AS "exmnOder"
+          FROM TB_PRPT_EXMN A
+         WHERE A.APLY_NO = #{aplyNo}
+    </select>
+
+    <!-- 예비조사 등록 -->
+    <insert id="regiPrptExmn" parameterType="business.com.exmn.service.PrptExmnVO">
+        INSERT 
+          INTO TB_PRPT_EXMN 
+             ( BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               SUFRER_OCCP_NM,
+               AFFC_SCOPE_RESI_YN,
+               EXPSR_RESI_HST_CN,
+               RESI_HST_CN,
+               RESI_WHL_CNT,
+               EXPSR_WHL_CNT,
+               VIDO_DATA_REOUT_CN,
+               RCOGN_DISS_HOLD_YN,
+               LBDY_NDX_YN,
+               DLTNC_RSLT_CD,
+               DLTNC_RSLT_RESN,
+               DLTNC_OPMT_YMD,
+               EXMN_YMD,
+               LGCY_EXMN_ODER,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{aplyNo},
+               #{sufrerOccpNm},
+               #{affcScopeResiYn},
+               #{expsrResiHstCn},
+               #{resiHstCn},
+               #{resiWhlCnt},
+               #{expsrWhlCnt},
+               #{vidoDataReoutCn},
+               #{rcognDissHoldYn},
+               #{lbdyNdxYn},
+               #{dltncRsltCd},
+               #{dltncRsltResn},
+               FN_FMT_STRTODATE(#{dltncOpmtYmd},''),
+               FN_FMT_STRTODATE(#{exmnYmd},''),
+               #{lgcyExmnOder},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 예비조사 이력저장 -->
+    <insert id="regiPrptExmnHst" parameterType="business.com.exmn.service.PrptExmnVO">
+        INSERT 
+          INTO TB_PRPT_EXMN_HST
+             ( HST_NO,
+               LOG_TY,
+               HST_YMD,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               SUFRER_OCCP_NM,
+               AFFC_SCOPE_RESI_YN,
+               EXPSR_RESI_HST_CN,
+               RESI_HST_CN,
+               RESI_WHL_CNT,
+               EXPSR_WHL_CNT,
+               VIDO_DATA_REOUT_CN,
+               RCOGN_DISS_HOLD_YN,
+               LBDY_NDX_YN,
+               DLTNC_RSLT_CD,
+               DLTNC_RSLT_RESN,
+               DLTNC_OPMT_YMD,
+               EXMN_YMD,
+               LGCY_EXMN_ODER,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+             )
+        SELECT SEQ_PRPT_EXMN_HST.NEXTVAL,
+               #{logTy},
+               SYSDATE,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               SUFRER_OCCP_NM,
+               AFFC_SCOPE_RESI_YN,
+               EXPSR_RESI_HST_CN,
+               RESI_HST_CN,
+               RESI_WHL_CNT,
+               EXPSR_WHL_CNT,
+               VIDO_DATA_REOUT_CN,
+               RCOGN_DISS_HOLD_YN,
+               LBDY_NDX_YN,
+               DLTNC_RSLT_CD,
+               DLTNC_RSLT_RESN,
+               DLTNC_OPMT_YMD,
+               EXMN_YMD,
+               LGCY_EXMN_ODER,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+          FROM TB_PRPT_EXMN
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+    </insert>
+
+    <!-- 예비조사 수정 -->
+    <update id="updtPrptExmn" parameterType="business.com.exmn.service.PrptExmnVO">
+        UPDATE TB_PRPT_EXMN 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(sufrerOccpNm        )"> SUFRER_OCCP_NM       = #{sufrerOccpNm        },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(affcScopeResiYn     )"> AFFC_SCOPE_RESI_YN   = #{affcScopeResiYn     },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(expsrResiHstCn      )"> EXPSR_RESI_HST_CN    = #{expsrResiHstCn      },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(resiHstCn           )"> RESI_HST_CN          = #{resiHstCn           },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(resiWhlCnt          )"> RESI_WHL_CNT         = #{resiWhlCnt          },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(expsrWhlCnt         )"> EXPSR_WHL_CNT        = #{expsrWhlCnt         },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(vidoDataReoutCn     )"> VIDO_DATA_REOUT_CN   = #{vidoDataReoutCn     },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(rcognDissHoldYn     )"> RCOGN_DISS_HOLD_YN   = #{rcognDissHoldYn     },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(lbdyNdxYn           )"> LBDY_NDX_YN          = #{lbdyNdxYn           },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dltncRsltCd         )"> 
+			DLTNC_RSLT_CD        = #{dltncRsltCd         },
+			<if test="@common.util.CommUtils@isEmpty(dltncRsltResn)"> DLTNC_RSLT_RESN = NULL,</if>
+		</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dltncRsltResn       )"> DLTNC_RSLT_RESN      = #{dltncRsltResn       },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dltncOpmtYmd        )"> DLTNC_OPMT_YMD       = FN_FMT_STRTODATE(#{dltncOpmtYmd},''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(exmnYmd             )"> EXMN_YMD             = FN_FMT_STRTODATE(#{exmnYmd}     ,''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(lgcyExmnOder        )"> LGCY_EXMN_ODER       = #{lgcyExmnOder        },</if>
+               MDFCN_YMD   = SYSDATE  
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+    </update>
+
+    <!-- 예비조사 삭제 -->
+    <delete id="deltPrptExmn" parameterType="business.com.exmn.service.PrptExmnVO">
+        DELETE 
+          FROM TB_PRPT_EXMN 
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+    </delete> 
+
+    <!-- 마이페이지 신청기준 예비조사 목록조회 -->
+    <select id="listPrptExmnMypage" resultType="java.util.HashMap" parameterType="string">
+        SELECT A.BIZ_AREA_CD                                  AS "bizAreaCd",
+               A.BIZ_ODER                                     AS "bizOder",
+               A.EXMN_ODER                                    AS "exmnOder",
+               A.APLY_NO                                      AS "aplyNo",
+               FN_FMT_STRTODATE(A.DLTNC_OPMT_YMD,'-')         AS "dltncOpmtYmd", <!-- 심의회 개최일자 -->
+               A.DLTNC_RSLT_CD                                AS "dltncRsltCd",  <!-- 심의회 결과코드 -->
+               FN_GET_CODENM('CT012', A.DLTNC_RSLT_CD)        AS "dltncRsltNm",  <!-- 심의회 결과명칭 -->
+               A.DLTNC_RSLT_RESN                              AS "dltncRsltResn" <!-- 심의회 결과사유 -->
+          FROM TB_PRPT_EXMN A
+         WHERE A.APLY_NO    = #{aplyNo}
+         ORDER BY 
+               A.BIZ_AREA_CD,
+               A.BIZ_ODER,
+               A.EXMN_ODER
+    </select>
+
+    <!-- 2021.12.15 기인정자의 심의회일자 일괄 업데이트 -->
+    <update id="updtPrptExmnLgcyAll" parameterType="business.com.exmn.service.PrptExmnVO">
+        UPDATE TB_PRPT_EXMN 
+           SET MDFR_NO        = #{gsUserNo},
+               MDFCN_YMD      = SYSDATE,  
+               DLTNC_OPMT_YMD = FN_FMT_STRTODATE(#{dltncOpmtYmd},'')
+         WHERE BIZ_AREA_CD    = #{bizAreaCd}
+           AND BIZ_ODER       = #{bizOder}
+           AND EXMN_ODER      = #{exmnOder}
+           AND LGCY_EXMN_ODER <![CDATA[ > ]]> 0
+    </update>
+
+</mapper>

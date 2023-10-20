@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Sms">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchText)">
+           AND(A.RCVR_NM LIKE '%' || #{srchText} || '%'
+            OR A.RCVR_NO LIKE '%' || #{srchText} || '%'
+              )
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.SN                   AS "sn",
+        A.SMS_SE_CD            AS "smsSeCd",
+        A.TRSM_CN              AS "trsmCn",
+        A.LNGT_SE_CD           AS "lngtSeCd",
+        A.TRNSTER_NM           AS "trnsterNm",
+        A.TRNSTER_NO           AS "trnsterNo",
+        A.RCVR_NM              AS "rcvrNm",
+        A.RCVR_NO              AS "rcvrNo",
+        A.SRVR_NM              AS "srvrNm",
+        A.SYS_SE_CD            AS "sysCd",
+        A.TRSM_STUS_CD         AS "trsmStusCd",
+        TO_CHAR(A.TRSM_DT, 'yyyy-mm-dd hh24:mi:ss') AS "trsmDt",
+		FN_GET_CODENM('CT007', A.SMS_SE_CD)         AS "smsSeNm",
+		FN_GET_CODENM('CT019', A.LNGT_SE_CD)        AS "lngtSeNm",
+		FN_GET_CODENM('CT038', A.TRSM_STUS_CD)      AS "trsmStusNm"
+    </sql>
+
+    <!-- SMS이력 목록조회 -->
+    <select id="listSms" resultType="java.util.HashMap" parameterType="business.sys.sms.service.SmsVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_SMS_HST A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.SN DESC
+    </select>
+    <select id="listSmsCount" resultType="int" parameterType="business.sys.sms.service.SmsVO">
+        SELECT COUNT(1) 
+          FROM TB_SMS_HST A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- SMS이력 상세조회 -->
+    <select id="viewSms" resultType="business.sys.sms.service.SmsVO" parameterType="business.sys.sms.service.SmsVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_SMS_HST A
+         WHERE SN = #{sn}
+    </select>
+
+    <!-- SMS이력 등록 -->
+    <insert id="regiSms" parameterType="business.sys.sms.service.SmsVO">
+        <selectKey keyProperty="sn" resultType="String" order="BEFORE">
+            SELECT SEQ_SMS_HST.nextval
+            FROM   DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_SMS_HST 
+             ( SN,
+               SMS_SE_CD,
+               TRSM_CN,
+               LNGT_SE_CD,
+               TRNSTER_NM,
+               TRNSTER_NO,
+               RCVR_NM,
+               RCVR_NO,
+               TRSM_STUS_CD,
+               TRSM_DT,
+               SRVR_NM,
+               SYS_SE_CD  
+             )
+        VALUES
+             ( #{sn},
+               #{smsSeCd},
+               #{trsmCn},
+               #{lngtSeCd},
+               #{trnsterNm},
+               #{trnsterNo},
+               #{rcvrNm},
+               #{rcvrNo},
+               #{trsmStusCd},
+               SYSDATE,
+               #{srvrNm},
+               #{sysCd}  
+             )
+    </insert>
+
+    <!-- SMS이력 삭제 -->
+    <delete id="deltSms" parameterType="business.sys.sms.service.SmsVO">
+        DELETE 
+          FROM TB_SMS_HST 
+         WHERE SN = #{sn}
+    </delete>
+    
+    <!-- SMS 수신대상자 목록 조회 (구제급여신청자 목록) -->
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where-Target">
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizArea)">
+            AND A.BIZ_AREA_CD = #{srchBizArea}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizOder)">
+            AND EXISTS (
+                SELECT 1
+                  FROM TB_MNSVY
+                 WHERE APLY_NO     = A.APLY_NO
+                   AND BIZ_AREA_CD = A.BIZ_AREA_CD
+                   AND BIZ_ODER    = #{srchBizOder}
+                )
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyStdt)">
+            AND A.APLY_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchAplyStdt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyEndt)">
+            AND A.APLY_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchAplyEndt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRcptStdt)">
+            AND A.RCPT_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchRcptStdt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRcptEndt)">
+            AND A.RCPT_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchRcptEndt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyKnd)">
+        	AND REGEXP_LIKE (A.APLY_KND_CD, #{srchAplyKnd})
+        </if>
+        <if test="@common.util.CommUtils@isNotEmptyList(aplySeList)">
+        	AND A.APLY_SE_CD IN 
+		    <foreach item="item" collection="aplySeList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+        <if test="@common.util.CommUtils@isNotEmptyList(prgreStusList)">
+        	AND A.PRGRE_STUS_CD IN 
+		    <foreach item="item" collection="prgreStusList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchTrgtText)">
+           AND(A.APLY_NO         LIKE '%' || #{srchTrgtText} || '%'
+            OR A.APLCNT_NM       LIKE '%' || #{srchTrgtText} || '%'
+            OR B.SUFRER_NM       LIKE '%' || #{srchTrgtText} || '%'
+            OR B.IDNTFC_ID       LIKE '%' || #{srchTrgtText} || '%'
+            OR A.APLCNT_MBTEL_NO LIKE '%' || #{srchTrgtText} || '%'
+              )
+        </if>
+    </sql>    
+    <select id="listSmsTarget" resultType="java.util.HashMap" parameterType="business.sys.sms.service.SmsVO">
+        SELECT A.APLY_NO              AS "aplyNo",
+               A.BIZ_AREA_CD          AS "bizAreaCd",
+               CASE WHEN BIZ_AREA_CD = 'ETC' OR BIZ_AREA_CD IS NULL
+                    THEN A.ETC_DMGE_AREA
+                    ELSE (SELECT BIZ_AREA
+                            FROM TB_BIZ_MNG
+                           WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+                             AND USE_YN      = 'Y')
+               END                    AS "bizAreaNm",
+               A.APLCNT_NO            AS "aplcntNo",
+               A.APLCNT_NM            AS "aplcntNm",
+               A.APLCNT_MBTEL_NO      AS "aplcntMbtelNo",
+               A.SUFRER_NO            AS "sufrerNo",
+               B.IDNTFC_ID            AS "idntfcId",
+               B.SUFRER_NM            AS "sufrerNm",
+               B.SUFRER_MBTEL_NO      AS "sufrerMbtelNo"
+          FROM TB_RELIEF A
+         INNER JOIN
+               TB_IDNTFC B
+            ON A.SUFRER_NO = B.SUFRER_NO
+         WHERE 1 = 1
+               <include refid="Sql-Where-Target"/>
+         ORDER BY 
+               A.REG_YMD DESC
+    </select>
+    <select id="listSmsTargetCount" resultType="int" parameterType="business.sys.sms.service.SmsVO">
+        SELECT COUNT(1) 
+          FROM TB_RELIEF A
+         INNER JOIN
+               TB_IDNTFC B
+            ON A.SUFRER_NO = B.SUFRER_NO
+         WHERE 1 = 1
+               <include refid="Sql-Where-Target"/>
+    </select>
+
+</mapper>

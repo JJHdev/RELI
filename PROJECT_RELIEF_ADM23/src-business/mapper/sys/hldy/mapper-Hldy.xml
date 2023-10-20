@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Hldy">
+    
+    <!-- 공휴일관리 목록조회 -->
+    <select id="listHldy" resultType="java.util.HashMap" parameterType="business.sys.hldy.service.HldyVO">
+        SELECT TO_CHAR(TO_DATE(A.HLDY_YMD, 'YYYY-MM-DD'),'YYYY-MM-DD')  AS "hldyYmd" 
+             , A.HLDY_YMD
+             , A.HLDY_NM                                                AS "hldyNm"
+             , TO_CHAR(A.REG_YMD, 'yyyy-mm-dd')                         AS "regDate"
+             , B.USER_NM                                                AS "rgtrNo"
+             , A.USE_YN                                                 AS "useYn"      
+          FROM TB_HLDY A, TB_USER B
+         WHERE 1 = 1
+           AND A.RGTR_NO = B.USER_NO(+)
+        <if test="@common.util.CommUtils@isNotEmpty(srchYear)">
+           AND HLDY_YMD LIKE '%' || #{srchYear} || '%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchText)">
+          AND HLDY_NM LIKE  '%' || #{srchText} || '%'   
+        </if>
+          ORDER BY "hldyYmd"
+    </select>
+     <!-- 페이징 -->
+    <select id='listHldyCount' parameterType="business.com.biz.service.BizMngVO" resultType="int">
+        SELECT COUNT(1)
+          FROM TB_HLDY
+         WHERE USE_YN = 'Y'
+        <if test="@common.util.CommUtils@isNotEmpty(srchYear)">
+           AND HLDY_YMD LIKE '%' || #{srchYear} || '%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchText)">
+          AND HLDY_NM LIKE  '%' || #{srchText} || '%'   
+        </if>
+    </select>   
+    <!-- 공휴일관리 상세조회 -->
+    <select id="viewHldy" resultType="business.sys.hldy.service.HldyVO" parameterType="business.sys.hldy.service.HldyVO">
+        SELECT HLDY_YMD       AS "hldyYmd"
+             , HLDY_NM        AS "hldyNm"
+             , REG_YMD        AS "regDate"
+             , RGTR_NO        AS "rgtrNo" 
+             , USE_YN         AS "useYn"
+          FROM
+            (SELECT TO_CHAR(TO_DATE(HLDY_YMD, 'YYYY-MM-DD'),'YYYY-MM-DD')    AS HLDY_YMD 
+                  , HLDY_NM
+                  , TO_CHAR(REG_YMD, 'YYYY-MM-DD')                           AS REG_YMD
+                  , RGTR_NO
+                  , USE_YN      
+               FROM TB_HLDY
+             )
+          WHERE HLDY_YMD = #{hldyYmd}
+    </select>
+    
+    <!-- 공휴일관리 수정 -->
+    <update id="updtHldy" parameterType="business.sys.hldy.service.HldyVO">
+         UPDATE TB_HLDY
+            SET HLDY_YMD       = FN_FMT_DATA('NUM', #{hldyYmd})
+              , HLDY_NM        = #{hldyNm}
+              , USE_YN         = 'Y'
+              , MDFR_NO        = #{userInfo.userNo}
+              , MDFCN_YMD      = SYSDATE
+          WHERE HLDY_YMD       = FN_FMT_DATA('NUM', #{oldHldyYmd})
+    </update>
+    
+    <!-- 공휴일관리 삭제  -->
+    <delete id="deltHldy" parameterType="business.sys.hldy.service.HldyVO">
+        DELETE
+          FROM TB_HLDY
+         WHERE HLDY_YMD = FN_FMT_DATA('NUM', #{oldHldyYmd})
+    </delete>
+    
+    <!-- 공휴일관리 등록 -->
+    <insert id="regiHldy" parameterType="business.sys.hldy.service.HldyVO">
+         INSERT INTO TB_HLDY (  
+              HLDY_YMD
+            , HLDY_NM
+            , RGTR_NO
+            , REG_YMD
+            , USE_YN
+         )
+         VALUES ( 
+              FN_FMT_DATA('NUM', #{hldyYmd})
+            , #{hldyNm}
+            , #{userInfo.userNo}
+            , SYSDATE
+            , 'Y'
+        )
+    </insert>
+</mapper>

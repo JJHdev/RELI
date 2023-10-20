@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PapeMng">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(papeCd)">
+            AND A.PAPE_CD = #{papeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(papeDtySeCd)">
+            AND A.PAPE_DTY_SE_CD = #{papeDtySeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(aplySeCd)">
+            AND A.APLY_SE_CD = #{aplySeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchUpPapeCd)">
+            AND B.UP_PAPE_CD = #{srchUpPapeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplySeCd)">
+            AND A.APLY_SE_CD = #{srchAplySeCd}
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.PAPE_CD              AS "papeCd",
+        B.PAPE_NM              AS "papeNm",
+        A.PAPE_DTY_SE_CD       AS "papeDtySeCd",
+        FN_GET_CODENM('CT034', A.PAPE_DTY_SE_CD)                AS "papeDtySeNm",
+        A.APLY_SE_CD           AS "aplySeCd",
+        (SELECT CD_CN FROM SYS_CODE WHERE CD_ID = A.APLY_SE_CD) AS "aplySeNm",
+        A.ESNTL_YN             AS "esntlYn",
+        A.USE_YN               AS "useYn",
+        A.RGTR_NO                                      AS "rgtrNo",
+        NVL((SELECT USER_NM
+           FROM TB_USER
+          WHERE USER_NO = A.RGTR_NO),A.RGTR_NO)        AS "rgtrNm",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        A.MDFR_NO                                      AS "mdfrNo",
+        NVL((SELECT USER_NM
+           FROM TB_USER
+          WHERE USER_NO = A.MDFR_NO),A.MDFR_NO)        AS "mdfrNm",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+    </sql>
+
+    <!-- 서류양식관리 목록조회 ** backup
+    <select id="bak.listPapeMng" resultType="java.util.HashMap" parameterType="business.com.file.service.PapeMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_PAPE_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY
+               A.PAPE_CD,
+               A.PAPE_DTY_SE_CD,
+               A.APLY_SE_CD
+    </select>
+    <select id="bak.listPapeMngCount" resultType="int" parameterType="business.com.file.service.PapeMngVO">
+        SELECT COUNT(1)
+          FROM TB_PAPE_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+    -->
+
+    <!-- 서류양식관리 목록조회 -->
+    <select id="listPapeMng" resultType="java.util.HashMap" parameterType="business.com.file.service.PapeMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_PAPE_MNG A
+             , TB_PAPE_CODE B
+         WHERE A.PAPE_CD = B.PAPE_CD
+               <include refid="Sql-Where"/>
+         ORDER BY
+               A.PAPE_CD,
+               A.PAPE_DTY_SE_CD,
+               A.APLY_SE_CD
+    </select>
+    <select id="listPapeMngCount" resultType="int" parameterType="business.com.file.service.PapeMngVO">
+        SELECT COUNT(1)
+          FROM TB_PAPE_MNG A
+             , TB_PAPE_CODE B
+         WHERE A.PAPE_CD = B.PAPE_CD
+               <include refid="Sql-Where"/>
+    </select>
+
+
+
+
+
+
+
+    <!-- 서류양식관리 상세조회 -->
+    <select id="viewPapeMng" resultType="business.com.file.service.PapeMngVO" parameterType="business.com.file.service.PapeMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_PAPE_MNG A
+             , TB_PAPE_CODE B
+         WHERE A.PAPE_CD      = B.PAPE_CD
+           AND A.PAPE_CD        = #{papeCd}
+           AND A.PAPE_DTY_SE_CD = #{papeDtySeCd}
+           AND A.APLY_SE_CD     = #{aplySeCd}
+    </select>
+
+    <!-- 서류양식관리 등록 -->
+    <insert id="regiPapeMng" parameterType="business.com.file.service.PapeMngVO">
+        INSERT
+          INTO TB_PAPE_MNG
+             ( PAPE_CD,
+               PAPE_DTY_SE_CD,
+               APLY_SE_CD,
+               ESNTL_YN,
+               USE_YN,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{papeCd},
+               #{papeDtySeCd},
+               #{aplySeCd},
+               #{esntlYn},
+               #{useYn},
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 서류양식관리 수정 -->
+    <update id="updtPapeMng" parameterType="business.com.file.service.PapeMngVO">
+        UPDATE TB_PAPE_MNG
+           SET ESNTL_YN       = #{esntlYn},
+               USE_YN         = #{useYn},
+               MDFR_NO        = #{gsUserNo},
+               MDFCN_YMD      = SYSDATE
+         WHERE PAPE_CD        = #{papeCd}
+           AND PAPE_DTY_SE_CD = #{papeDtySeCd}
+           AND APLY_SE_CD     = #{aplySeCd}
+    </update>
+
+    <!-- 서류양식관리 삭제 -->
+    <delete id="deltPapeMng" parameterType="business.com.file.service.PapeMngVO">
+        DELETE
+          FROM TB_PAPE_MNG
+         WHERE PAPE_CD        = #{papeCd}
+           AND PAPE_DTY_SE_CD = #{papeDtySeCd}
+           AND APLY_SE_CD     = #{aplySeCd}
+    </delete>
+
+
+    <!-- 신청서류목록 조회 -->
+    <select id="getListPape" parameterType="java.util.HashMap" resultType="business.com.file.service.PapeMngVO">
+        SELECT A.PAPE_DTY_SE_CD  AS "papeDtySeCd",
+               A.APLY_SE_CD      AS "aplySeCd",
+               B.UP_PAPE_CD      AS "upPapeCd",
+               B.PAPE_CD         AS "papeCd",
+               B.PAPE_NM         AS "papeNm",
+               B.FILE_NM         AS "fileNm",
+               B.FILE_PATH       AS "filePath",
+               A.ESNTL_YN        AS "esntlYn",
+               B.DOWN_CNT        AS "downCnt",
+               B.LIMT_CNT        AS "limtCnt",
+               B.CD_ORDR         AS "cdOrdr",
+               A.USE_YN          AS "papeUseYn",
+               B.USE_YN          AS "mngUseYn",
+              (SELECT PAPE_NM
+                 FROM TB_PAPE_CODE
+                WHERE PAPE_CD = B.UP_PAPE_CD
+              )                  AS "upPapeNm"
+          FROM TB_PAPE_MNG       A,
+               TB_PAPE_CODE      B
+         WHERE A.PAPE_CD         = B.PAPE_CD
+           AND A.PAPE_DTY_SE_CD  = #{papeDtySeCd}
+           AND A.APLY_SE_CD      = #{aplySeCd}
+        <if test="@common.util.CommUtils@isNotEmpty(upPapeCd)">
+           AND B.UP_PAPE_CD      = #{upPapeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(papeCd)">
+           AND A.PAPE_CD         = #{papeCd}
+        </if>
+        <if test="@common.util.CommUtils@isEmpty(dcmtNo)">
+           AND A.USE_YN          = 'Y'
+           AND B.USE_YN          = 'Y'
+        </if>
+	    <!-- 2022.01.19 LSH
+	         문서번호가 입력된 경우
+	         사용여부에 상관없이 양식파일정보를
+	         조회할 수 있도록 조건을 수정함.
+	     -->
+        <if test="@common.util.CommUtils@isNotEmpty(dcmtNo)">
+           AND (   EXISTS (
+                   SELECT 1
+                     FROM TB_APLY_FILE
+                    WHERE DTY_SE_CD = A.PAPE_DTY_SE_CD
+                      AND PAPE_CD   = A.PAPE_CD
+                      AND DCMT_NO   = #{dcmtNo}
+                   )
+                OR (A.USE_YN = 'Y'
+                AND B.USE_YN = 'Y'
+                   )
+               )
+        </if>
+         ORDER BY
+               A.PAPE_DTY_SE_CD,
+               B.UP_PAPE_CD,
+               B.CD_ORDR,
+               A.PAPE_CD
+    </select>
+
+    <!-- 신청서류그룹 조회 -->
+    <select id="getListPapeGroup" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT B.UP_PAPE_CD      AS "papeCd",
+              (SELECT PAPE_NM
+                 FROM TB_PAPE_CODE
+                WHERE PAPE_CD  = B.UP_PAPE_CD
+              )                  AS "papeNm"
+          FROM TB_PAPE_MNG       A,
+               TB_PAPE_CODE      B
+         WHERE A.PAPE_CD         = B.PAPE_CD
+           AND A.PAPE_DTY_SE_CD  = #{papeDtySeCd}
+           AND A.APLY_SE_CD      = #{aplySeCd}
+           AND A.USE_YN          = 'Y'
+           AND B.USE_YN          = 'Y'
+         GROUP BY
+               B.UP_PAPE_CD
+         ORDER BY
+               B.UP_PAPE_CD
+    </select>
+
+    <!-- [구제급여] 모든(All) 급여종류 목록 조회
+        CSLEE 2021.12.06 추가
+        ntarget 2022.12.13 살생물 추가 [ PP04 ]
+    -->
+    <select id="listPapeMngUpPapeAll" resultType="java.util.HashMap"
+                                   parameterType="business.com.file.service.PapeMngVO">
+        SELECT PAPE_CD AS "upPapeCd"
+             , PAPE_NM AS "upPapeNm"
+             , PAPE_CD AS "code"
+             , PAPE_NM AS "text"
+          FROM (
+            SELECT LEVEL AS lvl , A.*
+            FROM   TB_PAPE_CODE A
+            CONNECT BY PRIOR PAPE_CD = UP_PAPE_CD
+            <choose>
+                <when test="@common.util.CommUtils@isEqual(srchPapeDtySeCd,'PP01')">
+                    START  WITH UP_PAPE_CD = 'D00'
+                </when>
+                <when test="@common.util.CommUtils@isEqual(srchPapeDtySeCd,'PP02')">
+                    START  WITH UP_PAPE_CD = 'D10'
+                </when>
+                <when test="@common.util.CommUtils@isEqual(srchPapeDtySeCd,'PP03')">
+                    START  WITH UP_PAPE_CD = 'D20'
+                </when>
+                <when test="@common.util.CommUtils@isEqual(srchPapeDtySeCd,'PP04')">
+                    START  WITH UP_PAPE_CD = 'D30'
+                </when>
+                <otherwise>
+                    START  WITH UP_PAPE_CD = 'XXX'
+                </otherwise>
+            </choose>
+            ORDER  SIBLINGS BY PAPE_CD
+        )
+        WHERE LVL = 1
+    </select>
+
+    <!-- UpPape에 속하는 모든 제출서류 코드 목록 조회  -->
+    <select id="listPapeMngPapeCodeByUpPape" resultType="java.util.HashMap"
+                                 parameterType="business.com.file.service.PapeMngVO">
+        SELECT A.PAPE_CD AS "code"
+             , A.PAPE_NM AS "text"
+          FROM TB_PAPE_CODE A
+         WHERE UP_PAPE_CD = #{upPapeCd}
+         ORDER BY PAPE_CD
+    </select>
+
+
+    <!-- ============================ -->
+    <!--    [USR] 공통
+            2021.12.03 CSLEE 추가      -->
+    <!-- ============================ -->
+
+    <!-- 조회를 위한 공통 Subquery
+        (PP01 : 구제급여, PP02 : 취약계층 소송지원)
+    -->
+    <sql id="Sql-PapeSubQuery">
+        WITH SUB AS (
+            SELECT A.PAPE_CD
+                 , B.PAPE_NM
+                 , B.UP_PAPE_CD
+                 , (SELECT PAPE_NM
+                      FROM TB_PAPE_CODE
+                     WHERE PAPE_CD = B.UP_PAPE_CD) AS UP_PAPE_NM
+                 , A.APLY_SE_CD
+                 , (SELECT CD_CN
+                      FROM SYS_CODE
+                     WHERE CD_ID = A.APLY_SE_CD) AS APLY_SE_NM
+                 , A.ESNTL_YN
+                 , A.PAPE_DTY_SE_CD
+                 , B.FILE_NM
+                 , B.FILE_PATH
+                 , B.DOWN_TRGT_YN
+            FROM   TB_PAPE_MNG A
+                 , TB_PAPE_CODE B
+            WHERE  A.PAPE_CD = B.PAPE_CD
+            AND    A.USE_YN = 'Y'
+            AND    A.PAPE_DTY_SE_CD = #{papeDtySeCd}
+        )
+    </sql>
+
+    <!-- [구제급여] 신청구분 목록 조회 -->
+    <select id="listPapeMngAplySe" resultType="java.util.HashMap"
+                                   parameterType="business.com.file.service.PapeMngVO">
+        <include refid="Sql-PapeSubQuery"/>
+        SELECT APLY_SE_CD      AS "aplySeCd"
+             , MAX(APLY_SE_NM) AS "aplySeNm"
+             , APLY_SE_CD      AS "code"
+             , MAX(APLY_SE_NM) AS "text"
+        FROM   SUB
+        GROUP BY APLY_SE_CD
+        ORDER BY APLY_SE_CD
+    </select>
+
+    <!-- [구제급여]급여 종류 목록 조회 -->
+    <select id="listPapeMngUpPape" resultType="java.util.HashMap"
+                                   parameterType="business.com.file.service.PapeMngVO">
+        <include refid="Sql-PapeSubQuery"/>
+        SELECT UP_PAPE_CD      AS "upPapeCd"
+             , MAX(UP_PAPE_NM) AS "upPapeNm"
+             , MAX(APLY_SE_CD) AS "aplySeCd"
+             , MAX(APLY_SE_NM) AS "aplySeNm"
+             , UP_PAPE_CD      AS "code"
+             , MAX(UP_PAPE_NM) AS "text"
+          FROM SUB
+         WHERE APLY_SE_CD = #{aplySeCd}
+           AND UP_PAPE_CD NOT IN ('D001', 'D005')
+         GROUP BY UP_PAPE_CD
+         ORDER BY UP_PAPE_CD
+    </select>
+
+
+    <!-- [구제급여] 제출서류 (공통서류/추가서류 모두 포함) -->
+    <select id="listPapeMngPape" resultType="java.util.HashMap"
+                                 parameterType="business.com.file.service.PapeMngVO">
+        <include refid="Sql-PapeSubQuery"/>
+        SELECT PAPE_CD    AS "papeCd"
+             , PAPE_NM    AS "papeNm"
+             , UP_PAPE_CD AS "upPapeCd"
+             , UP_PAPE_NM AS "upPapeNm"
+             , PAPE_CD    AS "code"
+             , PAPE_NM    AS "text"
+          FROM SUB
+         WHERE 0 = 0
+         <if test="@common.util.CommUtils@isEqual(papeDtySeCd,'PP01')">
+           AND APLY_SE_CD   = #{aplySeCd}
+           <if test="@common.util.CommUtils@isNotEmpty(upPapeCd)">
+           AND UP_PAPE_CD IN (#{upPapeCd}, 'D001', 'D005')
+           </if>
+           <choose>
+                <when test="@common.util.CommUtils@isNotEmptyList(upPapeCdList)">
+                    AND UP_PAPE_CD IN
+                    <foreach item="item" collection="upPapeCdList" separator="," open="(" close=", 'D001', 'D005')">
+                        #{item}
+                    </foreach>
+                </when>
+                <otherwise>
+                    AND UP_PAPE_CD = '0'
+                </otherwise>
+           </choose>
+         </if>
+         <if test="@common.util.CommUtils@isNotEmpty(downTrgtYn)">
+           AND DOWN_TRGT_YN = #{downTrgtYn}
+         </if>
+         ORDER BY PAPE_CD
+    </select>
+
+
+    <!-- 파일 다운로드 목록 조회 -->
+    <select id="listPapeMngDownFile" resultType="business.com.file.service.PapeMngVO"
+                                     parameterType="business.com.file.service.PapeMngVO">
+        SELECT
+               A.PAPE_CD    AS "papeCd"
+             , A.PAPE_NM    AS "papeNm"
+             , A.FILE_NM    AS "fileNm"
+             , A.FILE_PATH  AS "filePath"
+             , A.DOWN_CNT   AS "downCnt"
+          FROM TB_PAPE_CODE A
+         WHERE USE_YN = 'Y'
+         <choose>
+            <when test="@common.util.CommUtils@isNotEmptyList(reliefPapeCdList)">
+                AND A.PAPE_CD IN
+                <foreach item="item" collection="reliefPapeCdList" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <when test="@common.util.CommUtils@isNotEmptyList(lwstPapeCdList)">
+                AND A.PAPE_CD IN
+                <foreach item="item" collection="lwstPapeCdList" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+         </choose>
+        ORDER BY A.PAPE_CD
+    </select>
+
+    <!-- 2022.01.11 CSLEE 추가
+         다운로드 카운트 증가 저장 -->
+    <update id="updtPapeMngDownCount" parameterType="business.com.file.service.PapeMngVO">
+        UPDATE TB_PAPE_CODE SET
+               DOWN_CNT = NVL(DOWN_CNT,0) + 1
+         WHERE 0 = 0
+         <choose>
+            <when test="@common.util.CommUtils@isNotEmptyList(reliefPapeCdList)">
+                AND PAPE_CD IN
+                <foreach item="item" collection="reliefPapeCdList" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <when test="@common.util.CommUtils@isNotEmptyList(lwstPapeCdList)">
+                AND PAPE_CD IN
+                <foreach item="item" collection="lwstPapeCdList" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+         </choose>
+    </update>
+
+</mapper>

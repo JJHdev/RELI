@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="EnvpAffc">
+
+	<!-- ======================== -->
+	<!--  공통 sql                -->
+	<!-- ======================== -->
+	<sql id="Sql-Where">
+		<if test="@common.util.CommUtils@isNotEmpty(sufrerNo)">
+			AND A.SUFRER_NO = #{sufrerNo}
+		</if>
+	</sql>
+	<sql id="Sql-Column">
+		A.SN                                       AS "sn",
+		A.SUFRER_NO                                AS "sufrerNo",
+		A.ABSTRCT_ADDR                             AS "abstrctAddr",
+		A.DCLR_YR                                  AS "dclrYr",
+		A.DCLR_RESN                                AS "dclrResn",
+		A.GAP_DSTNC                                AS "gapDstnc",
+		ROUND(A.LAT,3)                             AS "lat",
+		ROUND(A.LOT,3)                             AS "lot",
+		A.RGTR_NO                                  AS "rgtrNo",
+		TO_CHAR(A.REG_YMD, 'yyyy-mm-dd')           AS "regYmd",
+		A.MDFR_NO                                  AS "mdfrNo",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')         AS "mdfcnYmd"
+	</sql>
+	
+	<!-- 피해지역 목록조회 -->
+	<select id="getlistBizArea" resultType="java.util.Map">
+	SELECT A.BIZ_AREA_CD		AS "bizAreaCd"
+	    ,B.AFFC_SCOPE_CN 		AS "affcScopeCn"
+	    ,A.BIZ_AREA				AS "bizArea"
+	    ,A.LOT					AS "lon"
+	    ,A.LAT					AS "lat"
+	FROM TB_BIZ_MNG a left join TB_BIZ_ODER b
+	ON a.biz_area_cd = b.biz_area_cd
+	WHERE A.use_yn = 'Y' and B.biz_oder = '2'
+	</select>
+	<!-- 피해지역 한개 선택시 좌표 불러오기 -->
+	<select id="getOneBizArea" resultType='java.util.Map' parameterType="java.util.Map">
+	SELECT A.BIZ_AREA_CD		 		   AS "bizAreaCd"
+		 , B.AFFC_SCOPE_CN		AS "affcScopeCn"
+		 , A.BIZ_AREA 				   AS "bizArea"
+		 , A.LOT 						   AS "lon"
+		 , A.LAT						   AS "lat"
+	FROM TB_BIZ_MNG a left join TB_BIZ_ODER b
+	ON a.BIZ_AREA_CD = b.BIZ_AREA_CD
+	WHERE USE_YN = 'Y' 
+	AND B.BIZ_ODER = '2'
+	AND A.BIZ_AREA_CD = #{bizArea}
+	GROUP BY A.BIZ_AREA_CD, B.AFFC_SCOPE_CN, A.BIZ_AREA, A.LOT, A.LAT
+	</select>
+	
+	<!-- 피해자정보 목록조회 -->
+    <select id="listIdntBizArea" resultType="java.util.HashMap" parameterType="java.util.Map">
+    	<choose>
+			<when test="bizArea eq '00'">
+			SELECT DISTINCT A.BIZ_AREA_CD 	AS "bizAreaCd"
+				 , A.SUFRER_NO 				AS "sufrerNo"
+			     , C.BIZ_AREA				AS "bisArea"
+			     , B.IDNTFC_ID 				AS "idntfcId"
+			     , B.SUFRER_NM 				AS "sufrerNm"
+			     , COALESCE(B.RESI_WHL_CN, '0년')	AS "live"
+			 FROM TB_RELIEF A
+			     , TB_IDNTFC B
+			     , TB_BIZ_MNG C
+		      	 , (
+		     		SELECT SUFRER_NO, MIN(GAP_DSTNC)
+		     		FROM TB_ABSTRCT_ADDR
+<!-- 		     		WHERE GAP_DSTNC <![CDATA[<=]]> 1 -->
+		     		GROUP BY SUFRER_NO
+		     		) D
+			 WHERE 0 = 0
+			   AND A.SUFRER_NO = B.SUFRER_NO 
+			   AND A.BIZ_AREA_CD = C.BIZ_AREA_CD 
+			   AND A.SUFRER_NO = D.SUFRER_NO 
+			   <if test ="idntfcId != null and idntfcId neq ''">
+			   AND B.IDNTFC_ID = #{idntfcId}
+			   </if>
+			   <if test ="sufrerNm != null and sufrerNm neq ''">
+			   AND B.SUFRER_NM LIKE '%' || #{sufrerNm} || '%' 
+			   </if>
+			</when>
+    		<otherwise>
+			SELECT DISTINCT A.BIZ_AREA_CD AS "bizAreaCd"
+				 , A.SUFRER_NO 				AS "sufrerNo"
+			     , C.BIZ_AREA				AS "bisArea"
+			     , B.IDNTFC_ID 				AS "idntfcId"
+			     , B.SUFRER_NM 				AS "sufrerNm"
+			     , COALESCE(B.RESI_WHL_CN, '0년')	AS "live"	     
+			 FROM TB_RELIEF A
+			     , TB_IDNTFC B
+			     , TB_BIZ_MNG C
+		      	 , (
+		     		SELECT SUFRER_NO, MIN(GAP_DSTNC)
+		     		FROM TB_ABSTRCT_ADDR
+<!-- 		     		WHERE GAP_DSTNC <![CDATA[<=]]> 1 -->
+		     		GROUP BY SUFRER_NO
+		     		) D
+			 WHERE 0 = 0
+			   AND A.SUFRER_NO = B.SUFRER_NO 
+			   AND A.BIZ_AREA_CD = C.BIZ_AREA_CD 
+			   AND A.SUFRER_NO = D.SUFRER_NO 
+			   AND A.BIZ_AREA_CD = #{bizArea}
+			   <if test ="idntfcId != null and idntfcId neq ''">
+			   AND B.IDNTFC_ID = #{idntfcId}
+			   </if>
+			   <if test ="sufrerNm != null and sufrerNm neq ''">
+			   AND B.SUFRER_NM LIKE '%' || #{sufrerNm} || '%'
+			   </if>
+    		</otherwise>
+    	</choose>
+    </select>
+    
+	<!-- 피해자정보 좌표조회 -->
+    <select id="listEnvpAffcLoc" resultType="java.util.HashMap" parameterType="java.util.Map">
+    	<choose>
+			<when test="bizArea eq '00'">
+			SELECT DISTINCT A.BIZ_AREA_CD 	AS "bizAreaCd"
+				 , A.SUFRER_NO 				AS "sufrerNo"
+			     , C.BIZ_AREA				AS "bisArea"
+			     , B.IDNTFC_ID 				AS "idntfcId"
+			     , B.SUFRER_NM 				AS "sufrerNm"
+			     , D.LAT			   		AS "lat"
+			     , D.LOT					AS "lon"
+			     , D.SN						AS "sn"
+			 FROM TB_RELIEF A
+			     , TB_IDNTFC B
+			     , TB_BIZ_MNG C
+			     , TB_ABSTRCT_ADDR D
+			 WHERE 0 = 0
+			   AND A.SUFRER_NO = B.SUFRER_NO 
+			   AND A.BIZ_AREA_CD = C.BIZ_AREA_CD 
+			   AND A.SUFRER_NO = D.SUFRER_NO 
+<!-- 			   AND GAP_DSTNC <![CDATA[<=]]> 1 -->
+			   <if test ="idntfcId != null and idntfcId neq ''">
+			   AND B.IDNTFC_ID = #{idntfcId}
+			   </if>
+			   <if test ="sufrerNm != null and sufrerNm neq ''">
+			   AND B.SUFRER_NM LIKE '%' || #{sufrerNm} || '%'
+			   </if>
+			</when>
+    		<otherwise>
+			SELECT DISTINCT A.BIZ_AREA_CD AS "bizAreaCd"
+				 , A.SUFRER_NO 				AS "sufrerNo"
+			     , C.BIZ_AREA				AS "bisArea"
+			     , B.IDNTFC_ID 				AS "idntfcId"
+			     , B.SUFRER_NM 				AS "sufrerNm"		
+			     , D.LAT 					AS "lat"
+			     , D.LOT 					AS "lon"	
+			     , D.SN						AS "sn"     
+			 FROM TB_RELIEF A
+			     , TB_IDNTFC B
+			     , TB_BIZ_MNG C
+			     , TB_ABSTRCT_ADDR D
+			 WHERE 0 = 0
+			   AND A.SUFRER_NO = B.SUFRER_NO 
+			   AND A.BIZ_AREA_CD = C.BIZ_AREA_CD 
+			   AND A.SUFRER_NO = D.SUFRER_NO 
+			   AND A.BIZ_AREA_CD = #{bizArea}
+<!-- 			   AND GAP_DSTNC <![CDATA[<=]]> 1 -->
+			   <if test ="idntfcId != null and idntfcId neq ''">
+			   AND B.IDNTFC_ID = #{idntfcId}
+			   </if>
+			   <if test ="sufrerNm != null and sufrerNm neq ''">
+			   AND B.SUFRER_NM LIKE '%' || #{sufrerNm} || '%'
+			   </if>
+    		</otherwise>
+    	</choose>
+    </select>
+    
+    <select id="listIdntBizAreaCount" resultType="int" parameterType="business.com.relief.service.IdntfcVO">
+    	<choose>
+			<when test="bizArea eq '00'">
+			SELECT COUNT(1) FROM (
+				SELECT DISTINCT A.BIZ_AREA_CD 	AS "bizAreaCd"
+					 , A.SUFRER_NO 				AS "sufrerNo"
+				     , C.BIZ_AREA				AS "bisArea"
+				     , B.IDNTFC_ID 				AS "idntfcId"
+				     , B.SUFRER_NM 				AS "sufrerNm"
+				 FROM TB_RELIEF A
+				     , TB_IDNTFC B
+				     , TB_BIZ_MNG C
+			      	 , (
+			     		SELECT SUFRER_NO, MIN(GAP_DSTNC)
+			     		FROM TB_ABSTRCT_ADDR
+<!-- 			     		WHERE GAP_DSTNC <![CDATA[<=]]> 1 -->
+			     		GROUP BY SUFRER_NO
+			     		) D
+				 WHERE 0 = 0
+				   AND A.SUFRER_NO = B.SUFRER_NO 
+				   AND A.BIZ_AREA_CD = C.BIZ_AREA_CD 
+				   AND A.SUFRER_NO = D.SUFRER_NO 
+				   <if test ="idntfcId != null and idntfcId neq ''">
+				   AND B.IDNTFC_ID = #{idntfcId}
+				   </if>
+				   <if test ="sufrerNm != null and sufrerNm neq ''">
+				   AND B.SUFRER_NM LIKE '%' || #{sufrerNm} || '%'
+				   </if>
+			   )
+			</when>
+    		<otherwise>
+    		SELECT COUNT(1) FROM(
+	 			SELECT DISTINCT A.BIZ_AREA_CD AS "bizAreaCd"
+					 , A.SUFRER_NO 				AS "sufrerNo"
+				     , C.BIZ_AREA				AS "bisArea"
+				     , B.IDNTFC_ID 				AS "idntfcId"
+				     , B.SUFRER_NM 				AS "sufrerNm"	     
+				 FROM TB_RELIEF A
+				     , TB_IDNTFC B
+				     , TB_BIZ_MNG C
+			      	 , (
+			     		SELECT SUFRER_NO, MIN(GAP_DSTNC)
+			     		FROM TB_ABSTRCT_ADDR
+<!-- 			     		WHERE GAP_DSTNC <![CDATA[<=]]> 1 -->
+			     		GROUP BY SUFRER_NO
+			     		) D
+				 WHERE 0 = 0
+				   AND A.SUFRER_NO = B.SUFRER_NO 
+				   AND A.BIZ_AREA_CD = C.BIZ_AREA_CD 
+				   AND A.SUFRER_NO = D.SUFRER_NO 
+				   AND A.BIZ_AREA_CD = #{bizArea}
+				   <if test ="idntfcId != null and idntfcId neq ''">
+				   AND B.IDNTFC_ID = #{idntfcId}
+				   </if>
+				   <if test ="sufrerNm != null and sufrerNm neq ''">
+				   AND B.SUFRER_NM LIKE '%' || #{sufrerNm} || '%'
+				   </if>
+			   )
+    		</otherwise>
+    	</choose>
+    </select>
+    
+	<!-- 클릭시 sufrerNo 기준 가까운 점 select -->
+	<select id="getCoordinateByOnclick" resultType="java.util.HashMap" parameterType="java.util.Map">
+		
+		SELECT * FROM(
+		SELECT
+			(
+			6371 * acos(cos(CAST(LAT AS FLOAT) * 3.141592653589793 / 180.0) * cos(${lat} * 3.141592653589793 / 180.0) 
+				               * cos((${lon} * 3.141592653589793 / 180.0) - (CAST(LOT AS FLOAT) * 3.141592653589793 / 180.0)) + sin(CAST(LAT AS FLOAT) * 3.141592653589793 / 180.0) 
+				               * sin(${lat} * 3.141592653589793 / 180.0))
+			) as distance
+			, LOT				AS "lon"
+			, LAT				AS "lat"
+			, A.SUFRER_NO 		AS "sufrerNo"
+			, ABSTRCT_ADDR 		AS "abstrctAddr"
+			, DCLR_YR			AS "dclrYr"
+			, B.SUFRER_NM		AS "sufrerNm"
+			, SN				AS "sn"
+			, GAP_DSTNC			AS "gapDstnc"
+			, IDNTFC_ID			AS "idntfcId"
+		FROM TB_ABSTRCT_ADDR A LEFT JOIN TB_IDNTFC B
+		ON A.SUFRER_NO = B.SUFRER_NO 
+		WHERE A.SUFRER_NO IS NOT NULL 
+<!-- 		AND GAP_DSTNC <![CDATA[<=]]> 1 -->
+		)
+		WHERE distance <![CDATA[<=]]> 0.001 
+		</select>
+	</mapper>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <!-- ===================================================== -->
+    <!-- 파일 관리 관련 Job  -->
+    <!-- ===================================================== -->
+
+    <bean id="JobFileManageService" class="business.adm.batch.service.JobFileManageService"/>
+
+    <!-- 기간이 지난 복호화 폴더를 제거 -->
+    <bean id="clearDecryptFilesBatch" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="JobFileManageService" />
+        <property name="targetMethod" value="clearDecryptFiles" />
+        <property name="concurrent"   value="false" />
+    </bean>
+
+    <!-- 기간이 지난 임시저장 신청파일 제거 -->
+    <bean id="clearTemporaryAplyFilesBatch" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="JobFileManageService" />
+        <property name="targetMethod" value="clearTemporaryAplyFiles" />
+        <property name="concurrent"   value="false" />
+    </bean>
+
+    <!-- 매일 03시에 수행 (0 0 3 * * ?) -->
+    <bean id="clearDecryptFilesTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail"      ref="clearDecryptFilesBatch" />
+        <property name="cronExpression" value="0 0 3 * * ?" />
+    </bean>
+
+    <!-- 매일 04시에 수행 (0 0 4 * * ?) -->
+    <bean id="clearTemporaryAplyFilesTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail"      ref="clearTemporaryAplyFilesBatch" />
+        <property name="cronExpression" value="0 0 4 * * ?" />
+    </bean>
+
+    <!-- 스케쥴러 실행 -->
+    <bean id="jobFileManageScheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <!-- 2022.01.10 CSLEE 날짜기 지난 복호화 디렉토리 제거 JOB -->
+                <ref bean="clearDecryptFilesTrigger" />
+                <!-- 2022.01.11 LSH 날짜기 지난 임시저장 신청파일 제거 JOB 비활성화 -->
+                <ref bean="clearTemporaryAplyFilesTrigger" />
+            </list>
+        </property>
+    </bean>
+	<!--
+	===========================================================================
+	CRON 표현식
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	초   |   분 |   시 |   일 |   월 |요일 | 연도
+	0~59 | 0~59 | 0~23 | 1~31 | 1~12 | 0~6 | 생략가능
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	요일 : 0 (일요일) ~ 6( 토요일)
+	? : 설정 값 없을 때 - 일과 요일 에서만 사용가능
+	* : 모든조건
+	시작시간/단위 : 시작시간부터 해당 단위 때
+	시작범위-끝범위 : 시작범위 부터 끝범위까지
+	L : 마지막 - 일, 요일 에서만 사용가능
+	W : 가장 가까운 평일 찾는다 - 일 에서만 사용가능
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	ex) 10W
+	-10일이 평일 일 때 : 10일에 실행
+	-10일이 토요일 일 때 : 가장 가까운 평일인 금요일(9일)에 참
+	-10일이 일요일 일 때 : 가장 가까운 평일인 월요일(11일)에 참
+	# : 몇주 째인지 찾는다 - 요일 에서만 사용가능
+	ex) 3#2 : 수요일#2째주 에 참
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	예제
+	1) 매월 10일 오전 11시
+	   0  1  1  10  *  *
+	2) 매일 오후 2시 5분 0초
+	   0  5  14  *  *  *
+	3) 10분마다 도는 스케줄러 : 10분 0초, 20분 0초...
+	   0  0/10  *  *  *
+	4) 조건에서만 실행되는 스케줄러 : 10분 0초, 11분 0초 ~ 15분 0초까지 실행
+	   0  10-15  *  *  *
+	===========================================================================
+	-->
+</beans>

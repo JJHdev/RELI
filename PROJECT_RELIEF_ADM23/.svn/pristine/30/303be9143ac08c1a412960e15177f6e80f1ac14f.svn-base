@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="RoleMenu">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchRoleId)">
+            AND A.ROLE_ID = #{srchRoleId}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchMenuId)">
+            AND A.MENU_ID = #{srchMenuId}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchSysCd)">
+            AND EXISTS (
+                SELECT 1
+                  FROM SYS_MENU
+                 WHERE MENU_ID   = A.MENU_ID
+                   AND SYS_SE_CD = #{srchSysCd}
+                )
+        </if>
+    </sql>
+
+    <!-- 역할별메뉴관리 목록조회 -->
+    <select id="listRoleMenu" resultType="java.util.HashMap" parameterType="business.sys.role.service.RoleVO">
+        SELECT ROLE_ID              AS "roleId",
+               MENU_ID              AS "menuId",
+              (SELECT ROLE_NM
+                 FROM SYS_ROLE
+                WHERE ROLE_ID = A.ROLE_ID
+               )                    AS "roleNm",
+              (SELECT MENU_NM
+                 FROM SYS_MENU
+                WHERE MENU_ID = A.MENU_ID
+               )                    AS "menuNm",
+               RGTR_NO              AS "rgtrNo",
+               TO_CHAR(REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+               TO_CHAR(REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+               MDFR_NO              AS "mdfrNo",
+               TO_CHAR(MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+               TO_CHAR(MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+          FROM SYS_ROLE_MENU A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY ROLE_ID, MENU_ID
+    </select>
+    <select id="listRoleMenuCount" resultType="int" parameterType="business.sys.role.service.RoleVO">
+        SELECT COUNT(1) 
+          FROM SYS_ROLE_MENU A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 역할별메뉴관리 등록 -->
+    <insert id="regiRoleMenu" parameterType="business.sys.role.service.RoleVO">
+        INSERT 
+          INTO SYS_ROLE_MENU 
+             ( ROLE_ID,
+               MENU_ID,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{roleId},
+               #{menuId},
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 역할별메뉴관리 삭제 -->
+    <delete id="deltRoleMenu" parameterType="business.sys.role.service.RoleVO">
+        DELETE 
+          FROM SYS_ROLE_MENU 
+         WHERE ROLE_ID = #{roleId}
+           AND MENU_ID = #{menuId}
+    </delete> 
+
+</mapper>

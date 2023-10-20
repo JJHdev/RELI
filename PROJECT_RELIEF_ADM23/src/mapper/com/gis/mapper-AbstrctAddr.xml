@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AbstrctAddr">
+
+	<!-- ======================== -->
+	<!--  공통 sql                -->
+	<!-- ======================== -->
+	<sql id="Sql-Where">
+		<if test="@common.util.CommUtils@isNotEmpty(sufrerNo)">
+			AND A.SUFRER_NO = #{sufrerNo}
+		</if>
+	</sql>
+	<sql id="Sql-Column">
+		A.SN                                       AS "sn",
+		A.SUFRER_NO                                AS "sufrerNo",
+		A.ABSTRCT_ADDR                             AS "abstrctAddr",
+		A.DCLR_YR                                  AS "dclrYr",
+		A.DCLR_RESN                                AS "dclrResn",
+		A.GAP_DSTNC                                AS "gapDstnc",
+		ROUND(A.LAT,3)                             AS "lat",
+		ROUND(A.LOT,3)                             AS "lot",
+		A.RGTR_NO                                  AS "rgtrNo",
+		TO_CHAR(A.REG_YMD, 'yyyy-mm-dd')           AS "regYmd",
+		A.MDFR_NO                                  AS "mdfrNo",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')         AS "mdfcnYmd"
+	</sql>
+	
+	<!-- 초본주소 목록조회 -->
+	<select id="listAbstrctAddr" resultType="business.adm.gis.service.AbstrctAddrVO" parameterType="business.adm.gis.service.AbstrctAddrVO">
+		SELECT <include refid="Sql-Column"/>
+		FROM TB_ABSTRCT_ADDR A
+		WHERE 1 = 1
+			<include refid="Sql-Where"/>
+		ORDER BY 
+			A.DCLR_YR
+	</select>
+	<select id="listAbstrctAddrCount" resultType="int" parameterType="business.adm.gis.service.AbstrctAddrVO">
+		SELECT COUNT(1) 
+		FROM TB_ABSTRCT_ADDR A
+		WHERE 1 = 1
+		<include refid="Sql-Where"/>
+    </select>
+    
+    <!-- 피해자정보 상세조회 -->
+    <select id="viewAbstrctAddr" resultType="business.adm.gis.service.AbstrctAddrVO" parameterType="business.adm.gis.service.AbstrctAddrVO">
+		SELECT <include refid="Sql-Column"/>
+		FROM TB_ABSTRCT_ADDR A
+		WHERE A.SN = #{sn}
+    </select>
+    
+	<!-- 초본주소 등록 -->
+	<insert id="regiAbstrctAddr" parameterType="business.adm.gis.service.AbstrctAddrVO">
+		<selectKey keyProperty="sn" resultType="int" order="BEFORE">
+			SELECT SEQ_ABSTRCT_ADDR.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO TB_ABSTRCT_ADDR 
+			( SN,
+			  SUFRER_NO,
+			  ABSTRCT_ADDR,
+			  DCLR_YR,
+			  DCLR_RESN,
+			  GAP_DSTNC,
+			  LAT,
+			  LOT,
+			  RGTR_NO,
+			  REG_YMD
+			)
+		VALUES
+			( #{sn},
+			  (SELECT SUFRER_NO FROM TB_IDNTFC WHERE IDNTFC_ID = #{idntfcId}),
+			  #{abstrctAddr},
+			  CAST(#{dclrYr} AS INTEGER),
+			  #{dclrResn},
+			  #{gapDstnc},
+			  #{lat},
+			  #{lot},
+			  #{gsUserNo},
+			  SYSDATE
+			)
+	</insert>
+	
+	<!-- 초본주소 수정 -->
+	<update id="updtAbstrctAddr" parameterType="business.adm.gis.service.AbstrctAddrVO">
+		UPDATE TB_ABSTRCT_ADDR 
+		SET ABSTRCT_ADDR	= #{abstrctAddr},
+			DCLR_YR			= #{dclrYr},
+			DCLR_RESN		= #{dclrResn},
+			GAP_DSTNC		= #{gapDstnc},
+			LAT				= #{lat},
+			LOT				= #{lot},
+			MDFR_NO			= #{gsUserNo},
+			MDFCN_YMD		= SYSDATE
+		WHERE SN = #{sn}
+	</update>
+	
+	<!-- 초본주소 삭제 -->
+	<delete id="deltAbstrctAddr" parameterType="business.adm.gis.service.AbstrctAddrVO">
+		DELETE 
+		FROM TB_ABSTRCT_ADDR
+		WHERE SN = #{sn}
+	</delete> 
+
+</mapper>

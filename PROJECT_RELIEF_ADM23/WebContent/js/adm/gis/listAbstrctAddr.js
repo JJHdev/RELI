@@ -1,0 +1,428 @@
+/**
+******************************************************************************************
+*** 파일명 : listAbstrctAddr.js
+*** 설명글 : 초본 주소 등록 화면 스크립트
+***
+*** -----------------------------	Modified Log   --------------------------------------
+*** ver			 date				author				  description
+*** --------------------------------------------------------------------------------------
+*** 1.0			 2022.11.11		  JWH
+******************************************************************************************
+**/
+
+
+
+$(function() {
+	//========================================================//
+	// 화면 스크립트 내에 사용할 객체,상수 정의
+	//--------------------------------------------------------//
+	let P_GRID   = $('#appGrid');			// 그리드 객체
+	let P_SFORM  = $('#searchForm');		// 검색폼 객체
+	let P_PFORM  = $('#personForm');		// 피해자 정보 영역
+	let P_RFORM  = $('#registForm');		// 피해자 초본주소 정보 영역
+	let P_AGRID  = $('#abstrctGrid');		// 대상자조회 목록
+	let P_SELECT = false; // 피해자 상세조회 데이터
+	let A_SELECT = false; // 피해자 초본주소 상세조회 데이터
+	
+	P_GRID.datagrid({
+		fit: true,
+		// 그리드 결과데이터 타입
+		contentType: 'application/json',
+		// 그리드 결과데이터 타입
+		dataType: 'json',
+		// 그리드 데이터연동 방식
+		method: 'POST',
+		// 그리드 페이징처리 여부
+		pagination:true,
+		// 그리드 행번호 표시여부
+		rownumbers:true,
+		// 그리드 단일행만 선택여부
+		singleSelect: true,
+		// 한 페이지 출력수
+		pageSize: 30,
+		// 칼럼정의
+		columns: [[
+			{field:'idntfcId',width: 90,halign:'center',align:'center',title:'식별ID'},
+			{field:'sufrerNmMask',width:100,halign:'center',align:'center',title:'피해자명'},
+			{field:'sufrerBrdt',width:120,halign:'center',align:'center',title:'생년월일'},
+			{field:'sufrerAddr',width:300,halign:'center',align:'left',title:'주소'},
+			{field:'abstrctYn',width:90,halign:'center',align:'center',title:'초본등록 여부'}
+		]],
+		// 행선택시 상세조회
+		onSelect: doSelect
+	});
+	
+	P_AGRID.datagrid({
+		fit: true,
+		// 그리드 결과데이터 타입
+		contentType: 'application/json',
+		// 그리드 결과데이터 타입
+		dataType: 'json',
+		// 그리드 데이터연동 방식
+		method: 'POST',
+		// 그리드 행번호 표시여부
+		rownumbers:true,
+		// 체크박스 KEY값필드
+		idField:'sn',
+		// 칼럼정의
+		columns: [[
+			{field:'chckId',checkbox: true},
+			{field:'abstrctAddr',width:250,halign:'center',align:'left',title:'주소'},
+			{field:'dclrYr',width:90,halign:'center',align:'center',title:'신고년도'},
+			{field:'dclrResn',width:150,halign:'center',align:'center',title:'사유'},
+			{field:'gapDstnc',width:120,halign:'center',align:'right',title:'이격거리(km)'},
+			{field:'lot',width:80,halign:'center',align:'right',title:'X'},
+			{field:'lat',width:80,halign:'center',align:'right',title:'Y'},
+		]],
+		onLoadSuccess: function(data){
+			/*//최소,최대,거주기간 계산
+			const lstData = data.rows;
+			if(lstData < 1) return;
+			
+			const dclrYrs = lstData.map(({ dclrYr }) => dclrYr);
+			//최대 값
+			const max = Math.max.apply(null, dclrYrs);
+			//최소 값
+			const min = Math.min.apply(null, dclrYrs);
+			//거주기간
+			const live = max - min;
+			
+			// 최소,최대,거주기간 데이터로드
+			$.formUtil.toHtmlPatch(P_PFORM, {
+				live	: live + "년",
+				final	: max + "년",
+				first	: min + "년",
+			}, 's_');*/
+		},
+		// 행선택시 상세조회
+		onSelect: doAbstrctSelect
+	});
+	//========================================================//
+	// FORM ELEMENTS 정의
+	//--------------------------------------------------------//
+	// 피해자 초본정보 신고년도 콤보박스 정의
+	let P_REGIST_COMBO = {
+		dclrYrCombo: false,
+		doInit: function() {
+			let cmp = this;
+			this.dclrYrCombo = $('#dclrYrCmb').combobox({
+				mode: 'local',
+				data: STORE.getYears(0, $.formatUtil.toYear),
+				panelMaxHeight: 300,
+				onChange: function(newValue) {
+					$('#dclrYr').val(newValue);
+				}
+			});
+		}
+	};
+	
+	// 등록용 피해지역/사업차수 단계형 콤보박스 초기화
+	P_REGIST_COMBO.doInit();
+	
+	// 피해자정보 검색처리
+	//--------------------------------------------------------//
+	function doSearch() {
+		// 선택된 항목 CLEAR
+		P_GRID.datagrid('clearSelections');
+		// 검색폼 데이터 객체화
+		var obj = P_SFORM.serializeObject();
+		// 그리드 목록조회 URL
+		P_GRID.datagrid('options')['url'] = getUrl('/adm/gis/getlistIdntfc.do');
+		// 검색폼 그리드 검색
+		P_GRID.datagrid('load', obj);
+		return false;
+	}
+	
+	// 피해자정보 검색리셋
+	//--------------------------------------------------------//
+	function doReset() {
+		// 상세조회 데이터 초기화
+		doClear();
+		// 초본주소 목록 초기화
+		doAbstrctSearch();
+		// 검색폼 입력데이터 초기화
+		P_SFORM.form('reset');
+		// 검색폼 그리드 검색 처리
+		doSearch();
+		
+		return false;
+	}
+	
+	// 초본 리스트 조회
+	//--------------------------------------------------------//
+	function doAbstrctSearch() {
+		let params = {
+			sufrerNo : P_SELECT['sufrerNo'],
+		};
+		// 선택된 항목 CLEAR
+		P_AGRID.datagrid('clearSelections');
+		// 그리드 목록조회 URL
+		P_AGRID.datagrid('options')['url'] = getUrl('/adm/gis/getlistAbstrctAddr.do');
+		// 검색폼 그리드 검색
+		P_AGRID.datagrid('load', params);
+		return false;
+	}
+	
+	P_RFORM.validate({
+		debug: false,
+		onsubmit: false,
+		onfocusout: false,
+		// 검증룰 정의
+		rules: {
+			abstrctAddr : {required: true},
+			dclrYr		: {required: true},
+			dclrResn	: {required: true},
+			gapDstnc	: {required: true, number:true, min:0},
+			lot			: {required: true, number:true, min:124, max:132},
+			lat			: {required: true, number:true, min:33,  max:43}
+		},
+		// 검증메세지 정의
+		messages: {
+			abstrctAddr : {required: "주소는 필수 선택 사항입니다."},
+			dclrYr		: {required: "신고년도는 필수 선택 사항입니다."},
+			dclrResn	: {required: "사유는 필수 선택 사항입니다."},
+			gapDstnc	: {required: "이격거리는 필수 입력 사항입니다.", number:"이격거리가 숫자형식이 아닙니다.", min:"이격거리는 최소 0이상입니다."},
+			lot			: {required: "X(경도)는 필수 입력 사항입니다.", number:"X(경도)가 숫자형식이 아닙니다.", min:"X(경도)값은 최소 124.0이상입니다", max:"X(경도)값은 최대 132.0이하입니다"},
+			lat			: {required: "Y(위도)는 필수 입력 사항입니다.", number:"Y(위도)가 숫자형식이 아닙니다.", min:"Y(위도)값은 최소 33.0이상입니다", max:"Y(위도)값은 최대 43.0이하입니다"}
+		},
+		invalidHandler: validateHandler,
+		errorPlacement: validatePlacement
+	});
+	
+	// 피해자 상세조회
+	//-------------------------------//
+	function doSelect(index, row) {
+		var params = {
+			sufrerNo: row['sufrerNo']
+		};
+		doClear();
+		if(row['idntfcId'] === undefined){
+			$.commMsg.alert("식별ID가 없으면 정보를 조회할 수 없습니다.");
+			return false;
+		}
+		$.ajaxUtil.ajaxLoad(
+			getUrl('/adm/gis/getIdntfc.do'), 
+			params,
+			function(result) {
+				var data = result.Data;
+				P_SELECT = data;
+				//식별아이디 없는 경우 
+				if(data === undefined){
+					$.commMsg.alert("식별ID가 없으면 정보를 조회할 수 없습니다.");
+				}else if (data) {
+					// 개인정보 데이터로드
+					$.formUtil.toHtml(P_PFORM, {
+						idntfcId : data['idntfcId'],
+						sufrerNm : data['sufrerNm'],
+						bizArea  : data['bizArea'],
+						resiWhlCn: $.formatUtil.toYearNm(data['resiWhlCn']),
+						frstPollutnOcrnYr: $.formatUtil.toYear(data['frstPollutnOcrnYr']),
+						lastPollutnOcrnYr: $.formatUtil.toYear(data['lastPollutnOcrnYr'])
+					}, 's_');				
+					//초본 리스트 조회
+					doAbstrctSearch();
+				}
+			}
+		);			
+	}
+	
+	// 피해자 초본주소 상세조회
+	//-------------------------------//
+	function doAbstrctSelect(index, row) {
+		doAbstrctAddrClear();
+		A_SELECT = row;
+		A_SELECT['mode'] = MODE.UPDATE;
+		// 초본주소 상세정보 데이터로드
+		$.formUtil.toForm(row, P_RFORM);
+		// 신고연도 셋팅
+		$('#dclrYrCmb').combobox('select', row['dclrYr']);
+	}
+	
+	// 피해자 상세정보 리셋
+	//--------------------------------------------------------//
+	function doClear() {
+		// 피해자정보 초기화
+		$.formUtil.toHtmlReset(P_PFORM, 's_');
+		P_PFORM.form('reset');
+		// 상세조회 데이터 제거
+		P_SELECT = false;
+		doAbstrctAddrClear();
+		return false;
+	}
+	
+	// 피해자 초본주소 상세정보 리셋
+	//--------------------------------------------------------//
+	function doAbstrctAddrClear() {
+		// 피해자정보 초기화
+		$.formUtil.toHtmlReset(P_RFORM);
+		P_RFORM.form('reset');
+		// Insert 초기값 셋팅
+		$('#mode').val(MODE.INSERT);
+		// 상세조회 데이터 제거
+		A_SELECT = false;
+		return false;
+	}
+	
+	//초본주소  엑셀양식 다운로드
+	//-------------------------------//
+	function doDownForm() {
+		// 파일다운로드 (comm_utils.js 참고)
+		$.fileUtil.download({
+			params: {},
+			url   : getUrl("/adm/gis/downAbstrctForm.do")
+		});
+		return false;
+	}
+	
+	//초본주소 엑셀 업로드 - 22.11.11 JWH 작업 진행중
+	//-------------------------------//
+	function doLoadExcel() {
+		// 파일업로드 팝업 오픈
+		popup.openUpload({
+			// 업로드 URL
+			url: getUrl("/adm/gis/saveAbstrct.do"),
+			// 허용가능 확장자
+			extensions: ['xlsx','xls'],
+			// 팝업제목
+			title: '초본주소  엑셀등록',
+			// 기본변수
+			params: {
+				needYn: 'Y'
+			},
+			// 추가변수
+			addParams: {
+				/*idntfcId  : P_SELECT['idntfcId' ],*/
+			},
+			// 추가표시정보
+			addContent: function(table) {
+				
+			},
+			// 결과처리
+			success: function(ret) {
+				let r = $(ret);
+				if (r.find('.exception_detail_message') &&
+					r.find('.exception_detail_message').length > 0) {
+					$.commMsg.alert(r.find('.exception_detail_message').html());
+					return false;
+				}
+				if (r.find('.exception_message') &&
+					r.find('.exception_message').length > 0) {
+					$.commMsg.alert(r.find('.exception_message').html());
+					return false;
+				}
+				if (r['Code'] < 0) {
+					$.commMsg.alert('[Code:' + r['Code'] + '] ' + r['Message']);
+					return;
+				}
+				else {
+					$.commMsg.alert('성공적으로 등록되었습니다.', function() {
+						P_GRID.datagrid('reload');
+						$("#btnUploadCancel").click();
+					});
+				}
+			}
+		});
+		return false;
+	}
+	
+	//초본주소 등록(초기화) - 22.11.16 JWH
+	//-------------------------------//
+	function doRegist() {
+		if(!P_SELECT) {
+			$.commMsg.alert("초본을 등록할 피해자를 목록에서 선택해주시길 바랍니다.");
+		} else {
+			doAbstrctAddrClear();
+		}
+		return false;
+	}
+	
+	//초본주소 저장(수정) - 22.11.16 JWH
+	//-------------------------------//
+	function doSave() {
+		if(!P_SELECT){
+			$.commMsg.alert("초본을 등록할 피해자를 목록에서 선택해주시길 바랍니다.");
+			return false;
+		}
+		
+		// 등록폼의 VALIDATION 기능 활성화
+		if (P_RFORM.validate().settings)
+			P_RFORM.validate().settings.ignore = false;
+
+		//FORM VALIDATION
+		if (P_RFORM.valid() === false)
+			return false;
+		
+		//피해자 식별 ID 셋팅
+		$('#idntfcId').val(P_SELECT['idntfcId']);
+		
+		$.commMsg.confirm("저장하시겠습니까?", function() {
+			// AJAX로 저장처리
+			$.ajaxUtil.ajaxSave(
+				getUrl('/adm/gis/saveAbstrctAddr.do'),
+				JSON.stringify(P_RFORM.serializeObject()),
+				function(ret) {
+					$.ajaxUtil.success(ret, function() {
+						$.easyMsg.success(ret, '성공적으로 저장되었습니다.', function() {
+							// 피해자정보 조회
+							doSelect(0, P_SELECT);
+							//doRegist();
+						 	//doSearch();
+							//doAbstrctSearch();
+						});
+					});
+				}
+			);
+		});
+		return false;
+	}
+	
+	//초본주소 삭제 - 22.11.17 JWH
+	//-------------------------------//
+	function doRemove() {
+		// 목록의 선택 항목
+		const rows = P_AGRID.datagrid('getSelections');
+		if (rows.length == 0) {
+			$.commMsg.alert('삭제할 항목을 선택하세요.');
+			return false;
+		}
+		$.commMsg.confirm(rows.length+"건의 항목을 삭제하시겠습니까?", function() {
+			// AJAX로 저장처리
+			$.ajaxUtil.ajaxSave(
+				getUrl('/adm/gis/saveAbstrctAddr.do'),
+				JSON.stringify({
+					mode:	 MODE.REMOVE,
+					abstrctAddrList: rows
+				}),
+				function(ret) {
+					$.ajaxUtil.success(ret, function() {
+						$.easyMsg.success(ret, '성공적으로 삭제되었습니다.', function() {
+							// 피해자정보 조회
+							doSelect(0, P_SELECT);
+							//doAbstrctAddrClear();
+							//doSearch();
+							//doAbstrctSearch();
+						});
+					});
+				}
+			);
+		});
+		return false;
+	}
+	// 초기검색실행
+	doSearch();
+	
+	// 피해자 조회
+	$('#btnSearch').bind('click', doSearch);
+	// 피해자 조회 검색 리셋
+	$('#btnReset').bind('click', doReset);
+	// 초본주소  엑셀양식 다운로드
+	$('#btnAbstrctForm').bind('click', doDownForm);
+	// 초본주소 엑셀 업로드
+	$('#btnAbstrctLoad').bind('click', doLoadExcel);
+	// 초본주소 등록
+	$('#btnRegist').bind('click', doRegist);
+	// 초본주소 저장(수정)
+	$('#btnSave').bind('click', doSave);
+	// 초본주소 삭제
+	$('#btnDel').bind('click', doRemove);
+});

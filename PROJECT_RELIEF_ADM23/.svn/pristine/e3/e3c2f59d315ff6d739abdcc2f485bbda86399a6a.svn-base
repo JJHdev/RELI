@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Comm">
+
+    <!--
+    코드 리스트 조회
+    -->
+    <select id="listCode" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT
+               A.CD_ID              AS "code"
+             , A.CD_NM              AS "text"
+             , A.UP_CD_ID           AS "upCdId"
+             , A.CD_NM              AS "cdNm"
+             , A.CD_CN              AS "cdCn"
+             , A.CD_ORDR            AS "cdOrdr"
+          FROM SYS_CODE A
+         WHERE A.USE_YN = 'Y'
+         <if test="@common.util.CommUtils@isNotEmpty(upCdId)">
+           AND A.UP_CD_ID = #{upCdId}
+         </if>
+         <if test="codeList != null">
+           AND A.CD_ID IN
+           <foreach collection="codeList" item="code" index="index" separator="," open="(" close=")">
+               #{code}
+           </foreach>
+         </if>
+         ORDER BY CD_ORDR ASC
+    </select>
+
+    <!-- 엑셀로드 설정정보 콤보 조회 -->
+    <select id="getListExcel" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT EXCL_NO     AS "code",
+               EXCL_NAME   AS "text"
+          FROM TEMP_EXCEL A
+         ORDER BY EXCL_NO
+    </select>
+
+    <!-- 피해지역 콤보 조회 -->
+    <select id="getListBizMng" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT BIZ_AREA_CD     AS "code",
+               BIZ_AREA        AS "text",
+               BIZ_DTL_AREA    AS "desc"
+          FROM TB_BIZ_MNG
+         WHERE USE_YN          = 'Y'
+         ORDER BY BIZ_AREA_CD
+    </select>
+
+    <!-- 사업차수 콤보 조회 -->
+    <select id="getListBizOder" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT BIZ_ODER               AS "code",
+               BIZ_ODER_NM            AS "text",
+               BIZ_AREA_CD            AS "bizAreaCd",
+               BIZ_ODER               AS "bizOder",
+               BIZ_ODER_NM            AS "bizOderNm",
+               BIZ_BGNG_YMD           AS "bizBgngYmd",
+               BIZ_END_YMD            AS "bizEndYmd",
+               POLUSRC_CN             AS "polusrcCn",
+               HRMFLNS_FACTR_EXPSR_CN AS "hrmflnsFactrExpsrCn",
+               HEALTH_DMGE_CN         AS "healthDmgeCn",
+               AFFC_SCOPE_CN          AS "affcScopeCn",
+               EXPSR_WHL_CN           AS "expsrWhlCn",
+               RESI_WHL_CN            AS "resiWhlCn"
+          FROM TB_BIZ_ODER
+         WHERE BIZ_AREA_CD  = #{bizAreaCd}
+           AND BIZ_USE_YN   = 'Y'
+           AND BIZ_ODER    != '0'
+         ORDER BY BIZ_ODER
+    </select>
+
+    <!-- 예비조사차수 콤보 조회 -->
+    <select id="getListPrptOder" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT EXMN_ODER    AS "code",
+               EXMN_ODER    AS "text"
+          FROM TB_PRPT_EXMN_PLAN
+         WHERE BIZ_AREA_CD  = #{bizAreaCd}
+           AND BIZ_ODER     = #{bizOder}
+         ORDER BY EXMN_ODER
+    </select>
+
+    <!-- 본조사차수 콤보 조회 -->
+    <select id="getListMnsvyOder" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT EXMN_ODER    AS "code",
+               EXMN_ODER    AS "text"
+          FROM TB_MNSVY_PLAN
+         WHERE BIZ_AREA_CD  = #{bizAreaCd}
+           AND BIZ_ODER     = #{bizOder}
+         ORDER BY EXMN_ODER
+    </select>
+
+    <!-- 질병분류 콤보 조회 -->
+    <select id="getListDissCl" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT DISTINCT A.DISS_CL_CD                AS "code",
+                (SELECT B.SCKWND_NM 
+                   FROM TB_SCKWND_CODE B 
+                  WHERE B.SCKWND_CD = A.DISS_CL_CD) AS "text" 
+          FROM TB_SCKWND_CODE A
+         WHERE A.DISS_CL_CD IS NOT NULL
+         ORDER BY A.DISS_CL_CD
+    </select>
+
+    <!-- 신청차수 콤보 조회 -->
+    <select id="getListReliefOder" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT DISTINCT
+               APLY_ODER AS "code",
+               APLY_ODER AS "text"
+          FROM TB_RELIEF_ODER
+         ORDER BY APLY_ODER
+    </select>
+
+    <!-- 주소검색 목록조회 -->
+    <select id="listAddress" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+        SELECT DISTINCT
+		       A.ADM_CD    AS "zipNo"
+		      ,B.RN_NM     AS "rnNm"
+		      ,A.BULD_MNNM AS "buldMnnm"
+		      ,A.BULD_SLNO AS "buldSlno"
+		      ,B.SI_NM||' '||
+		       DECODE(B.SGG_NM,'','', B.SGG_NM||' ')||
+		       DECODE(B.EMD_SE,'0',B.EMD_NM||' ')||
+		       B.RN_NM||' '||
+		       DECODE(A.UNDR_AT,0,'',1,'지하 ',2,'공중 ')||
+		       A.BULD_MNNM||
+		       DECODE(A.BULD_SLNO,0,'','-'||A.BULD_SLNO)||
+		       CASE WHEN (B.EMD_SE = '0' AND D.BD_KDCD = '0') THEN ''
+		            WHEN (B.EMD_SE = '0' AND D.BD_KDCD = '1') THEN DECODE(D.SGG_BULD_NM, '', '', '(' || D.SGG_BULD_NM || ')' )
+		            WHEN (B.EMD_SE = '1' AND D.BD_KDCD = '0') THEN '('||B.EMD_NM||')'
+		            WHEN (B.EMD_SE = '1' AND D.BD_KDCD = '1') THEN '('||B.EMD_NM || DECODE(D.SGG_BULD_NM, '', '', ',' || D.SGG_BULD_NM ) ||')'
+		       END         AS "roadAddr"
+		      ,C.SI_NM||' '||
+		       DECODE(C.SGG_NM,'','', C.SGG_NM||' ')||
+		       DECODE(C.LEDO_EMD_NM,'','', C.LEDO_EMD_NM||' ')||
+		       DECODE(C.LI_NM,'','', C.LI_NM||' ')||
+		       DECODE(C.MT_YN,'0','', ' 산')||
+		       C.LNBR_MNNM||
+		       DECODE(C.LNBR_SLNO,0,'','-'||C.LNBR_SLNO)
+		                   AS "jibunAddr"
+          FROM TB_ZIP_ADRS      A,
+               TB_ZIP_CODE      B,
+               TB_ZIP_LNBR      C,
+               TB_ZIP_DTLS      D
+         WHERE A.RN_CD          = B.RN_CD
+           AND A.EMD_NO         = B.EMD_NO
+           AND A.MGT_NO         = C.MGT_NO
+           AND A.MGT_NO         = D.MGT_NO
+           AND C.RPRS_YN        = '1' <!-- 대표지번만 -->
+           AND (  B.SI_NM       LIKE #{srchText} || '%'
+               OR B.SGG_NM      LIKE #{srchText} || '%'
+               OR B.RN_NM       LIKE #{srchText} || '%'
+               OR C.LI_NM       LIKE #{srchText} || '%'
+               OR CONTAINS(C.LEDO_EMD_NM, #{srchText}, null) <![CDATA[ > ]]> 0
+               )
+		<if test="@common.util.CommUtils@isNotEmpty(srchMnnm)">
+	       AND (  A.BULD_MNNM = #{srchMnnm}
+	           OR C.LNBR_MNNM = #{srchMnnm}
+	           )
+			<if test="@common.util.CommUtils@isNotEmpty(srchSlno)">
+		       AND (  A.BULD_SLNO = #{srchSlno}
+		           OR C.LNBR_SLNO = #{srchSlno}
+		           )
+	        </if>
+        </if>
+         ORDER BY
+		       TO_NUMBER(
+		           NVL(TRANSLATE(B.RN_NM, '1234567890' || B.RN_NM, '1234567890'), 0)
+		       ),
+		       NVL(
+		           REPLACE(
+		               REPLACE(
+		                   B.RN_NM, 
+		                   TRANSLATE(B.RN_NM, '1234567890'||B.RN_NM, '1234567890'),
+		                   LPAD(TRANSLATE(B.RN_NM, '1234567890'||B.RN_NM, '1234567890'),9,'0')
+		               ), 
+		               B.RN_NM, 
+		               ''
+		           ), 
+		           '0'
+		       ),
+		       A.BULD_MNNM, 
+		       A.BULD_SLNO
+    </select>
+          
+    <select id="listAddressCount" resultType="int" parameterType="java.util.HashMap">
+        SELECT COUNT(DISTINCT MGT_NO)
+          FROM (
+               SELECT A.MGT_NO
+                 FROM TB_ZIP_ADRS      A,
+                      TB_ZIP_CODE      B
+                WHERE A.RN_CD          = B.RN_CD
+                  AND A.EMD_NO         = B.EMD_NO
+                  AND (  B.SI_NM       LIKE #{srchText} || '%'
+                      OR B.SGG_NM      LIKE #{srchText} || '%'
+                      OR B.RN_NM       LIKE #{srchText} || '%'
+                      )
+				<if test="@common.util.CommUtils@isNotEmpty(srchMnnm)">
+			      AND A.BULD_MNNM = #{srchMnnm}
+					<if test="@common.util.CommUtils@isNotEmpty(srchSlno)">
+				       AND A.BULD_SLNO = #{srchSlno}
+			        </if>
+		        </if>
+               UNION ALL
+               SELECT A.MGT_NO
+                 FROM TB_ZIP_ADRS      A,
+                      TB_ZIP_LNBR      C
+                WHERE A.MGT_NO         = C.MGT_NO
+                  AND C.RPRS_YN        = '1'
+                  AND (C.LI_NM LIKE #{srchText} || '%' OR CONTAINS(C.LEDO_EMD_NM, #{srchText}, null) <![CDATA[ > ]]> 0 )
+				<if test="@common.util.CommUtils@isNotEmpty(srchMnnm)">
+			      AND C.LNBR_MNNM = #{srchMnnm}
+					<if test="@common.util.CommUtils@isNotEmpty(srchSlno)">
+				       AND C.LNBR_SLNO = #{srchSlno}
+			        </if>
+		        </if>
+               )
+    </select>
+          
+	<!-- 2022.01.20 영업일수에 해당하는 날짜 반환 -->
+    <select id="getWorkDate" resultType="string" parameterType="java.util.HashMap">
+        SELECT FN_GET_WORKDATE(#{workCnt}, #{currDate}) 
+          FROM DUAL
+    </select>
+    
+    <!-- 2022.12.06 서류코드 콤보 조회 -->
+    <select id="getListPapeCode" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT A.PAPE_CD    AS "code",
+               <!-- '['|| (SELECT PAPE_NM FROM TB_PAPE_CODE WHERE PAPE_CD = A.UP_PAPE_CD) ||']'|| -->
+               A.PAPE_NM    AS "text",
+               A.PAPE_CD    AS "papeCd",
+               A.UP_PAPE_CD AS "upPapeCd"
+          FROM TB_PAPE_CODE A
+         WHERE A.USE_YN     = 'Y' 
+           AND REGEXP_LIKE(A.UP_PAPE_CD, #{papeCd}||'[0-9]')
+      ORDER BY A.PAPE_CD, 
+               A.CD_ORDR
+    </select>
+
+    <!-- 2023.01.16 살생물제품 제품분류및유형 콤보 조회 -->
+    <select id="getListBioPrduct" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT CD_ID      AS "code", 
+		      (SELECT CD_NM 
+		         FROM SYS_CODE 
+		        WHERE UP_CD_ID = #{upCdId}
+		          AND CD_ID    = A.UP_CD_ID) 
+		       || ' > ' 
+		       || CD_NM   AS "text"
+		  FROM SYS_CODE   A
+		 WHERE LEVEL    > 1
+	   CONNECT BY PRIOR 
+	           CD_ID    = UP_CD_ID
+		 START WITH
+		       UP_CD_ID = #{upCdId}
+		 ORDER BY 
+		       UP_CD_ID
+		     , CD_ID
+    </select>
+    
+    <!-- 2023.02.03 공휴일 연도 콤보조회 -->
+    <select id="getHldyYear" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+    	SELECT hldy_ymd			AS "code"
+    	     , hldy_ymd			AS "text"
+    	  FROM (
+		    	SELECT DISTINCT(SUBSTR(HLDY_YMD, 1, 4)) AS hldy_ymd
+		 		  FROM TB_HLDY
+		 	   )
+ 		 ORDER BY hldy_ymd DESC
+    </select>
+    
+
+</mapper>

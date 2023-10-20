@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ReamtPay">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizArea)">
+            AND B.BIZ_AREA_CD = #{srchBizArea}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchGiveYear)">
+            AND A.PAY_INFRM_YMD LIKE #{srchGiveYear} || '%'
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.SN                                          AS "sn",
+        A.REAMT_MNG_NO                                AS "reamtMngNo",
+        B.BIZ_AREA_CD                                 AS "bizAreaCd",
+        (SELECT BIZ_AREA
+           FROM TB_BIZ_MNG
+          WHERE BIZ_AREA_CD = B.BIZ_AREA_CD
+            AND USE_YN      = 'Y')                    AS "bizAreaNm",
+        B.BIZ_ODER                                    AS "bizOder",
+        B.TRGT_ENT_NM                                 AS "trgtEntNm",
+        B.REFBNF_TOT_AMT                              AS "refbnfTotAmt",
+        B.RDM_AMT                                     AS "rdmAmt",
+        FN_FMT_STRTODATE(B.RDM_YMD, '-')              AS "rdmYmd",
+        A.PAY_INFRM_AMT                               AS "payInfrmAmt",
+        FN_FMT_STRTODATE(A.PAY_INFRM_YMD, '-')        AS "payInfrmYmd",
+        FN_FMT_STRTODATE(A.PNOP_YMD, '-')             AS "pnopYmd",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 구상금납부내역 목록조회 -->
+    <select id="listReamtPay" resultType="java.util.HashMap" parameterType="business.com.relief.service.ReamtPayVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_REAMT_PAY     A,
+               TB_REAMT_MNG     B
+         WHERE A.REAMT_MNG_NO = B.REAMT_MNG_NO
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               B.REG_YMD DESC,
+               A.REG_YMD DESC
+    </select>
+    <select id="listReamtPayCount" resultType="int" parameterType="business.com.relief.service.ReamtPayVO">
+        SELECT COUNT(1) 
+          FROM TB_REAMT_PAY     A,
+               TB_REAMT_MNG     B
+         WHERE A.REAMT_MNG_NO = B.REAMT_MNG_NO
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 구상금납부내역 등록 -->
+    <insert id="regiReamtPay" parameterType="business.com.relief.service.ReamtPayVO">
+        <selectKey keyProperty="sn" resultType="string" order="BEFORE">
+            SELECT SEQ_REAMT_PAY.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_REAMT_PAY 
+             ( SN,
+               REAMT_MNG_NO,
+               PAY_INFRM_AMT,
+               PAY_INFRM_YMD,
+               PNOP_YMD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{sn},
+               #{reamtMngNo},
+               FN_FMT_DATA('NUM', #{payInfrmAmt}),
+               FN_FMT_STRTODATE(#{payInfrmYmd}, ''),
+               FN_FMT_STRTODATE(#{pnopYmd    }, ''),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 구상금납부내역 수정 -->
+    <update id="updtReamtPay" parameterType="business.com.relief.service.ReamtPayVO">
+        UPDATE TB_REAMT_PAY 
+           SET MDFR_NO      = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(payInfrmAmt)"> PAY_INFRM_AMT = FN_FMT_DATA('NUM', #{payInfrmAmt}),</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(payInfrmYmd)"> PAY_INFRM_YMD = FN_FMT_STRTODATE(#{payInfrmYmd}, ''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(pnopYmd    )"> PNOP_YMD      = FN_FMT_STRTODATE(#{pnopYmd    }, ''),</if>  
+               MDFCN_YMD    = SYSDATE
+         WHERE SN           = #{sn}
+           AND REAMT_MNG_NO = #{reamtMngNo}
+    </update>
+
+    <!-- 구상금납부내역 삭제 -->
+    <delete id="deltReamtPay" parameterType="business.com.relief.service.ReamtPayVO">
+        DELETE 
+          FROM TB_REAMT_PAY 
+         WHERE SN           = #{sn}
+           AND REAMT_MNG_NO = #{reamtMngNo}
+    </delete> 
+
+    <!-- 구상금관리 사업지역,업체명 기준 관리번호 가져오기 -->
+    <select id="getReamtMngNo" resultType="string" parameterType="business.com.relief.service.ReamtPayVO">
+        SELECT REAMT_MNG_NO
+          FROM TB_REAMT_MNG
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND TRGT_ENT_NM = #{trgtEntNm}
+    </select>
+
+    <!-- 구상금관리 등록 -->
+    <insert id="regiReamtMng" parameterType="business.com.relief.service.ReamtPayVO">
+        <selectKey keyProperty="reamtMngNo" resultType="string" order="BEFORE">
+            SELECT SEQ_REAMT_MNG.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_REAMT_MNG 
+             ( REAMT_MNG_NO,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               TRGT_ENT_NM,
+               REFBNF_TOT_AMT,
+               RDM_AMT,
+               RDM_YMD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{reamtMngNo},
+               #{bizAreaCd},
+               #{bizOder},
+               #{trgtEntNm},
+               FN_FMT_DATA('NUM', #{refbnfTotAmt}),
+               FN_FMT_DATA('NUM', #{rdmAmt      }),
+               FN_FMT_STRTODATE(#{rdmYmd}, ''),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 구상금관리 수정 -->
+    <update id="updtReamtMng" parameterType="business.com.relief.service.ReamtPayVO">
+        UPDATE TB_REAMT_MNG 
+           SET MDFR_NO      = #{gsUserNo},
+	  <if test="@common.util.CommUtils@isNotEmpty(trgtEntNm   )"> TRGT_ENT_NM    = #{trgtEntNm   },</if>
+	  <if test="@common.util.CommUtils@isNotEmpty(refbnfTotAmt)"> REFBNF_TOT_AMT = FN_FMT_DATA('NUM', #{refbnfTotAmt}),</if>
+	  <if test="@common.util.CommUtils@isNotEmpty(rdmAmt      )"> RDM_AMT        = FN_FMT_DATA('NUM', #{rdmAmt      }),</if>
+	  <if test="@common.util.CommUtils@isNotEmpty(rdmYmd      )"> RDM_YMD        = FN_FMT_STRTODATE(#{rdmYmd}, ''),</if>  
+               MDFCN_YMD    = SYSDATE
+         WHERE REAMT_MNG_NO = #{reamtMngNo}
+    </update>
+
+    <!-- 구상금관리 삭제 -->
+    <delete id="deltReamtMng" parameterType="business.com.relief.service.ReamtPayVO">
+        DELETE 
+          FROM TB_REAMT_MNG 
+         WHERE REAMT_MNG_NO = #{reamtMngNo}
+    </delete> 
+
+    <!-- 구상금납부내역 상세조회 -->
+    <select id="viewReamtPay" resultType="business.com.relief.service.ReamtPayVO" parameterType="business.com.relief.service.ReamtPayVO">
+        SELECT A.SN                                          AS "sn",
+	           A.REAMT_MNG_NO                                AS "reamtMngNo",
+	           B.BIZ_AREA_CD                                 AS "bizAreaCd",
+	           (SELECT BIZ_AREA
+	              FROM TB_BIZ_MNG
+	             WHERE BIZ_AREA_CD = B.BIZ_AREA_CD
+	               AND USE_YN      = 'Y')                    AS "bizAreaNm",
+	           B.BIZ_ODER                                    AS "bizOder",
+	           B.TRGT_ENT_NM                                 AS "trgtEntNm",
+	           B.REFBNF_TOT_AMT                              AS "refbnfTotAmt",
+	           B.RDM_AMT                                     AS "rdmAmt",
+	           FN_FMT_STRTODATE(B.RDM_YMD, '-')              AS "rdmYmd",
+	           A.PAY_INFRM_AMT                               AS "payInfrmAmt",
+	           FN_FMT_STRTODATE(A.PAY_INFRM_YMD, '-')        AS "payInfrmYmd",
+	           FN_FMT_STRTODATE(A.PNOP_YMD, '-')             AS "pnopYmd",
+		      (SELECT SUM(GIVE_AMT)
+		         FROM TB_MNSVY
+		        WHERE BIZ_AREA_CD     = B.BIZ_AREA_CD)      AS "mcpAmt",    <!-- 의료비 -->
+		      (SELECT SUM(FNRL_CST_AMT)
+		         FROM TB_MNSVY
+		        WHERE BIZ_AREA_CD     = B.BIZ_AREA_CD)      AS "fnrlAmt",   <!-- 장례비 -->
+		      (SELECT SUM(BRVFM_RWRD_AMT)
+		         FROM TB_MNSVY
+		        WHERE BIZ_AREA_CD     = B.BIZ_AREA_CD)      AS "brvfmAmt",  <!-- 유족보상금 -->
+		      (SELECT SUM(PRPRTY_DMGE_RWRD_AMT)
+		         FROM TB_MNSVY
+		        WHERE BIZ_AREA_CD     = B.BIZ_AREA_CD)      AS "prprtyAmt", <!-- 재산피해보상금 -->
+                <!--
+                2022.11.14 [ntarget] : TB_RCPER_LVLH_MNG 테이블 삭제                  
+                 -->
+                <!-- 
+		      (SELECT SUM(RCPER_LVLH_ALLWNC_AMT)
+		         FROM TB_RCPER_LVLH_MNG  O,
+		              TB_RCPER_LVLH_DTLS P,
+		              TB_MNSVY           C
+		        WHERE O.BIZ_AREA_CD   = C.BIZ_AREA_CD
+		          AND O.BIZ_ODER      = C.BIZ_ODER
+		          AND O.EXMN_ODER     = C.EXMN_ODER
+		          AND O.APLY_NO       = C.APLY_NO
+		          AND P.BIZ_AREA_CD   = C.BIZ_AREA_CD
+		          AND P.BIZ_ODER      = C.BIZ_ODER
+		          AND P.EXMN_ODER     = C.EXMN_ODER
+		          AND P.APLY_NO       = C.APLY_NO
+		          AND O.GIVE_YR       = P.GIVE_YR
+		          AND P.GIVE_YN       = 'Y'
+		          AND C.BIZ_AREA_CD   = B.BIZ_AREA_CD)      AS "rcperAmt"    --><!-- 요양생활수당 -->
+              (SELECT SUM(P.GIVE_AMT)
+                 FROM TB_RCPER_LVLH_DTLS P,
+                      TB_MNSVY           C
+                WHERE P.BIZ_AREA_CD   = C.BIZ_AREA_CD
+                  AND P.BIZ_ODER      = C.BIZ_ODER
+                  AND P.EXMN_ODER     = C.EXMN_ODER
+                  AND P.APLY_NO       = C.APLY_NO
+                  AND P.GIVE_YN       = 'Y'
+                  AND C.BIZ_AREA_CD   = B.BIZ_AREA_CD)      AS "rcperAmt"    <!-- 요양생활수당 -->                  
+          FROM TB_REAMT_PAY     A,
+               TB_REAMT_MNG     B
+         WHERE A.REAMT_MNG_NO = B.REAMT_MNG_NO
+           AND A.REAMT_MNG_NO = #{reamtMngNo}
+           AND A.SN           = #{sn}
+    </select>
+
+    <!-- 구제급여총액조회 -->
+    <select id="viewReliefTotal" resultType="string" parameterType="string">
+        SELECT SUM(AMT1+AMT2+AMT3+AMT4+AMT5)                  AS "totalAmt"
+          FROM (
+		        SELECT NVL(C.GIVE_AMT            , 0)         AS AMT1, <!-- 의료비 -->
+		               NVL(C.FNRL_CST_AMT        , 0)         AS AMT2, <!-- 장례비 -->
+		               NVL(C.BRVFM_RWRD_AMT      , 0)         AS AMT3, <!-- 유족보상금 -->
+		               NVL(C.PRPRTY_DMGE_RWRD_AMT, 0)         AS AMT4, <!-- 재산피해보상금 -->
+                    <!--
+                    2022.11.14 [ntarget] : TB_RCPER_LVLH_MNG 테이블 삭제                  
+                     -->
+                    <!--                        
+			           NVL((SELECT SUM(RCPER_LVLH_ALLWNC_AMT)
+				              FROM TB_RCPER_LVLH_MNG  O,
+				                   TB_RCPER_LVLH_DTLS P
+				             WHERE O.BIZ_AREA_CD   = C.BIZ_AREA_CD
+				               AND O.BIZ_ODER      = C.BIZ_ODER
+				               AND O.EXMN_ODER     = C.EXMN_ODER
+				               AND O.APLY_NO       = C.APLY_NO
+				               AND P.BIZ_AREA_CD   = C.BIZ_AREA_CD
+				               AND P.BIZ_ODER      = C.BIZ_ODER
+				               AND P.EXMN_ODER     = C.EXMN_ODER
+				               AND P.APLY_NO       = C.APLY_NO
+				               AND O.GIVE_YR       = P.GIVE_YR
+				               AND P.GIVE_YN       = 'Y'), 0) AS AMT5  --><!-- 요양생활수당 -->
+                       NVL((SELECT SUM(P.GIVE_AMT)
+                              FROM TB_RCPER_LVLH_DTLS P
+                             WHERE P.BIZ_AREA_CD   = C.BIZ_AREA_CD
+                               AND P.BIZ_ODER      = C.BIZ_ODER
+                               AND P.EXMN_ODER     = C.EXMN_ODER
+                               AND P.APLY_NO       = C.APLY_NO
+                               AND P.GIVE_YN       = 'Y'), 0) AS AMT5 <!-- 요양생활수당 -->                        
+		          FROM TB_MNSVY C
+		         WHERE BIZ_AREA_CD = #{bizAreaCd}
+               )
+    </select>
+
+</mapper>

@@ -1,0 +1,19 @@
+<!-- 관리자 인증 -->
+<div id="popupAdminCert" class="layerPop form type4">
+  	<form id="popupAdminForm" name="popupAdminForm" method="post" onsubmit="return false;">
+	    <div class="layerWrap">
+	        <!-- 레이어내용 -->
+	        <div class="layerPop-inner systemLayer">
+	        	<div class="inputGroup">
+					<div class="inputWrap call">
+						<input type="text" id="adminNo" name="adminNo" placeholder="관리자 번호 입력" />
+						<button id="btnPopupCert">인증</button>
+					</div>
+				</div>
+				<div class="resuit">
+					<div class="resuit-txt" id="popupResult"></div>
+				</div>
+			</div>
+	    </div>
+	</form>
+</div>

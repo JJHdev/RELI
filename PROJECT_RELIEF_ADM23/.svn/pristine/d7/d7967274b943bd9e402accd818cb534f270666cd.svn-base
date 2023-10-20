@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="RcperLvlhDtls">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Column">
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+        A.BIZ_ODER                                    AS "bizOder",
+        A.EXMN_ODER                                   AS "exmnOder",
+        A.APLY_NO                                     AS "aplyNo",
+        A.GIVE_YR                                     AS "giveYr",
+        A.GIVE_MM                                     AS "giveMm",
+        FN_FMT_STRTODATE(A.GIVE_YMD,'-')              AS "giveYmd",
+        A.GIVE_YN                                     AS "giveYn",
+        A.GIVE_AMT                                    AS "giveAmt",    <!-- [2022.12.27 추가] 지급금액 -->
+        A.GIVE_SE_CD                                  AS "giveSeCd",   <!-- [2022.12.27 추가] 지급구분코드 -->
+        FN_GET_CODENM('CT043', A.GIVE_SE_CD)          AS "giveSeNm",   <!-- [2022.12.27 추가] 지급구분명칭 -->
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 요양생활수당지급상세 목록조회 -->
+    <select id="listRcperLvlhDtls" resultType="java.util.HashMap" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_RCPER_LVLH_DTLS A
+         WHERE A.BIZ_AREA_CD = #{bizAreaCd}
+           AND A.BIZ_ODER    = #{bizOder}
+           AND A.EXMN_ODER   = #{exmnOder}
+           AND A.APLY_NO     = #{aplyNo}
+        <if test="@common.util.CommUtils@isNotEmpty(giveYr)">
+            AND A.GIVE_YR    = #{giveYr}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveMm)">
+            AND A.GIVE_MM    = #{giveMm}
+        </if>
+         ORDER BY 
+               A.BIZ_AREA_CD,
+               A.BIZ_ODER,
+               A.EXMN_ODER,
+               A.APLY_NO,
+               A.GIVE_YR,
+               A.GIVE_MM
+    </select>
+    <select id="listRcperLvlhDtlsCount" resultType="int" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT COUNT(1) 
+          FROM TB_RCPER_LVLH_DTLS A
+         WHERE A.BIZ_AREA_CD = #{bizAreaCd}
+           AND A.BIZ_ODER    = #{bizOder}
+           AND A.EXMN_ODER   = #{exmnOder}
+           AND A.APLY_NO     = #{aplyNo}
+        <if test="@common.util.CommUtils@isNotEmpty(giveYr)">
+            AND A.GIVE_YR    = #{giveYr}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveMm)">
+            AND A.GIVE_MM    = #{giveMm}
+        </if>
+    </select>
+
+    <!-- 요양생활수당지급상세 상세조회 -->
+    <select id="viewRcperLvlhDtls" resultType="business.com.exmn.service.RcperLvlhVO" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_RCPER_LVLH_DTLS A
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+           AND GIVE_MM     = #{giveMm}
+    </select>
+
+    <!-- 요양생활수당지급상세 등록 -->
+    <insert id="regiRcperLvlhDtls" parameterType="business.com.exmn.service.RcperLvlhVO">
+        INSERT 
+          INTO TB_RCPER_LVLH_DTLS 
+             ( BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               GIVE_YR,
+               GIVE_MM,
+               GIVE_YMD,
+               GIVE_YN,
+               GIVE_AMT,
+               GIVE_SE_CD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{aplyNo},
+               #{giveYr},
+               #{giveMm},
+               FN_FMT_STRTODATE(#{giveYmd},''),
+               NVL(#{giveYn},'N'),
+               FN_FMT_DATA('NUM',#{giveAmt}),
+               #{giveSeCd},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 요양생활수당지급상세 이력저장 -->
+    <insert id="regiRcperLvlhDtlsHst" parameterType="business.com.exmn.service.RcperLvlhVO">
+        INSERT 
+          INTO TB_RCPER_LVLH_DTLS_HST
+             ( HST_NO,
+               LOG_TY,
+               HST_YMD,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               GIVE_YR,
+               GIVE_MM,
+               GIVE_YMD,
+               GIVE_YN,
+               GIVE_AMT,
+               GIVE_SE_CD,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+             )
+        SELECT SEQ_RCPER_LVLH_DTLS_HST.NEXTVAL,
+               #{logTy},
+               SYSDATE,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               GIVE_YR,
+               GIVE_MM,
+               GIVE_YMD,
+               GIVE_YN,
+               GIVE_AMT,
+               GIVE_SE_CD,
+               RGTR_NO,
+               REG_YMD,
+               MDFR_NO,
+               MDFCN_YMD
+          FROM TB_RCPER_LVLH_DTLS
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+           AND GIVE_MM     = #{giveMm}
+    </insert>
+
+    <!-- 요양생활수당지급상세 수정 -->
+    <update id="updtRcperLvlhDtls" parameterType="business.com.exmn.service.RcperLvlhVO">
+        UPDATE TB_RCPER_LVLH_DTLS 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(giveYmd )"> GIVE_YMD    = FN_FMT_STRTODATE(#{giveYmd},''),</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(giveYn  )"> GIVE_YN     = #{giveYn}, </if>
+  		<if test="@common.util.CommUtils@isNotEmpty(giveAmt )"> GIVE_AMT    = FN_FMT_DATA('NUM',#{giveAmt}), </if>
+  		<if test="@common.util.CommUtils@isNotEmpty(giveSeCd)"> GIVE_SE_CD  = #{giveSeCd}, </if>
+               MDFCN_YMD   = SYSDATE  
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+           AND GIVE_MM     = #{giveMm}
+    </update>
+
+    <!-- 요양생활수당지급상세 삭제 -->
+    <delete id="deltRcperLvlhDtls" parameterType="business.com.exmn.service.RcperLvlhVO">
+        DELETE 
+          FROM TB_RCPER_LVLH_DTLS 
+         WHERE BIZ_AREA_CD = #{bizAreaCd}
+           AND BIZ_ODER    = #{bizOder}
+           AND EXMN_ODER   = #{exmnOder}
+           AND APLY_NO     = #{aplyNo}
+           AND GIVE_YR     = #{giveYr}
+           AND GIVE_MM     = #{giveMm}
+    </delete>
+
+    <!-- 요양생활수당 (4,5등급만) 일시금금액 조회 -->
+    <select id="getRcperLvlhLumpSum" resultType="long" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT SUM(GIVE_AMT) -
+               NVL( ( SELECT SUM(R.GIVE_AMT)
+                        FROM TB_RCPER_LVLH_DTLS R
+                           , TB_MNSVY           M
+                       WHERE R.BIZ_AREA_CD      = M.BIZ_AREA_CD
+                         AND R.BIZ_ODER         = M.BIZ_ODER
+                         AND R.EXMN_ODER        = M.EXMN_ODER
+                         AND R.APLY_NO          = M.APLY_NO
+                         AND M.BIZ_AREA_CD      = #{bizAreaCd}
+                         AND M.BIZ_ODER         = #{bizOder}
+                         AND M.EXMN_ODER        = #{exmnOder}
+                         AND M.APLY_NO          = #{aplyNo}
+                         AND M.LAST_DMGE_GRD_CD IN ('4','5')
+                         AND TO_DATE(R.GIVE_YR || R.GIVE_MM, 'YYYYMM')
+                     BETWEEN TO_DATE(#{giveBgngYm}, 'YYYYMM')
+                         AND TO_DATE(#{giveEndYm} , 'YYYYMM')
+                    ), 0)
+          FROM ( SELECT A.GIVE_YM
+                      , NVL( ( SELECT D.GRD_AMT 
+                                FROM TB_DMGE_GRD_MNG D
+                                   , TB_MNSVY        M
+                               WHERE M.BIZ_AREA_CD   = #{bizAreaCd}
+                                 AND M.BIZ_ODER      = #{bizOder}
+                                 AND M.EXMN_ODER     = #{exmnOder}
+                                 AND M.APLY_NO       = #{aplyNo}
+                                 AND D.DMGE_GRD_YR   = M.DMGE_GRD_YR
+                                 AND D.DMGE_GRD_CD   = M.LAST_DMGE_GRD_CD
+                                 AND D.DMGE_GRD_CD  IN ('4','5')
+                             ), 0) AS GIVE_AMT 
+                   FROM ( SELECT TO_CHAR( 
+                                     ADD_MONTHS(
+                                          TO_DATE(#{giveBgngYm}, 'YYYYMM')
+                                        , LEVEL - 1 
+                                     )
+                                   , 'YYYYMM'
+                                 ) AS GIVE_YM
+                            FROM DUAL
+                         CONNECT BY
+                                 LEVEL <![CDATA[<=]]> MONTHS_BETWEEN(
+                                                          TO_DATE(#{giveEndYm} , 'YYYYMM')
+                                                        , TO_DATE(#{giveBgngYm}, 'YYYYMM') 
+                                                      ) + 1
+                        ) A
+               )
+    </select>
+
+    <!-- 요양생활수당 소급기간내의 지급할 금액 조회 -->
+    <select id="getRtroactSum" resultType="long" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT SUM(GIVE_AMT)
+          FROM ( SELECT A.GIVE_YM
+                      , NVL( ( SELECT D.GRD_AMT 
+                                FROM TB_DMGE_GRD_MNG D
+                                   , TB_MNSVY        M
+                               WHERE M.BIZ_AREA_CD   = #{bizAreaCd}
+                                 AND M.BIZ_ODER      = #{bizOder}
+                                 AND M.EXMN_ODER     = #{exmnOder}
+                                 AND M.APLY_NO       = #{aplyNo}
+                                 AND D.DMGE_GRD_YR   = M.DMGE_GRD_YR
+                                 AND D.DMGE_GRD_CD   = M.LAST_DMGE_GRD_CD
+                             ), 0) AS GIVE_AMT 
+                   FROM ( SELECT TO_CHAR( 
+                                     ADD_MONTHS(
+                                          TO_DATE(#{rtroactBgngYm}, 'YYYYMM')
+                                        , LEVEL - 1 
+                                     )
+                                   , 'YYYYMM'
+                                 ) AS GIVE_YM
+                            FROM DUAL
+                         CONNECT BY
+                                 LEVEL <![CDATA[<=]]> MONTHS_BETWEEN(
+                                                          TO_DATE(#{rtroactEndYm} , 'YYYYMM')
+                                                        , TO_DATE(#{rtroactBgngYm}, 'YYYYMM') 
+                                                      ) + 1
+                        ) A
+               )
+    </select>
+
+    <!-- 요양생활수당 소급여부 -->
+    <select id="checkRcperLvlhRtroact" resultType="boolean" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END 
+          FROM TB_RCPER_LVLH_DTLS A
+         WHERE A.BIZ_AREA_CD = #{bizAreaCd}
+           AND A.BIZ_ODER    = #{bizOder}
+           AND A.EXMN_ODER   = #{exmnOder}
+           AND A.APLY_NO     = #{aplyNo}
+           AND A.GIVE_SE_CD  = #{giveSeCd}
+        <if test="@common.util.CommUtils@isNotEmpty(giveYr)">
+            AND A.GIVE_YR    = #{giveYr}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(giveMm)">
+            AND A.GIVE_MM    = #{giveMm}
+        </if>
+    </select>
+    
+    <!-- 식별ID,조사차수 기준 본조사정보 조회 -->
+    <select id="viewRcperLvlhMnsvy" resultType="business.com.exmn.service.RcperLvlhVO" parameterType="business.com.exmn.service.RcperLvlhVO">
+        SELECT A.BIZ_AREA_CD      AS "bizAreaCd"
+             , A.BIZ_ODER         AS "bizOder"
+             , A.EXMN_ODER        AS "exmnOder"
+             , A.APLY_NO          AS "aplyNo"
+             , A.GIVE_BGNG_YM     AS "giveBgngYm"
+             , A.GIVE_END_YM      AS "giveEndYm"
+             , CASE WHEN A.DMGE_GRD_YR      IS NOT NULL
+                     AND A.LAST_DMGE_GRD_CD IS NOT NULL
+                    THEN 'Y'
+                    ELSE 'N'
+               END                AS "giveUseYn" 
+             , NVL( (SELECT GRD_AMT
+                       FROM TB_DMGE_GRD_MNG D
+                      WHERE DMGE_GRD_YR   = A.DMGE_GRD_YR
+                        AND DMGE_GRD_CD   = A.LAST_DMGE_GRD_CD
+                    ), 0)         AS "giveAmt"
+          FROM TB_MNSVY A
+         WHERE EXISTS (
+               SELECT 1
+		         FROM TB_RELIEF R
+		        INNER JOIN
+		              TB_IDNTFC I
+		           ON I.SUFRER_NO = R.SUFRER_NO
+		        WHERE R.APLY_NO   = A.APLY_NO
+		          AND I.IDNTFC_ID = #{idntfcId}
+               )
+           AND A.EXMN_ODER = ${exmnOder}
+    </select>
+
+</mapper>

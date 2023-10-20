@@ -1,0 +1,20 @@
+<!-- 의료비추가신청 -->
+<div id="popupAply" class="layerPop type2">
+    <div class="layerWrap">
+        <!-- 레이어내용 -->
+        <div class="layerPop-inner">
+			<ul>
+				<li>· 최근 지급된 의료비 이외 추가로 의료비를 신청하실 수 있습니다.</li>
+				<li>· 진료비, 약제비 등 증빙 서류를 업로드 후 제출해 주시길 바랍니다.</li>
+			</ul>
+			<div class="h30"></div>
+			<div id="appAplyAddFile"></div>
+			<div class="h30"></div>
+			<!-- 버튼 -->
+			<div class="btnWrap type1">
+				<a href="javascript:void(0);" id="btnPopSubmit">제출하기</a>
+			</div>
+			
+		</div>
+    </div>
+</div>

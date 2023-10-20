@@ -1,0 +1,18 @@
+<!-- 전자서명 -->
+<div id="popupSignature" class="layerPop form type3 listLock">
+    <div class="layerWrap">
+        <!-- 레이어내용 -->
+        <div class="layerPop-inner">
+        
+			<div id="signature-pad" class="signature-pad" style="width:500px; height:300px;">
+				<div class="signature-pad--body">
+					<canvas></canvas>
+				</div>
+			</div>
+			<div class="btnWrap type2">
+				<a href="javascript:void(0);" id="btnSignClear" style="line-height:10pt">지우기</a>
+				<a href="javascript:void(0);" id="btnSignSave" style="line-height:10pt">확인</a>
+			</div>
+		</div>
+    </div>
+</div>

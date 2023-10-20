@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="LbdyNdx">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Column">
+        A.SN                                          AS "sn",
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+        A.BIZ_ODER                                    AS "bizOder",
+        A.EXMN_ODER                                   AS "exmnOder",
+        A.APLY_NO                                     AS "aplyNo",
+        A.LBDY_NDX_CD                                 AS "lbdyNdxCd",
+        A.LBDY_NDX_RSLT_CN                            AS "lbdyNdxRsltCn",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 생체지표정보 목록조회 -->
+    <select id="listLbdyNdx" resultType="java.util.HashMap" parameterType="business.com.exmn.service.LbdyNdxVO">
+        SELECT A.BIZ_AREA_CD                                 AS "bizAreaCd",
+               A.BIZ_ODER                                    AS "bizOder",
+               A.EXMN_ODER                                   AS "exmnOder",
+               A.APLY_NO                                     AS "aplyNo",
+               NVL(A.LBDY_NDX_CD, C.CD_ID)                   AS "lbdyNdxCd",
+               C.CD_NM                                       AS "lbdyNdxNm",
+               A.LBDY_NDX_RSLT_CN                            AS "lbdyNdxRsltCn",
+               A.SN                                          AS "sn",
+               A.RGTR_NO                                     AS "rgtrNo",
+               TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		       TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+               A.MDFR_NO                                     AS "mdfrNo",
+               TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		       TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+          FROM SYS_CODE      C
+          LEFT OUTER JOIN
+              (SELECT *
+                 FROM TB_LBDY_NDX
+                WHERE BIZ_AREA_CD = #{bizAreaCd}
+		        <if test="@common.util.CommUtils@isNotEmpty(bizOder)">
+	              AND BIZ_ODER    = #{bizOder}
+		        </if>
+		        <if test="@common.util.CommUtils@isNotEmpty(exmnOder)">
+		          AND EXMN_ODER   = #{exmnOder}
+		        </if>
+		        <if test="@common.util.CommUtils@isNotEmpty(aplyNo)">
+		          AND APLY_NO     = #{aplyNo}
+		        </if>
+              )              A
+            ON C.CD_ID       = A.LBDY_NDX_CD
+         WHERE C.UP_CD_ID    = 'CT033'
+           AND C.USE_YN      = 'Y'
+        <if test="@common.util.CommUtils@isNotEmpty(bizAreaCd)">
+           AND EXISTS (
+           	   SELECT 1
+           	     FROM TB_BIZ_MNG
+           	    WHERE BIZ_AREA_CD = #{bizAreaCd}
+           	      AND BIZ_AREA    = C.CD_CN
+               )
+        </if>
+         ORDER BY 
+               A.SN
+    </select>
+
+    <!-- 생체지표정보 상세조회 -->
+    <select id="viewLbdyNdx" resultType="business.com.exmn.service.LbdyNdxVO" parameterType="business.com.exmn.service.LbdyNdxVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_LBDY_NDX A
+         WHERE SN = #{sn}
+    </select>
+
+    <!-- 생체지표정보 등록 -->
+    <insert id="regiLbdyNdx" parameterType="business.com.exmn.service.LbdyNdxVO">
+        INSERT 
+          INTO TB_LBDY_NDX 
+             ( SN,
+               BIZ_AREA_CD,
+               BIZ_ODER,
+               EXMN_ODER,
+               APLY_NO,
+               LBDY_NDX_CD,
+               LBDY_NDX_RSLT_CN,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( SEQ_LBDY_NDX.NEXTVAL,
+               #{bizAreaCd},
+               #{bizOder},
+               #{exmnOder},
+               #{aplyNo},
+               #{lbdyNdxCd},
+               #{lbdyNdxRsltCn},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 생체지표정보 수정 -->
+    <update id="updtLbdyNdx" parameterType="business.com.exmn.service.LbdyNdxVO">
+        UPDATE TB_LBDY_NDX 
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(bizAreaCd    )"> BIZ_AREA_CD          = #{bizAreaCd    },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(bizOder      )"> BIZ_ODER             = #{bizOder      },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(exmnOder     )"> EXMN_ODER            = #{exmnOder     },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo       )"> APLY_NO              = #{aplyNo       },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(lbdyNdxCd    )"> LBDY_NDX_CD          = #{lbdyNdxCd    },</if>
+        <if test="@common.util.CommUtils@isNotEmpty(lbdyNdxRsltCn)"> LBDY_NDX_RSLT_CN     = #{lbdyNdxRsltCn},</if>  
+               MDFCN_YMD = SYSDATE
+         WHERE SN        = #{sn}
+    </update>
+
+    <!-- 생체지표정보 삭제 -->
+    <delete id="deltLbdyNdx" parameterType="business.com.exmn.service.LbdyNdxVO">
+        DELETE 
+          FROM TB_LBDY_NDX 
+         WHERE SN = #{sn}
+    </delete> 
+
+</mapper>

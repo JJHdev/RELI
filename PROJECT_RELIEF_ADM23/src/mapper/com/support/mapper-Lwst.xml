@@ -1,0 +1,924 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Lwst">
+<!-- srchArea -->
+ <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo)">
+            AND A.APLY_NO = #{aplyNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmptyList(prgreStusList)">
+        	AND A.PRGRE_STUS_CD IN
+		    <foreach item="item" collection="prgreStusList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+         <if test="@common.util.CommUtils@isNotEmptyList(sprtSeCdList)">
+		  	 AND
+		   <foreach item="item" collection="sprtSeCdList" separator=" OR " open="(" close=")">
+		      REGEXP_LIKE (A.SPRT_SE_CD, #{item})
+		   </foreach>
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyStdt)">
+            AND A.APLY_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchAplyStdt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyEndt)">
+            AND A.APLY_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchAplyEndt},'')
+        </if>
+         <if test="@common.util.CommUtils@isNotEmpty(srchAplcntNm)">
+         	AND A.APLCNT_NM LIKE '%' || #{srchAplcntNm} || '%'
+        </if>
+         <if test="@common.util.CommUtils@isNotEmpty(srchDmgeArea)">
+         	AND A.ETC_DMGE_AREA LIKE '%' || #{srchDmgeArea} || '%'
+        </if>
+
+        <if test="@common.util.CommUtils@isNotEmpty(srchRtrcnStdt)">
+            AND A.RTRCN_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchRtrcnStdt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRtrcnEndt)">
+            AND A.RTRCN_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchRtrcnEndt},'')
+        </if>
+     </sql>
+
+      <sql id="Sql-WhereLwst">
+        <if test="@common.util.CommUtils@isNotEmpty(srchIncdntNm)">
+         	AND A.INCDNT_NM LIKE '%' || #{srchIncdntNm} || '%'
+        </if>
+           <if test="@common.util.CommUtils@isNotEmpty(srchIncdntNo)">
+         	AND A.INCDNT_NO LIKE '%' || #{srchIncdntNo} || '%'
+        </if>
+
+        <if test="@common.util.CommUtils@isNotEmpty(srchLwstStdt)">
+            AND A.LWST_YMD <![CDATA[ >= ]]> FN_FMT_STRTODATE(#{srchLwstStdt},'')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchLwstEndt)">
+            AND A.LWST_YMD <![CDATA[ <= ]]> FN_FMT_STRTODATE(#{srchLwstEndt},'')
+        </if>
+     </sql>
+
+	<select id="openLwst" resultType="business.com.support.service.LwstVO">
+    	SELECT
+			TELNO									AS "aplcntTelNo"
+		,	MBTEL_NO								AS "aplcntMbtelNo"
+  		,	REGEXP_SUBSTR(EML_ADDR, '[^@]+', 1, 1)	AS "aplcntEmlAddr"
+    	,	REGEXP_SUBSTR(EML_ADDR, '[^@]+', 1, 2)	AS "aplcntEmlDomain"
+		,	A.USER_NO								AS "aplcntNo"
+		, 	A.USER_NM								AS "aplcntNm"
+		, 	A.ZIP									AS "aplcntZip"
+		, 	A.ADDR									AS "aplcntAddr"
+		, 	A.DADDR									AS "aplcntDaddr"
+		, 	A.BRDT									AS "aplcntBrdt"
+	FROM   TB_USER A
+		WHERE A.USER_NO = #{aplcntNo}
+    </select>
+
+    <insert id="saveUserLwst" parameterType="business.com.support.service.LwstVO">
+    	<selectKey keyProperty="aplyNo" resultType="string" order="BEFORE">
+    		SELECT 'F' || SUBSTR(SYSDATE, 3,2) || LPAD(SEQ_VULSOGRP.NEXTVAL || '', 7, '0')  FROM DUAL
+    	</selectKey>
+    	 INSERT
+          INTO TB_VULSOGRP
+             (	APLY_NO,
+				APLCNT_NO,
+				APLCNT_NM,
+				APLCNT_BRNO,
+				APLCNT_BRDT,
+				APLCNT_ZIP,
+				APLCNT_ADDR,
+				APLCNT_DADDR,
+				APLCNT_TELNO,
+				APLCNT_MBTEL_NO,
+				APLCNT_EML_ADDR,
+				RESPDNT_NM,
+				RESPDNT_BRNO,
+				RESPDNT_BRDT,
+				RESPDNT_ZIP,
+				RESPDNT_ADDR,
+				RESPDNT_DADDR,
+				RESPDNT_TELNO,
+				RESPDNT_MBTEL_NO,
+				RESPDNT_EML_ADDR,
+				DMGE_OCRN_PLCE,
+				DMGE_YMD,
+				DMGE_CN,
+				DMGE_AMT,
+				APLY_OBJET_CN,
+				APLY_CN,
+				APLY_AMT,
+				APLY_YMD,
+				PRGRE_STUS_CD,
+				SIGN_CN <!-- 2021.12.14 전자서명파일추가 -->
+             )
+        VALUES
+             (	#{aplyNo},
+				#{aplcntNo},
+				#{aplcntNm},
+				#{aplcntBrno},
+				#{aplcntBrdt},
+				#{aplcntZip},
+				#{aplcntAddr},
+				#{aplcntDaddr},
+				#{aplcntTelNo},
+				#{aplcntMbtelNo},
+				#{aplcntEmlAddr},
+				#{respdntNm},
+				#{respdntBrno},
+				#{respdntBrdt},
+				#{respdntZip},
+				#{respdntAddr},
+				#{respdntDaddr},
+				#{respdntTelno},
+				#{respdntMbtelNo},
+				#{respdntEmlAddr},
+				#{dmgeOcrnPlce},
+				#{dmgeYmd},
+				#{dmgeCn},
+				#{dmgeAmt},
+				#{aplyObjetCn},
+				#{aplyCn},
+				#{aplyAmt},
+				to_char(sysdate,'yyyymmdd'),
+				'10',
+				#{signCn} <!-- 2021.12.14 전자서명파일추가 -->
+             )
+    </insert>
+
+     <select id="listLwstCount" resultType="int" parameterType="business.com.support.service.LwstVO">
+        SELECT
+            COUNT(1)
+      FROM
+         TB_VULSOGRP A
+		WHERE
+			1 = 1
+			 <include refid="Sql-Where"/>
+    </select>
+
+    <select id="listLwstRtrcnCount" resultType="int" parameterType="business.com.support.service.LwstVO">
+        SELECT
+            COUNT(1)
+      FROM
+         TB_VULSOGRP A
+		WHERE
+			1 = 1
+			 <include refid="Sql-Where"/>
+    </select>
+
+    <select id="listLwst" resultType="business.com.support.service.LwstVO" parameterType="business.com.support.service.LwstVO">
+    	SELECT
+			A.APLY_NO									AS	"aplyNo"
+    	,	A.APLCNT_NO									AS	"aplcntNo"
+    	,	FN_FMT_DATA('NM', A.APLCNT_NM	)			AS  "aplcntNm"
+    	,	A.APLCNT_NM									AS  "aplcntNmR"
+    	,	FN_FMT_DATA('RNO',A.APLCNT_BRNO)			AS  "aplcntBrno"
+    	,	FN_FMT_STRTODATE(A.APLCNT_BRDT, '-')		AS  "aplcntBrdt"
+    	,	A.APLCNT_ZIP								AS	"aplcntZip"
+    	,	A.APLCNT_ADDR								AS	"aplcntAddr"
+    	,	A.APLCNT_DADDR								AS	"aplcntDaddr"
+    	,	'[' || A.APLCNT_ZIP || '] ' || A.APLCNT_ADDR || NVL(A.APLCNT_DADDR,'') AS "aplcntAddrLwst"
+    	,	A.APLCNT_TELNO								AS	"aplcntTelNo"
+    	,	FN_FMT_DATA('TEL-M', A.APLCNT_MBTEL_NO)		AS  "aplcntMbtelNo"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_MBTEL_NO)		AS  "aplcntMbtel"
+    	,	A.APLCNT_EML_ADDR							AS	"aplcntEmlAddr"
+   		,	FN_FMT_DATA('NM', A.RESPDNT_NM	)			AS "respdntNm"
+   		,	FN_FMT_DATA('RNO',A.RESPDNT_BRNO)			AS  "respdntBrno"
+    	,	A.RESPDNT_BRDT								AS	"respdntBrdt"
+    	,	A.RESPDNT_ZIP								AS	"respdntZip"
+    	,	A.RESPDNT_ADDR								AS	"respdntAddr"
+    	,	A.RESPDNT_DADDR								AS	"respdntDaddr"
+    	,	'[' || A.RESPDNT_ZIP || '] ' || A.RESPDNT_ADDR || NVL(A.RESPDNT_DADDR,'') AS "respdntAddrLwst"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_TELNO)			AS  "respdntTelno"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_MBTEL_NO)		AS  "respdntMbtelNo"
+    	,	A.RESPDNT_EML_ADDR							AS	"respdntEmlAddr"
+    	,	A.DMGE_OCRN_PLCE							AS	"dmgeOcrnPlce"
+    	,	A.DMGE_YMD									AS	"dmgeYmd"
+    	,	A.DMGE_CN									AS	"dmgeCn"
+    	,	A.DMGE_AMT									AS	"dmgeAmt"
+    	,	A.APLY_OBJET_CN								AS	"aplyObjetCn"
+    	,	A.APLY_CN									AS	"aplyCn"
+    	,	A.APLY_AMT									AS	"aplyAmt"
+    	,	FN_FMT_STRTODATE(A.APLY_YMD, '-')			AS  "aplyYmd"
+    	,	A.PRGRE_STUS_CD								AS  "prgreStusCd"
+    	,	A.APLY_SE_CD								AS	"aplySeCd"
+    	,	A.SIGN_CN                                   AS   "signCn"
+    	,	FN_GET_CODENM (
+				'CT022',
+				A.APLY_SE_CD
+			)                       AS "aplySeNm"
+    	,	FN_MRG_CODENM('CT021',A.SPRT_SE_CD)			AS	"sprtSeNm"
+    	,	A.RGTR_NO									AS	"rgtrNo"
+    	,	TO_CHAR(A.REG_YMD, 'yyyy-mm-dd hh24:mi:ss')	AS	"regYmd"
+    	,	TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfcnYmd"
+    	,	FN_GET_CODENM (
+				'CT023',
+				A.PRGRE_STUS_CD
+			)                       AS "prgreStusNm"
+		FROM
+			TB_VULSOGRP A
+		WHERE
+			1 = 1
+			 <include refid="Sql-Where"/>
+		AND
+			(A.PRGRE_STUS_CD = '10' OR A.PRGRE_STUS_CD = '20')
+		ORDER BY
+			A.APLY_NO DESC
+    </select>
+
+    <select id="viewListLwst" resultType="business.com.support.service.LwstVO" parameterType="String">
+    	SELECT
+			A.APLY_NO									AS	"aplyNo"
+    	,	A.APLCNT_NO									AS	"aplcntNo"
+    	,	A.APLCNT_NM									AS	"aplcntNm"
+    	,	FN_FMT_DATA('RNO',A.APLCNT_BRNO)			AS  "aplcntBrno"
+    	,	FN_FMT_STRTODATE(A.APLCNT_BRDT, '-')		AS  "aplcntBrdt"
+    	,	A.APLCNT_ZIP								AS	"aplcntZip"
+    	,	A.APLCNT_ADDR								AS	"aplcntAddr"
+    	,	A.APLCNT_DADDR								AS	"aplcntDaddr"
+    	,	'[' || A.APLCNT_ZIP || '] ' || A.APLCNT_ADDR || NVL(A.APLCNT_DADDR,'') AS "aplcntAddrLwst"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_TELNO)			AS	"aplcntTelNo"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_MBTEL_NO)		AS  "aplcntMbtelNo"
+    	,	A.APLCNT_EML_ADDR							AS	"aplcntEmlAddr"
+    	,	A.RESPDNT_NM								AS	"respdntNm"
+    	,	FN_FMT_DATA('RNO', A.RESPDNT_BRNO)			AS  "respdntBrno"
+    	,	A.RESPDNT_BRDT								AS	"respdntBrdt"
+    	,	A.RESPDNT_ZIP								AS	"respdntZip"
+    	,	A.RESPDNT_ADDR								AS	"respdntAddr"
+    	,	A.RESPDNT_DADDR								AS	"respdntDaddr"
+		,	'[' || A.RESPDNT_ZIP || '] ' || A.RESPDNT_ADDR || NVL(A.RESPDNT_DADDR,'') AS "respdntAddrLwst"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_TELNO)			AS  "respdntTelno"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_MBTEL_NO)		AS  "respdntMbtelNo"
+    	,	A.RESPDNT_EML_ADDR							AS	"respdntEmlAddr"
+    	,	A.DMGE_OCRN_PLCE							AS	"dmgeOcrnPlce"
+    	,	A.DMGE_YMD									AS	"dmgeYmd"
+    	,	A.DMGE_CN									AS	"dmgeCn"
+    	,	A.DMGE_AMT									AS	"dmgeAmt"
+    	,	A.APLY_OBJET_CN								AS	"aplyObjetCn"
+    	,	A.APLY_CN									AS	"aplyCn"
+    	,	A.APLY_AMT									AS	"aplyAmt"
+    	,	A.ETC_DMGE_AREA								AS	"etcDmgeArea"
+    	,	FN_FMT_STRTODATE(A.APLY_YMD, '-')			AS  "aplyYmd"
+    	,	A.PRGRE_STUS_CD								AS  "prgreStusCd"
+    	,	A.SIGN_CN                                   AS   "signCn"
+    	,	FN_GET_CODENM (
+				'CT023',
+				A.PRGRE_STUS_CD
+			)                       AS "prgreStusNm"
+		,	A.APLY_SE_CD								AS	"aplySeCd"
+		,	FN_GET_CODENM (
+				'CT022',
+				A.APLY_SE_CD
+			)                       AS "aplySeNm"
+		,	A.SPRT_SE_CD								AS	"sprtSeCd"
+		,	FN_MRG_CODENM('CT021',A.SPRT_SE_CD)			AS	"sprtSeNm"
+		FROM 
+			TB_VULSOGRP A
+		WHERE
+			A.APLY_NO = #{aplyNo}
+		ORDER BY
+			A.APLY_YMD DESC
+    </select>
+
+    <update id="updateLwstIncdnt" parameterType="business.com.support.service.LwstVO">
+    	UPDATE
+    		TB_VULSOGRP A
+    	SET
+    		PRGRE_STUS_CD		=   '20'
+    	,	RGTR_NO				=	#{rgtrNo}
+    	,	REG_YMD				=	TO_CHAR(SYSDATE,'YYYYMMDD')
+    	,	MDFR_NO				=	#{mdfrNo}
+    	,	MDFCN_YMD			=	TO_CHAR(SYSDATE,'YYYYMMDD')
+    	,	RCPT_YMD			=	TO_CHAR(SYSDATE,'YYYYMMDD')
+    	,	APLY_SE_CD			=	#{aplySeCd}
+        ,   SPRT_SE_CD          =   #{sprtSeCd}
+        ,   ETC_DMGE_AREA       =   #{etcDmgeArea}
+        ,   DMGE_OCRN_PLCE      =   #{dmgeOcrnPlce}
+        ,   DMGE_CN     		=   #{dmgeCn}
+        ,   APLY_OBJET_CN       =   #{aplyObjetCn}
+        ,   APLY_CN             =   #{aplyCn}
+    	WHERE
+			APLY_NO = #{aplyNo}
+    </update>
+
+    <update id="cancelLwstIncdnt" parameterType="business.com.support.service.LwstVO">
+    	UPDATE
+    		TB_VULSOGRP A
+    	SET
+    		PRGRE_STUS_CD	 = '99'
+    	,	RGTR_NO				=	#{rgtrNo}
+    	,	MDFR_NO				=	#{mdfrNo}
+    	,	APLY_SE_CD			=	#{aplySeCd}
+        ,   SPRT_SE_CD          =   #{sprtSeCd}
+        ,	MDFCN_YMD			=	TO_CHAR(SYSDATE,'YYYYMMDD')
+    	,	RTRCN_YMD			=	TO_CHAR(SYSDATE,'YYYYMMDD')
+    	,   ETC_DMGE_AREA       =   #{etcDmgeArea}
+        ,   DMGE_OCRN_PLCE      =   #{dmgeOcrnPlce}
+        ,   DMGE_CN     		=   #{dmgeCn}
+        ,   APLY_OBJET_CN       =   #{aplyObjetCn}
+        ,   APLY_CN             =   #{aplyCn}
+    	WHERE
+			APLY_NO = #{aplyNo}
+    </update>
+
+        <insert id="saveLwstIncdnt" parameterType="business.com.support.service.LwstVO">
+    	 <selectKey keyProperty="incdntMngNo" resultType="int" order="BEFORE">
+            SELECT SEQ_LWST_INCDNT.NEXTVAL FROM DUAL
+        </selectKey>
+    	 INSERT
+          INTO TB_LWST_INCDNT
+             (	INCDNT_MNG_NO,
+				INCDNT_NM,
+				INCDNT_NO,
+				JDGMT_DEPT_NM,
+				LWST_PRICES_AMT,
+				LWST_YMD,
+				MDFCN_YMD,
+				MDFR_NO,
+				PAPSTMP_AMT,
+				RCPT_YMD,
+				REG_YMD,
+				RGTR_NO
+             )
+        VALUES
+             (	#{incdntMngNo},
+				#{incdntNm},
+				#{incdntNo},
+				#{jdgmtDeptNm},
+				#{lwstPricesAmt},
+				FN_FMT_STRTODATE(#{lwstYmd},''),
+				#{mdfcnYmd},
+				#{mdfrNo},
+				#{papstmpAmt},
+				FN_FMT_STRTODATE(#{rcptYmd},''),
+				TO_CHAR(SYSDATE,'YYYYMMDD'),
+				#{rgtrNo}
+             )
+    </insert>
+
+    <select id="listLwstRtrcn" resultType="business.com.support.service.LwstVO" parameterType="business.com.support.service.LwstVO">
+    	SELECT
+			A.APLY_NO									AS	"aplyNo"
+    	,	A.APLCNT_NO									AS	"aplcntNo"
+    	,	FN_FMT_DATA('NM', A.APLCNT_NM	)			AS "aplcntNm"
+    	,	A.APLCNT_NM									AS  "aplcntNmR"
+    	,	FN_FMT_DATA('RNO',A.APLCNT_BRNO)			AS  "aplcntBrno"
+    	,	FN_FMT_STRTODATE(A.APLCNT_BRDT, '-')		AS  "aplcntBrdt"
+    	,	A.APLCNT_ZIP								AS	"aplcntZip"
+    	,	A.APLCNT_ADDR								AS	"aplcntAddr"
+    	,	A.APLCNT_DADDR								AS	"aplcntDaddr"
+   		,	'[' || A.APLCNT_ZIP || '] ' || A.APLCNT_ADDR || NVL(A.APLCNT_DADDR,'') AS "aplcntAddrLwst"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_TELNO)			AS  "aplcntTelNo"
+    	,	FN_FMT_DATA('TEL-M', A.APLCNT_MBTEL_NO)		AS  "aplcntMbtelNo"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_MBTEL_NO)		AS  "aplcntMbtel"
+    	,	A.APLCNT_EML_ADDR							AS	"aplcntEmlAddr"
+   		,	FN_FMT_DATA('NM', A.RESPDNT_NM	)			AS  "respdntNm"
+   		,	FN_FMT_DATA('RNO',A.RESPDNT_BRNO)			AS  "respdntBrno"
+    	,	A.RESPDNT_BRDT								AS	"respdntBrdt"
+    	,	A.RESPDNT_ZIP								AS	"respdntZip"
+    	,	A.RESPDNT_ADDR								AS	"respdntAddr"
+    	,	A.RESPDNT_DADDR								AS	"respdntDaddr"
+    	,	'[' || A.RESPDNT_ZIP || '] ' || A.RESPDNT_ADDR || NVL(A.RESPDNT_DADDR,'') AS "respdntAddrLwst"
+    	,	A.RESPDNT_TELNO								AS	"respdntTelno"
+    	,	A.RESPDNT_MBTEL_NO							AS	"respdntMbtelNo"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_TELNO)			AS  "respdntTelno"
+    	,	FN_FMT_DATA('TEL-M', A.RESPDNT_MBTEL_NO)	AS  "respdntMbtelNo"
+    	,	A.RESPDNT_EML_ADDR							AS	"respdntEmlAddr"
+    	,	A.DMGE_OCRN_PLCE							AS	"dmgeOcrnPlce"
+    	,	A.DMGE_YMD									AS	"dmgeYmd"
+    	,	A.DMGE_CN									AS	"dmgeCn"
+    	,	A.DMGE_AMT									AS	"dmgeAmt"
+    	,	A.APLY_OBJET_CN								AS	"aplyObjetCn"
+    	,	A.APLY_CN									AS	"aplyCn"
+    	,	FN_GET_CODENM (
+				'CT022',
+				A.APLY_SE_CD
+			)                       AS "aplySeNm"
+    	,	A.APLY_AMT									AS	"aplyAmt"
+    	,	FN_FMT_STRTODATE(A.APLY_YMD, '-')			AS  "aplyYmd"
+    	,	A.PRGRE_STUS_CD								AS  "prgreStusCd"
+    	,	A.APLY_SE_CD								AS	"aplySeCd"
+    	,	FN_GET_CODENM (
+				'CT022',
+				A.APLY_SE_CD
+			)                       AS "aplySeNm"
+    	,	FN_MRG_CODENM('CT021',A.SPRT_SE_CD)			AS	"sprtSeNm"
+    	,	A.RGTR_NO									AS	"rgtrNo"
+    	,	TO_CHAR(A.REG_YMD, 'yyyy-mm-dd hh24:mi:ss')	AS	"regYmd"
+    	,	TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfcnYmd"
+    	,	FN_GET_CODENM (
+				'CT023',
+				A.PRGRE_STUS_CD
+			)                       AS "prgreStusNm"
+		FROM
+			TB_VULSOGRP A
+		WHERE
+			1 = 1
+			 <include refid="Sql-Where"/>
+		AND
+			(A.PRGRE_STUS_CD = '99')
+		ORDER BY
+			A.MDFCN_YMD DESC
+    </select>
+
+    <select id="viewlistLwstRtrcn" resultType="business.com.support.service.LwstVO" parameterType="String">
+    	SELECT
+			A.APLY_NO									AS	"aplyNo"
+    	,	A.APLCNT_NO									AS	"aplcntNo"
+    	,	A.APLCNT_NM									AS	"aplcntNm"
+    	,	A.ETC_DMGE_AREA								AS	"etcDmgeArea"
+    	,	FN_FMT_DATA('RNO',A.APLCNT_BRNO)			AS  "aplcntBrno"
+    	,	FN_FMT_STRTODATE(A.APLCNT_BRDT, '-')		AS  "aplcntBrdt"
+    	,	A.APLCNT_ZIP								AS	"aplcntZip"
+    	,	A.APLCNT_ADDR								AS	"aplcntAddr"
+    	,	A.APLCNT_DADDR								AS	"aplcntDaddr"
+		,	'[' || A.APLCNT_ZIP || '] ' || A.APLCNT_ADDR || NVL(A.APLCNT_DADDR,'') AS "aplcntAddrLwst"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_TELNO)			AS  "aplcntTelNo"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_MBTEL_NO)		AS  "aplcntMbtelNo"
+    	,	A.APLCNT_EML_ADDR							AS	"aplcntEmlAddr"
+    	,	A.RESPDNT_NM								AS	"respdntNm"
+    	,	A.RESPDNT_BRNO								AS	"respdntBrno"
+    	,	A.RESPDNT_BRDT								AS	"respdntBrdt"
+    	,	A.RESPDNT_ZIP								AS	"respdntZip"
+    	,	A.RESPDNT_ADDR								AS	"respdntAddr"
+    	,	A.RESPDNT_DADDR								AS	"respdntDaddr"
+    	,	'[' || A.RESPDNT_ZIP || '] ' || A.RESPDNT_ADDR || NVL(A.RESPDNT_DADDR,'') AS "respdntAddrLwst"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_TELNO)			AS  "respdntTelno"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_MBTEL_NO)		AS  "respdntMbtelNo"
+    	,	A.RESPDNT_EML_ADDR							AS	"respdntEmlAddr"
+    	,	A.DMGE_OCRN_PLCE							AS	"dmgeOcrnPlce"
+    	,	A.DMGE_YMD									AS	"dmgeYmd"
+    	,	A.DMGE_CN									AS	"dmgeCn"
+    	,	A.DMGE_AMT									AS	"dmgeAmt"
+    	,	A.APLY_OBJET_CN								AS	"aplyObjetCn"
+    	,	A.APLY_CN									AS	"aplyCn"
+    	,	A.APLY_AMT									AS	"aplyAmt"
+    	,	FN_FMT_STRTODATE(A.APLY_YMD, '-')			AS  "aplyYmd"
+    	,	A.PRGRE_STUS_CD								AS  "prgreStusCd"
+    	,	A.APLY_CN									AS	"aplyCn"
+    	,	FN_GET_CODENM (
+				'CT023',
+				A.PRGRE_STUS_CD
+			)                       AS "prgreStusNm"
+		,	A.APLY_SE_CD								AS	"aplySeCd"
+		,	A.SPRT_SE_CD								AS	"sprtSeCd"
+		,	FN_MRG_CODENM('CT021',A.SPRT_SE_CD)			AS	"sprtSeNm"
+		FROM
+			TB_VULSOGRP A
+		WHERE
+			A.APLY_NO = #{aplyNo}
+		ORDER BY
+			A.APLY_YMD DESC
+    </select>
+
+    <select id="listLwstIncdntCount" resultType="int" parameterType="business.com.support.service.LwstVO">
+        SELECT
+            COUNT(1)
+      FROM
+         TB_LWST_INCDNT A
+		WHERE
+			1 = 1
+	 <include refid="Sql-WhereLwst"/>
+    </select>
+
+    <select id="listLwstIncdnt" resultType="business.com.support.service.LwstVO" parameterType="business.com.support.service.LwstVO">
+    	SELECT
+             A.INCDNT_MNG_NO                		 AS  "incdntMngNo"
+         ,   A.INCDNT_NM                  			 AS  "incdntNm"
+         ,   A.INCDNT_NO                     		 AS  "incdntNo"
+         ,   A.JDGMT_DEPT_NM                 		 AS  "jdgmtDeptNm"
+         ,   A.LWST_PRICES_AMT               		 AS  "lwstPricesAmt"
+         ,	 FN_FMT_STRTODATE(A.LWST_YMD, '-')		 AS  "lwstYmd"
+         ,   A.MDFCN_YMD                   		     AS  "mdfcnYmd"
+         ,   A.MDFR_NO                      		 AS  "mdfrNo"
+         ,   A.PAPSTMP_AMT                		     AS  "papstmpAmt"
+         <!-- ,	A.APLY_CN									AS	"aplyCn" -->
+         ,   A.RCPT_YMD                    		     AS  "rcptYmd"
+         ,	 FN_FMT_STRTODATE(A.REG_YMD, '-')		 AS  "regYmd"
+         ,   A.RGTR_NO                      		 AS  "rgtrNo"
+		FROM
+			TB_LWST_INCDNT A
+		WHERE
+			1 = 1
+		 <include refid="Sql-WhereLwst"/>
+		ORDER BY
+			A.REG_YMD DESC
+    </select>
+
+    <select id="viewListLwstIncdnt" resultType="business.com.support.service.LwstVO">
+    	SELECT
+		     A.INCDNT_MNG_NO                          AS "incdntMngNo"
+		 ,   A.INCDNT_NM                            AS "incdntNm"
+		 ,   A.INCDNT_NO                             AS "incdntNo"
+		 ,   A.JDGMT_DEPT_NM                          AS "jdgmtDeptNm"
+		 ,   A.LWST_PRICES_AMT                         AS "lwstPricesAmt"
+		 ,    FN_FMT_STRTODATE(A.LWST_YMD, '-')         AS "lwstYmd"
+		 ,   A.MDFCN_YMD                             AS "mdfcnYmd"
+		 ,   A.MDFR_NO                                AS "mdfrNo"
+		 ,   A.PAPSTMP_AMT                            AS "papstmpAmt"
+		 ,    FN_FMT_STRTODATE(A.RCPT_YMD, '-')         AS "rcptYmd"
+		 ,    FN_FMT_STRTODATE(A.REG_YMD, '-')         AS "regYmd"
+		 ,   A.RGTR_NO                                 AS "rgtrNo"
+		<!-- ,	 A.APLY_CN									AS	"aplyCn" -->
+		 ,  (SELECT V.APLCNT_NM
+		       FROM TB_VULSOGRP V
+		      WHERE V.APLY_NO = (SELECT MIN(APLY_NO)
+		                           FROM TB_LWST_APLY
+		                          WHERE INCDNT_MNG_NO = A.INCDNT_MNG_NO)
+		    )                                          AS "aplcntNm"
+		 ,  (SELECT V.RESPDNT_NM
+		       FROM TB_VULSOGRP V
+		      WHERE V.APLY_NO = (SELECT MIN(APLY_NO)
+		                           FROM TB_LWST_APLY
+		                          WHERE INCDNT_MNG_NO = A.INCDNT_MNG_NO)
+		    )                                          AS "respdntNm"
+<!-- 		  ,  (SELECT V.APLCNT_NM -->
+<!-- 		       FROM TB_VULSOGRP V -->
+<!-- 		      WHERE V.APLY_NO = (SELECT MIN(APLY_NO) -->
+<!-- 		                           FROM TB_LWST_APLY -->
+<!-- 		                          WHERE INCDNT_MNG_NO = A.INCDNT_MNG_NO) -->
+<!-- 		    ) || ' 외 ' || -->
+<!-- 		    (SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE COUNT(*)-1 END -->
+<!-- 		       FROM TB_LWST_APLY -->
+<!-- 		      WHERE INCDNT_MNG_NO = A.INCDNT_MNG_NO -->
+<!-- 		    ) || '명'                                  AS "aplcntNmCnt" -->
+		    ,  (
+		  CASE WHEN
+		  (SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE COUNT(*)-1 END
+		       FROM TB_LWST_APLY
+		      WHERE INCDNT_MNG_NO = A.INCDNT_MNG_NO
+		    ) >1
+		    THEN
+		     (SELECT V.APLCNT_NM
+		       FROM TB_VULSOGRP V
+		      WHERE V.APLY_NO = (SELECT MIN(APLY_NO)
+		                           FROM TB_LWST_APLY
+		                          WHERE INCDNT_MNG_NO = A.INCDNT_MNG_NO)
+		    )   
+		    || ' 외 ' ||
+		    (SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE COUNT(*)-1 END
+		       FROM TB_LWST_APLY
+		      WHERE INCDNT_MNG_NO = A.INCDNT_MNG_NO
+		    ) 
+		     || '명' 
+		    ELSE
+		     (SELECT V.APLCNT_NM
+		       FROM TB_VULSOGRP V
+		      WHERE V.APLY_NO = (SELECT MIN(APLY_NO)
+		                           FROM TB_LWST_APLY
+		                          WHERE INCDNT_MNG_NO = A.INCDNT_MNG_NO)
+		    )   END
+		    )                                 AS "aplcntNmCnt"
+		FROM
+		   TB_LWST_INCDNT A
+		WHERE
+		   A.INCDNT_MNG_NO = #{incdntMngNo}
+    </select>
+
+    <update id="udtLwstIncdnt" parameterType="business.com.support.service.LwstVO">
+    	UPDATE
+    		TB_LWST_INCDNT
+    	SET	MDFR_NO     = #{gsUserNo},
+    	<if test="@common.util.CommUtils@isNotEmpty(incdntNm)"     > INCDNT_NM       = #{incdntNm},</if>
+		<if test="@common.util.CommUtils@isNotEmpty(incdntNo)"     > INCDNT_NO  	 = #{incdntNo},</if>
+		<if test="@common.util.CommUtils@isNotEmpty(jdgmtDeptNm)"  > JDGMT_DEPT_NM   = #{jdgmtDeptNm},</if>
+		<if test="@common.util.CommUtils@isNotEmpty(lwstPricesAmt)"> LWST_PRICES_AMT = #{lwstPricesAmt},</if>
+		<if test="@common.util.CommUtils@isNotEmpty(lwstYmd)"      > LWST_YMD        = FN_FMT_STRTODATE(#{lwstYmd}, ''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(papstmpAmt)"   > PAPSTMP_AMT     = #{papstmpAmt},</if>
+		<if test="@common.util.CommUtils@isNotEmpty(rcptYmd)"      > RCPT_YMD        = FN_FMT_STRTODATE(#{rcptYmd}, ''),</if>
+   			MDFCN_YMD = TO_CHAR(SYSDATE,'YYYYMMDD')
+    	WHERE
+    		INCDNT_MNG_NO = #{incdntMngNo}
+    </update>
+
+    <delete id="deleteLwstIncdnt" parameterType="business.com.support.service.LwstVO">
+        DELETE
+          FROM TB_LWST_INCDNT
+         WHERE
+         	INCDNT_MNG_NO = #{incdntMngNo}
+    </delete>
+
+    <select id="listLwstPrgreCount" resultType="int" parameterType="business.com.support.service.LwstVO">
+        SELECT
+            COUNT(1)
+      FROM
+         TB_VULSOGRP A
+		WHERE
+			1 = 1
+			 <include refid="Sql-Where"/>
+    </select>
+
+
+ 	<select id="listLwstPrgre" resultType="business.com.support.service.LwstVO" parameterType="business.com.support.service.LwstVO">
+    	SELECT
+			A.APLY_NO									AS	"aplyNo"
+    	,	A.APLCNT_NO									AS	"aplcntNo"
+    	,	FN_FMT_DATA('NM', A.APLCNT_NM	)			AS 	"aplcntNm"
+    	,	A.APLCNT_NM									AS 	"aplcntNmR"
+    	,	FN_FMT_DATA('RNO',A.APLCNT_BRNO)			AS  "aplcntBrno"
+    	,	FN_FMT_STRTODATE(A.APLCNT_BRDT, '-')		AS  "aplcntBrdt"
+    	,	A.APLCNT_ZIP								AS	"aplcntZip"
+    	,	A.APLCNT_ADDR								AS	"aplcntAddr"
+    	,	A.APLCNT_DADDR								AS	"aplcntDaddr"
+		,	'[' || A.APLCNT_ZIP || '] ' || A.APLCNT_ADDR || NVL(A.APLCNT_DADDR,'') AS "aplcntAddrLwst"
+     	,	FN_FMT_DATA('TEL', A.APLCNT_TELNO)			AS  "aplcntTelNo"
+    	,	FN_FMT_DATA('TEL-M', A.APLCNT_MBTEL_NO)		AS  "aplcntMbtelNo"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_MBTEL_NO)		AS  "aplcntMbtel"
+    	,	A.APLCNT_EML_ADDR							AS	"aplcntEmlAddr"
+   		,	FN_FMT_DATA('NM', A.RESPDNT_NM	)			AS "respdntNm"
+   		,	A.RESPDNT_NM								AS "respdntNmR"
+   		,	FN_FMT_DATA('RNO',A.RESPDNT_BRNO)			AS  "respdntBrno"
+    	,	A.RESPDNT_BRDT								AS	"respdntBrdt"
+    	,	A.RESPDNT_ZIP								AS	"respdntZip"
+    	,	A.RESPDNT_ADDR								AS	"respdntAddr"
+    	,	A.RESPDNT_DADDR								AS	"respdntDaddr"
+		,	'[' || A.RESPDNT_ZIP || '] ' || A.RESPDNT_ADDR || NVL(A.RESPDNT_DADDR,'') AS "respdntAddrLwst"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_TELNO)			AS  "respdntTelno"
+    	,	FN_FMT_DATA('TEL-M', A.RESPDNT_MBTEL_NO)	AS  "respdntMbtelNo"
+    	,	A.RESPDNT_EML_ADDR							AS	"respdntEmlAddr"
+    	,	A.DMGE_OCRN_PLCE							AS	"dmgeOcrnPlce"
+    	,	A.DMGE_YMD									AS	"dmgeYmd"
+    	,	A.DMGE_CN									AS	"dmgeCn"
+    	,	A.DMGE_AMT									AS	"dmgeAmt"
+    	,	A.APLY_OBJET_CN								AS	"aplyObjetCn"
+    	,	A.APLY_CN									AS	"aplyCn"
+    	,	A.APLY_AMT									AS	"aplyAmt"
+    	,	A.ETC_DMGE_AREA								AS	"etcDmgeArea"
+    	,	FN_FMT_STRTODATE(A.APLY_YMD, '-')			AS  "aplyYmd"
+    	,	A.PRGRE_STUS_CD								AS  "prgreStusCd"
+    	,	FN_GET_CODENM (
+				'CT023',
+				A.PRGRE_STUS_CD
+			)                       AS "prgreStusNm"
+    	,	A.APLY_SE_CD								AS	"aplySeCd"
+    	,	FN_GET_CODENM (
+				'CT022',
+				A.APLY_SE_CD
+			)                       AS "aplySeNm"
+    	,	FN_MRG_CODENM('CT021',A.SPRT_SE_CD)			AS	"sprtSeNm"
+    	,	A.RGTR_NO									AS	"rgtrNo"
+    	,	TO_CHAR(A.REG_YMD, 'yyyy-mm-dd hh24:mi:ss')	AS	"regYmd"
+    	,	TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfcnYmd"
+		FROM
+			TB_VULSOGRP A
+		WHERE
+			1 = 1
+			 <include refid="Sql-Where"/>
+		AND NOT
+			(A.PRGRE_STUS_CD  IN ( '10','05','99') )
+		ORDER BY
+			A.APLY_NO DESC
+    </select>
+
+	 <select id="viewlistLwstPrgre" resultType="business.com.support.service.LwstVO" parameterType="String">
+    	SELECT
+			A.APLY_NO									AS	"aplyNo"
+    	,	A.APLCNT_NO									AS	"aplcntNo"
+    	,	A.APLCNT_NM									AS	"aplcntNm"
+    	,	FN_FMT_DATA('RNO',A.APLCNT_BRNO)			AS  "aplcntBrno"
+    	,	FN_FMT_STRTODATE(A.APLCNT_BRDT, '-')		AS  "aplcntBrdt"
+    	,	A.APLCNT_ZIP								AS	"aplcntZip"
+    	,	A.APLCNT_ADDR								AS	"aplcntAddr"
+    	,	A.APLCNT_DADDR								AS	"aplcntDaddr"
+		,	'[' || A.APLCNT_ZIP || '] ' || A.APLCNT_ADDR || NVL(A.APLCNT_DADDR,'') AS "aplcntAddrLwst"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_TELNO)			AS  "aplcntTelNo"
+    	,	FN_FMT_DATA('TEL', A.APLCNT_MBTEL_NO)		AS  "aplcntMbtelNo"
+    	,	A.APLCNT_EML_ADDR							AS	"aplcntEmlAddr"
+    	,	A.RESPDNT_NM								AS	"respdntNm"
+    	,	FN_FMT_DATA('RNO',A.RESPDNT_BRNO)			AS  "respdntBrno"
+    	,	A.RESPDNT_BRDT								AS	"respdntBrdt"
+    	,	A.RESPDNT_ZIP								AS	"respdntZip"
+    	,	A.RESPDNT_ADDR								AS	"respdntAddr"
+    	,	A.RESPDNT_DADDR								AS	"respdntDaddr"
+    	,	'[' || A.RESPDNT_ZIP || '] ' || A.RESPDNT_ADDR || NVL(A.RESPDNT_DADDR,'') AS "respdntAddrLwst"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_TELNO)			AS  "respdntTelno"
+    	,	FN_FMT_DATA('TEL', A.RESPDNT_MBTEL_NO)		AS  "respdntMbtelNo"
+    	,	A.RESPDNT_MBTEL_NO							AS	"respdntMbtelNo"
+    	,	A.RESPDNT_EML_ADDR							AS	"respdntEmlAddr"
+    	,	A.DMGE_OCRN_PLCE							AS	"dmgeOcrnPlce"
+    	,	A.DMGE_YMD									AS	"dmgeYmd"
+    	,	A.DMGE_CN									AS	"dmgeCn"
+    	,	A.DMGE_AMT									AS	"dmgeAmt"
+    	,	A.APLY_OBJET_CN								AS	"aplyObjetCn"
+    	,	A.APLY_CN									AS	"aplyCn"
+    	,	A.APLY_AMT									AS	"aplyAmt"
+    	,	FN_FMT_STRTODATE(A.APLY_YMD, '-')			AS  "aplyYmd"
+    	,	A.PRGRE_STUS_CD								AS  "prgreStusCd"
+    	,	A.ETC_DMGE_AREA								AS	"etcDmgeArea"
+		,	A.APLY_SE_CD								AS	"aplySeCd"
+		,	A.SPRT_SE_CD								AS	"sprtSeCd"
+		,	FN_MRG_CODENM('CT021',A.SPRT_SE_CD)			AS	"sprtSeNm"
+		FROM
+			TB_VULSOGRP A
+		WHERE
+			A.APLY_NO = #{aplyNo}
+		ORDER BY
+			A.APLY_YMD DESC
+	</select>
+
+	<select id="searchLwstNo" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+<!-- 		SELECT -->
+<!-- 		       A.INCDNT_NO         AS      "searchincdntNo" -->
+<!-- 		   ,   A.INCDNT_NM         AS      "incdntNm" -->
+<!-- 		   ,   A.INCDNT_MNG_NO      AS       "incdntMngNo" -->
+<!-- 		FROM -->
+<!-- 		   TB_LWST_INCDNT A -->
+<!-- 		WHERE A.INCDNT_MNG_NO = -->
+<!-- 		      CASE WHEN (SELECT COUNT(*) -->
+<!-- 		                   FROM TB_LWST_APLY -->
+<!-- 		                  WHERE APLY_NO = #{aplyNo}) > 0 -->
+<!-- 		           THEN (SELECT INCDNT_MNG_NO -->
+<!-- 		                   FROM TB_LWST_APLY -->
+<!-- 		                  WHERE APLY_NO = #{aplyNo} -->
+<!-- 		                    AND ROWNUM  = 1) -->
+<!-- 		           ELSE A.INCDNT_MNG_NO -->
+<!--            END -->
+		SELECT
+				INCDNT_NO			AS		"searchincdntNo"
+			,	INCDNT_NM			AS		"incdntNm"
+			,	INCDNT_MNG_NO		AS 		"incdntMngNo"
+		FROM
+			TB_LWST_INCDNT
+		WHERE
+			INCDNT_NO  LIKE '%' || #{searchincdntNo} || '%'
+	</select>
+
+	<select id="listAllLwst" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT
+				INCDNT_NO			AS		"searchincdntNo"
+			,	INCDNT_NM			AS		"incdntNm"
+			,	INCDNT_MNG_NO		AS 		"incdntMngNo"
+		FROM
+			TB_LWST_INCDNT
+	</select>
+
+<!-- 	  <update id="udtAplyLwstList" parameterType="business.com.support.service.LwstVO"> -->
+<!--     	UPDATE  -->
+<!--     		TB_LWST_APLY  -->
+<!--     	SET	MDFR_NO     = #{gsUserNo}, -->
+<!--     	<if test="@common.util.CommUtils@isNotEmpty(incdntNm)"     > INCDNT_NM       = #{incdntNm},</if> -->
+<!-- 		<if test="@common.util.CommUtils@isNotEmpty(incdntNo)"     > INCDNT_NO  	 = #{incdntNo},</if> -->
+<!-- 		<if test="@common.util.CommUtils@isNotEmpty(jdgmtDeptNm)"  > JDGMT_DEPT_NM   = #{jdgmtDeptNm},</if> -->
+<!-- 		<if test="@common.util.CommUtils@isNotEmpty(lwstPricesAmt)"> LWST_PRICES_AMT = #{lwstPricesAmt},</if> -->
+<!-- 		<if test="@common.util.CommUtils@isNotEmpty(lwstYmd)"      > LWST_YMD        = FN_FMT_STRTODATE(#{lwstYmd}, ''),</if> -->
+<!-- 		<if test="@common.util.CommUtils@isNotEmpty(papstmpAmt)"   > PAPSTMP_AMT     = #{papstmpAmt},</if> -->
+<!-- 		<if test="@common.util.CommUtils@isNotEmpty(rcptYmd)"      > RCPT_YMD        = FN_FMT_STRTODATE(#{rcptYmd}, ''),</if> -->
+<!--    			MDFCN_YMD = TO_CHAR(SYSDATE,'YYYYMMDD') -->
+<!--     	WHERE -->
+<!--     		INCDNT_MNG_NO = #{incdntMngNo} -->
+<!--     </update> -->
+
+    <insert id="saveAplyLwstList" parameterType="business.com.support.service.LwstVO">
+    	 INSERT
+          INTO TB_LWST_APLY
+             (	INCDNT_MNG_NO,
+				APLY_NO,
+				REG_YMD,
+				RGTR_NO
+             )
+        VALUES
+             (	#{incdntMngNo},
+				#{aplyNo},
+				TO_CHAR(SYSDATE,'YYYYMMDD'),
+				#{rgtrNo}
+             )
+    </insert>
+
+    <delete id="deleteAplyList" parameterType="business.com.support.service.LwstVO">
+        DELETE
+          FROM TB_LWST_APLY
+         WHERE
+         	INCDNT_MNG_NO = #{incdntMngNo}
+    </delete>
+
+
+
+    <!--2021.12.16 CSLEE
+        특정 신청자의 신청정보와 소송사건 정보 목록 조회  -->
+    <select id="listLwstAplyIncdnt" resultType="business.com.support.service.LwstVO" parameterType="business.com.support.service.LwstVO">
+        SELECT
+             A.APLY_NO                                   AS  "aplyNo"
+           , A.APLCNT_NO                                 AS  "aplcntNo"
+           , A.APLCNT_NM                                 AS  "aplcntNm"
+           , FN_FMT_DATA('RNO',A.APLCNT_BRNO)            AS  "aplcntBrno"
+           , FN_FMT_STRTODATE(A.APLCNT_BRDT, '-')        AS  "aplcntBrdt"
+           , A.APLCNT_ZIP                                AS  "aplcntZip"
+           , A.APLCNT_ADDR                               AS  "aplcntAddr"
+           , A.APLCNT_DADDR                              AS  "aplcntDaddr"
+           ,'[' || A.APLCNT_ZIP || '] ' || A.APLCNT_ADDR || NVL(A.APLCNT_DADDR,'') AS "aplcntAddrLwst"
+           , FN_FMT_DATA('TEL', A.APLCNT_TELNO)          AS  "aplcntTelNo"
+           , FN_FMT_DATA('TEL', A.APLCNT_MBTEL_NO)       AS  "aplcntMbtelNo"
+           , A.APLCNT_EML_ADDR                           AS  "aplcntEmlAddr"
+           , A.RESPDNT_NM                                AS  "respdntNm"
+           , FN_FMT_DATA('RNO',A.RESPDNT_BRNO)           AS  "respdntBrno"
+           , A.RESPDNT_BRDT                              AS  "respdntBrdt"
+           , A.RESPDNT_ZIP                               AS  "respdntZip"
+           , A.RESPDNT_ADDR                              AS  "respdntAddr"
+           , A.RESPDNT_DADDR                             AS  "respdntDaddr"
+			,	'[' || A.RESPDNT_ZIP || '] ' || A.RESPDNT_ADDR || NVL(A.RESPDNT_DADDR,'') AS "respdntAddrLwst"
+           , FN_FMT_DATA('TEL', A.RESPDNT_TELNO)         AS  "respdntTelno"
+           , FN_FMT_DATA('TEL', A.RESPDNT_MBTEL_NO)      AS  "respdntMbtelNo"
+           , A.RESPDNT_MBTEL_NO                          AS  "respdntMbtelNo"
+           , A.RESPDNT_EML_ADDR                          AS  "respdntEmlAddr"
+           , A.DMGE_OCRN_PLCE                            AS  "dmgeOcrnPlce"
+           , A.DMGE_YMD                                  AS  "dmgeYmd"
+           , A.DMGE_CN                                   AS  "dmgeCn"
+           , A.DMGE_AMT                                  AS  "dmgeAmt"
+           , A.APLY_OBJET_CN                             AS  "aplyObjetCn"
+           , A.APLY_CN                                   AS  "aplyCn"
+           , A.APLY_AMT                                  AS  "aplyAmt"
+           , FN_FMT_STRTODATE(A.APLY_YMD, '-')           AS  "aplyYmd"
+           , A.PRGRE_STUS_CD                             AS  "prgreStusCd"
+           , FN_GET_CODENM('CT023', A.PRGRE_STUS_CD)     AS  "prgreStusNm"
+           , A.ETC_DMGE_AREA                             AS  "etcDmgeArea"
+           , A.APLY_SE_CD                                AS  "aplySeCd"
+           , A.SPRT_SE_CD                                AS  "sprtSeCd"
+           , FN_MRG_CODENM('CT021',A.SPRT_SE_CD)         AS  "sprtSeNm"
+        FROM TB_VULSOGRP A
+       WHERE A.APLCNT_NO = #{aplcntNo}
+       ORDER BY A.APLY_YMD DESC
+    </select>
+
+    <!--2021.12.16 CSLEE
+        신청정보와 소송사건 정보 조회 (향후기일 정보는 최신 정보 1건 기준
+        [USR>마이페이지>취약계층 소송지원 현황] 화면을 위해 추가 -->
+    <select id="viewLwstAplyIncdnt" resultType="business.com.support.service.LwstVO" parameterType="business.com.support.service.LwstVO">
+        SELECT S1.APLY_NO                         AS "aplyNo"
+             , FN_FMT_STRTODATE(S1.RCPT_YMD, '-') AS "rcptYmd"
+             , (SELECT TRIM(TO_CHAR(NVL(SUM(NVL(LWST_SPRT_AMT,0)),0),'999,999,999,999,999,999'))
+                  FROM TB_LWST_SPRT
+                 WHERE APLY_NO = S1.APLY_NO)      AS "lwstSprtAmtTot"
+             , (SELECT LISTAGG( FN_GET_CODENM('CT032', S.LWST_SPRT_CD)
+                                || ' ' ||NVL(TRIM(TO_CHAR(S.LWST_SPRT_AMT,'999,999,999,999,999,999')),0)||'원'
+                               , '/') WITHIN GROUP(ORDER BY S.LWST_SPRT_CD)
+                  FROM TB_LWST_SPRT S
+                 WHERE S.APLY_NO = S1.APLY_NO)    AS "lwstSprtAmtDetail"
+             , S1.APLCNT_NM                       AS "aplcntNm"
+             , (CASE WHEN S2.APPLY_CNT > 1 THEN S1.APLCNT_NM || ' 외 '||(S2.APPLY_CNT-1)||'명'
+                     ELSE S1.APLCNT_NM END)       AS "aplcntNmDesc"
+             , S1.RESPDNT_NM                      AS "respdntNm"
+             , S2.INCDNT_MNG_NO                   AS "incdntMngNo"
+             , S2.INCDNT_NO                       AS "incdntNo"
+             , S2.INCDNT_NM                       AS "incdntNm"
+             , TRIM(TO_CHAR(S2.LWST_PRICES_AMT,'999,999,999,999,999,999')) AS "lwstPricesAmt"
+             , TRIM(TO_CHAR(S2.PAPSTMP_AMT,'999,999,999,999,999,999'))     AS "papstmpAmt"
+             , FN_FMT_STRTODATE(S2.LWST_YMD, '-') AS "lwstYmd"
+             , S2.JDGMT_DEPT_NM                   AS "jdgmtDeptNm"
+             , FN_FMT_STRTODATE(S2.DUDT_YMD, '-') AS "dudtYmd"
+             , S2.DUDT_TM                         AS "dudtTm"
+             , S2.DUDT_SE_CD                      AS "dudtSeCd"
+             , FN_GET_CODENM('CT008', S2.DUDT_SE_CD) AS "dudtSeNm"
+             , S2.DUDT_PLCE                       as "dudtPlce"
+             , S2.RSLT_CN                         as "rsltCn"
+             , FN_GET_CODENM('CT024', S2.RSLT_CN) AS "rsltCnNm"
+             , S2.APPLY_CNT                       AS "applyCnt"
+          FROM TB_VULSOGRP S1
+          JOIN (SELECT A.INCDNT_MNG_NO
+                     , A.INCDNT_NO
+                     , A.INCDNT_NM
+                     , (SELECT COUNT(1) FROM TB_LWST_APLY WHERE INCDNT_MNG_NO = A.INCDNT_MNG_NO ) AS APPLY_CNT
+                     , A.LWST_PRICES_AMT
+                     , A.PAPSTMP_AMT
+                     , A.LWST_YMD
+                     , A.JDGMT_DEPT_NM
+                     , B.DUDT_YMD
+                     , B.DUDT_TM
+                     , B.DUDT_SE_CD
+                     , B.DUDT_PLCE
+                     , B.RSLT_CN
+                     , ROW_NUMBER() OVER(ORDER BY B.DUDT_YMD DESC, B.DUDT_TM DESC) ROWNO
+                     , #{aplyNo} AS APLY_NO
+                  FROM TB_LWST_INCDNT A
+                  JOIN TB_LWST_INCDNT_DTLS B
+                    ON A.INCDNT_MNG_NO = B.INCDNT_MNG_NO
+                 WHERE A.INCDNT_MNG_NO IN (
+                       SELECT INCDNT_MNG_NO
+                         FROM TB_LWST_APLY
+                        WHERE APLY_NO = #{aplyNo}
+                          AND ROWNUM  = 1 )
+             ) S2
+            ON S1.APLY_NO = S2.APLY_NO
+         WHERE S2.ROWNO = 1
+    </select>
+
+    <!--2021.12.17 CSLEE
+        특정 신청정보의  향후일자 목록 정보를 향후기일 최신 일자 순으로 조회 -->
+    <select id="listLwstAplyIncdntDetail" resultType="business.com.support.service.LwstVO" parameterType="business.com.support.service.LwstVO">
+        SELECT A.SN                              AS "sn"
+             , A.INCDNT_MNG_NO                   AS "incdntMngNo"
+             , FN_FMT_STRTODATE(A.DUDT_YMD, '-') AS "dudtYmd"
+             , A.DUDT_TM                         AS "dudtTm"
+             , A.DUDT_SE_CD                      AS "dudtSeCd"
+             , FN_GET_CODENM('CT008', A.DUDT_SE_CD) AS "dudtSeNm"
+             , A.DUDT_PLCE                       AS "dudtPlce"
+             , A.RSLT_CN                         AS "rsltCn"
+             , FN_GET_CODENM('CT024', A.RSLT_CN) AS "rsltCnNm"
+          FROM TB_LWST_INCDNT_DTLS A
+         WHERE A.INCDNT_MNG_NO IN (
+               SELECT INCDNT_MNG_NO
+                 FROM TB_LWST_APLY
+                WHERE APLY_NO = #{aplyNo}
+                  AND ROWNUM  = 1)
+         ORDER BY A.DUDT_YMD DESC, A.DUDT_TM DESC
+    </select>
+
+</mapper>

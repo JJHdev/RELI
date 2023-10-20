@@ -1,0 +1,13 @@
+@charset "utf-8";
+
+/* 오류페이지 css */
+.error-wrap { width: 100%; min-height: 300px; padding: 30px; display: flex; -webkit-align-items: center; align-items: center; justify-content: center; }
+.error-wrap p { font-size: 20px; font-weight: 700; color: #171717; line-height: 50px; text-align: center; }
+.error-title h2 { padding-left: 45px; font-size: 26px; font-weight: 700; background: url(../images/common/i-tit.png)8px 50% no-repeat; }
+
+.app-error-adm .error-wrap { background: #ffffff; border: 1px solid #C9E1E8; border-radius: 10px; box-shadow: 0 0 10px rgb(0 0 0 / 10%); }
+.app-error-adm .error-title { font-size: 20px; font-weight: bold; color: green; padding: 10px 0; margin: 0 0 26px; overflow: hidden; border-bottom: 1px solid #C9E1E8; }
+.app-error-adm .error-title h2 { color: #171717; }
+
+.app-error-usr .error-wrap { background: #f1f3f9; border: 1px solid #abb8bc; border-radius: 15px; margin: 25px 0 35px;}
+.app-error-usr .error-title h2 { color: #1E7BA9; }

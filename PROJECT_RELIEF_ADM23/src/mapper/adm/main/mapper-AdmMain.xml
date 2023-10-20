@@ -1,0 +1,1050 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AdmMain">
+
+    <!-- 구제급여 신청상태 목록 조회 (접수/예비조사/본조사/지급) 
+         ntarget : 20220302 : 상태 변경으로 인한 수정. (VW_RELIEF_STUS 사용) 
+       - 우선 쿼리 변경. 추후 고도화때 TB_RELIEF에 별도의 최종상태코드 컬럼을 추가하여 관리 필요함.
+    -->    
+    <select id="listReliefStatus" resultType="java.util.HashMap">
+        <!-- 
+		SELECT A.CD_ID   AS "stusCd",
+		       A.CD_NM   AS "stusNm", 
+		       CASE WHEN A.CD_ID = '04'
+		            THEN (SELECT COUNT(*) 
+		                    FROM TB_RELIEF 
+		                   WHERE PRGRE_STUS_CD IN ('02','03','04')
+		                 )
+		            ELSE (SELECT COUNT(*) 
+		                    FROM TB_RELIEF 
+		                   WHERE PRGRE_STUS_CD = A.CD_ID
+		                 )
+		       END       AS "stusCnt"
+		  FROM SYS_CODE   A
+		 WHERE A.UP_CD_ID = 'CT025'
+		   AND A.CD_ID IN ('04','05','06','07')
+		 ORDER BY A.CD_ID,
+		          A.CD_NM
+        --> 
+         
+        WITH T_STAT AS (
+                SELECT SUM(DECODE(GBN, 'A', CNT))   AS REQ_CNT      /* 신청 [접수] */
+                     , SUM(DECODE(GBN, 'B', CNT))   AS RCP_CNT      /* 접수 [예비조사] */
+                     , SUM(DECODE(GBN, 'C', CNT))   AS EXM_I_CNT    /* 예비조사 - 조사중 [예비조사] */
+                     , SUM(DECODE(GBN, 'D', CNT))   AS EXM_Y_CNT    /* 예비조사 - 적합 [본조사] */
+                     , SUM(DECODE(GBN, 'E', CNT))   AS EXM_N_CNT    /* 예비조사 - 부적합 [완료] */
+                     , SUM(DECODE(GBN, 'F', CNT))   AS MNS_I_CNT    /* 본조사 - 조사중 [본조사] */
+                     , SUM(DECODE(GBN, 'G', CNT))   AS MNS_Y_CNT    /* 본조사 - 적합 [지급] */
+                     , SUM(DECODE(GBN, 'H', CNT))   AS MNS_N_CNT    /* 본조사 - 부적합 [완료] */
+                     , SUM(DECODE(GBN, 'I', CNT))   AS GIVE_CNT     /* 지급 [완료] */
+                  FROM (
+                            -- 신청접수 (신청)    [ 신청 ]
+                            SELECT 'A'              AS GBN
+                                 , COUNT(*)         AS CNT
+                              FROM TB_RELIEF A
+                             WHERE 0 = 0
+                               --AND PRGRE_STUS_CD IN ('02','03')
+                               AND ((APLY_YMD IS NOT NULL AND RCPT_YMD IS NULL) OR PRGRE_STUS_CD = '03')
+                               AND PRGRE_STUS_CD <![CDATA[ <> ]]> '01'
+                               AND NOT EXISTS (SELECT 1
+                                                 FROM TB_PRPT_EXMN
+                                                WHERE APLY_NO = A.APLY_NO)
+                               AND NOT EXISTS (SELECT 1
+                                                 FROM TB_MNSVY
+                                                WHERE APLY_NO = A.APLY_NO)
+                                                            
+                            UNION ALL
+                            
+                            -- 접수 (접수)      [ 접수 ]
+                            SELECT 'B'
+                                 , COUNT(*)
+                              FROM TB_RELIEF A
+                             WHERE 0 = 0
+                               AND RCPT_YMD IS NOT NULL
+                               AND NOT EXISTS (SELECT 1
+                                                 FROM TB_PRPT_EXMN
+                                                WHERE APLY_NO = A.APLY_NO)
+                               AND NOT EXISTS (SELECT 1
+                                                 FROM TB_MNSVY
+                                                WHERE APLY_NO = A.APLY_NO)
+                            
+                            UNION ALL
+                            
+                            -- 예비조사 (조사중)   [ 예비조사 ]
+                            SELECT 'C'
+                                 , COUNT(*)
+                              FROM TB_RELIEF A
+                             WHERE EXISTS (
+                                            SELECT 1
+                                              FROM (
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_PRPT_EXMN AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO 
+                                                   )
+                                             WHERE RIDX = 1
+                                               AND DLTNC_RSLT_CD IS NULL
+                                               AND APLY_NO = A.APLY_NO
+                                           )
+                               AND NOT EXISTS (
+                                            SELECT 1
+                                              FROM ( 
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_MNSVY AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO        
+                                                   )
+                                             WHERE RIDX = 1
+                                               --AND DLTNC_RSLT_CD IS NOT NULL
+                                               AND APLY_NO = A.APLY_NO
+                                           )             
+                            
+                            UNION ALL
+                            
+                            -- 예비조사 (심의회결과 - 적합)    [ 예비조사 ]
+                            SELECT 'D'
+                                 , COUNT(*) 
+                              FROM TB_RELIEF A
+                             WHERE EXISTS (
+                                            SELECT 1
+                                              FROM (
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_PRPT_EXMN AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO 
+                                                   )
+                                             WHERE RIDX = 1
+                                               AND DLTNC_RSLT_CD = 'R1'
+                                               AND APLY_NO = A.APLY_NO
+                                           )
+                               AND NOT EXISTS (
+                                            SELECT 1
+                                              FROM ( 
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_MNSVY AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO        
+                                                   )
+                                             WHERE RIDX = 1
+                                               --AND DLTNC_RSLT_CD IS NOT NULL
+                                               AND APLY_NO = A.APLY_NO
+                                           )
+                            
+                            UNION ALL
+                            
+                            -- 예비조사 (심의회결과 - 부적합)   [ 예비조사-완료 ]
+                            SELECT 'E'
+                                 , COUNT(*)
+                              FROM TB_RELIEF A
+                             WHERE EXISTS (
+                                            SELECT 1
+                                              FROM (
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_PRPT_EXMN AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO 
+                                                   )
+                                             WHERE RIDX = 1
+                                               AND DLTNC_RSLT_CD = 'R9'
+                                               AND APLY_NO = A.APLY_NO
+                                           )
+                               AND NOT EXISTS (
+                                            SELECT 1
+                                              FROM ( 
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_MNSVY AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO        
+                                                   )
+                                             WHERE RIDX = 1
+                                               --AND DLTNC_RSLT_CD IS NOT NULL
+                                               AND APLY_NO = A.APLY_NO
+                                           )  
+                            
+                            UNION ALL
+                            
+                            -- 본조사 (조사중)    [ 본조사 ]
+                            SELECT 'F'
+                                 , COUNT(*)
+                              FROM TB_RELIEF A
+                             WHERE EXISTS (
+                                            SELECT 1
+                                              FROM ( 
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , AA.GIVE_YMD
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_MNSVY AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO        
+                                                   )
+                                             WHERE RIDX = 1
+                                               AND DLTNC_RSLT_CD IS NULL
+                                               AND GIVE_YMD IS NULL 
+                                               AND APLY_NO = A.APLY_NO
+                                           )
+                            
+                            UNION ALL
+                            
+                            -- 본조사 (심의회결과 - 적합) [ 본조사 ]
+                            SELECT 'G'
+                                 , COUNT(*)
+                              FROM TB_RELIEF A
+                             WHERE EXISTS (
+                                            SELECT 1
+                                              FROM ( 
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , AA.GIVE_YMD
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_MNSVY AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO        
+                                                   )
+                                             WHERE RIDX = 1
+                                               AND DLTNC_RSLT_CD = 'R1'
+                                               AND GIVE_YMD IS NULL
+                                               AND APLY_NO = A.APLY_NO
+                                           )
+                            
+                            UNION ALL
+                             
+                            -- 본조사 (심의회결과 - 부적합)    [ 본조사-완료 ]
+                            SELECT 'H'
+                                 , COUNT(*)
+                              FROM TB_RELIEF A
+                             WHERE EXISTS (
+                                            SELECT 1
+                                              FROM ( 
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , AA.GIVE_YMD
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_MNSVY AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO        
+                                                   )
+                                             WHERE RIDX = 1
+                                               AND DLTNC_RSLT_CD = 'R9'
+                                               AND GIVE_YMD IS NULL
+                                               AND APLY_NO = A.APLY_NO
+                                           )
+                            
+                            UNION ALL
+                            
+                            -- 지급 (지급일자 등록)         [ 지급-완료 ]  
+                            SELECT 'I'
+                                 , COUNT(*)
+                              FROM TB_RELIEF A
+                             WHERE EXISTS (
+                                            SELECT 1
+                                              FROM ( 
+                                                    SELECT AA.DLTNC_RSLT_CD
+                                                         , AA.APLY_NO
+                                                         , AA.GIVE_YMD
+                                                         , ROW_NUMBER() OVER(PARTITION BY AA.APLY_NO ORDER BY AA.EXMN_ODER DESC) AS RIDX
+                                                      FROM TB_MNSVY AA
+                                                         , TB_RELIEF BB
+                                                     WHERE AA.APLY_NO = BB.APLY_NO        
+                                                   )
+                                             WHERE RIDX = 1
+                                               AND GIVE_YMD IS NOT NULL
+                                               AND APLY_NO = A.APLY_NO
+                                           )
+                       )
+        )
+        SELECT DECODE(ROWNUM, 1, '31'
+                            , 2, '32'
+                            , 3, '33'
+                            , 4, '34'
+                            , 5, '35') AS "stusCd"
+             , DECODE(ROWNUM, 1, REQ_CNT
+                            , 2, RCP_CNT + EXM_I_CNT
+                            , 3, EXM_Y_CNT + MNS_I_CNT
+                            , 4, MNS_Y_CNT
+                            , 5, EXM_N_CNT + MNS_N_CNT + GIVE_CNT) AS "stusCnt"
+          FROM T_STAT A
+       CONNECT BY LEVEL <![CDATA[ <= ]]>  5                        
+    </select>
+
+
+    <!-- 종합현황 검색조건 -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo)">
+            AND A.APLY_NO = #{aplyNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(prgreStusCd)">
+            AND E.LAST_STUS_CD = #{prgreStusCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyStdt)">
+            AND A.APLY_YMD <![CDATA[ >= ]]> REPLACE(#{srchAplyStdt},'-','')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyEndt)">
+            AND A.APLY_YMD <![CDATA[ <= ]]> REPLACE(#{srchAplyEndt},'-','')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRcptStdt)">
+            AND A.RCPT_YMD <![CDATA[ >= ]]> REPLACE(#{srchRcptStdt},'-','')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchRcptEndt)">
+            AND A.RCPT_YMD <![CDATA[ <= ]]> REPLACE(#{srchRcptEndt},'-','')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchIdntfcId)">
+            AND D.IDNTFC_ID LIKE '%' || #{srchIdntfcId} || '%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplcntNm)">
+            AND A.APLCNT_NM LIKE '%' || #{srchAplcntNm} || '%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchSufrerNm)">
+            AND D.SUFRER_NM LIKE '%' || #{srchSufrerNm} || '%'
+        </if>
+       	<if test="@common.util.CommUtils@isEqual(srchGiveYn,'Y')"><!-- 지급완료 -->
+            AND C.GIVE_YMD IS NOT NULL
+       	</if>
+       	<if test="@common.util.CommUtils@isEqual(srchGiveYn,'N')"><!-- 미지급 -->
+            AND C.GIVE_YMD IS NULL
+       	</if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchAplyKnd)">
+        	AND REGEXP_LIKE (A.APLY_KND_CD, #{srchAplyKnd})
+        </if>
+        <if test="@common.util.CommUtils@isNotEmptyList(aplySeList)">
+        	AND A.APLY_SE_CD IN 
+		    <foreach item="item" collection="aplySeList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+        <if test="@common.util.CommUtils@isNotEmptyList(prgreStusList)">
+        	AND E.LAST_STUS_CD IN 
+		    <foreach item="item" collection="prgreStusList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+        <if test="@common.util.CommUtils@isNotEmptyList(bizAreaList)">
+        	AND A.BIZ_AREA_CD IN 
+		    <foreach item="item" collection="bizAreaList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+        <!-- 2022.03.02 [ntarget] 예비조사 결과 검사 추가 -->
+        <if test="@common.util.CommUtils@isNotEmptyList(dltncRsltExmnList)">
+        	AND B.DLTNC_RSLT_CD IN 
+		    <foreach item="item" collection="dltncRsltExmnList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+        <if test="@common.util.CommUtils@isNotEmptyList(dltncRsltList)">
+        	AND C.DLTNC_RSLT_CD IN 
+		    <foreach item="item" collection="dltncRsltList" separator="," open="(" close=")">
+		        #{item}
+		    </foreach>
+        </if>
+    </sql>
+
+    <!-- 구제급여 종합현황 목록조회 
+         ntarget : 2022.03.02 : 최종상태 추가 반영
+    -->
+    <select id="listReliefTotal" resultType="java.util.HashMap" parameterType="business.com.relief.service.ReliefVO">
+        SELECT A.APLY_NO                                AS "aplyNo",
+               <!-- 신청정보 -->
+               A.APLY_SE_CD                             AS "aplySeCd",
+               FN_GET_CODENM('CT010', A.APLY_SE_CD)     AS "aplySeNm",
+               A.APLY_KND_CD                            AS "aplyKndCd",
+               FN_MRG_CODENM('CT011', A.APLY_KND_CD)    AS "aplyKndNm",
+               A.APLY_RESN                              AS "aplyResn",
+               A.BIZ_AREA_CD                            AS "bizAreaCd",
+               A.ETC_DMGE_AREA                          AS "etcDmgeArea",
+               CASE WHEN A.BIZ_AREA_CD = 'ETC' OR A.BIZ_AREA_CD IS NULL
+                    THEN A.ETC_DMGE_AREA
+                    ELSE (SELECT BIZ_AREA
+                            FROM TB_BIZ_MNG
+                           WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+                             AND USE_YN      = 'Y')
+               END                                      AS "bizAreaNm",
+			   NVL(C.GIVE_BANK_NM, A.BANK_NM)           AS "bankCd",         <!-- 지급은행코드 -->
+               FN_GET_CODENM('CT035',
+                   NVL(C.GIVE_BANK_NM, A.BANK_NM))      AS "bankNm",         <!-- 지급은행명 -->
+               NVL(C.GIVE_DPSTR_NM, A.DPSTR_NM)         AS "dpstrNm",            <!-- 예금주명 -->
+               NVL(SCP.DEC_B64('KEY1',C.GIVE_ACTNO), 
+                   SCP.DEC_B64('KEY1',A.ACTNO))         AS "actno",              <!-- 지급계좌 -->
+               <!-- 피해자정보 -->
+               D.IDNTFC_ID                              AS "idntfcId",
+               D.SUFRER_NO                              AS "sufrerNo",
+               D.SUFRER_NM                              AS "sufrerNm",
+               FN_FMT_DATA('NM', D.SUFRER_NM)           AS "sufrerNmMask",
+               D.SUFRER_BRDT                            AS "sufrerBrdt",
+               SCP.DEC_B64('KEY1',D.SUFRER_RRNO)        AS "sufrerRrno",
+               D.SUFRER_SXDST                           AS "sufrerSxdst",
+               D.SUFRER_ZIP                             AS "sufrerZip",
+               D.SUFRER_ADDR                            AS "sufrerAddr",
+               D.SUFRER_DADDR                           AS "sufrerDaddr",
+               '['||D.SUFRER_ZIP||'] '
+               || D.SUFRER_ADDR 
+               || NVL(D.SUFRER_DADDR,'')                AS "sufrerAddrAll",
+               D.SUFRER_EML_ADDR                        AS "sufrerEmlAddr",
+               D.SUFRER_TELNO                           AS "sufrerTelno",
+               D.SUFRER_MBTEL_NO                        AS "sufrerMbtelNo",
+               D.SUFRER_AGE                             AS "sufrerAge",
+               FN_GET_CODENM('CT030', D.SUFRER_SXDST)   AS "sufrerSxdstNm",
+               <!-- 신청자정보 -->
+               A.APLCNT_NO                              AS "aplcntNo",
+               A.APLCNT_NM                              AS "aplcntNm",
+               FN_FMT_DATA('NM', A.APLCNT_NM)           AS "aplcntNmMask",
+               FN_FMT_STRTODATE(A.APLCNT_BRDT,'-')      AS "aplcntBrdt",
+               SCP.DEC_B64('KEY1',A.APLCNT_RRNO)        AS "aplcntRrno",
+               A.APLCNT_TELNO                           AS "aplcntTelno",
+               A.APLCNT_MBTEL_NO                        AS "aplcntMbtelNo",
+               A.APLCNT_EML_ADDR                        AS "aplcntEmlAddr",
+               A.APLCNT_ZIP                             AS "aplcntZip",
+               A.APLCNT_ADDR                            AS "aplcntAddr",
+               A.APLCNT_DADDR                           AS "aplcntDaddr",
+               '['||A.APLCNT_ZIP||'] '
+               || A.APLCNT_ADDR 
+               || NVL(A.APLCNT_DADDR,'')                AS "aplcntAddrAll",
+               A.SUFRER_REL_CD                          AS "sufrerRelCd",
+               FN_GET_CODENM('CT013', A.SUFRER_REL_CD)  AS "sufrerRelNm",
+               A.DTH_YN                                 AS "dthYn",
+               <!-- 진행정보 -->
+               C.BIZ_ODER                               AS "bizOder",
+               E.LAST_STUS_CD                           AS "prgreStusCd",
+               FN_GET_CODENM('CT042', E.LAST_STUS_CD)   AS "prgreStusNm",                
+               B.DLTNC_RSLT_CD                          AS "exmnDltncRsltCd",    <!-- 심의회결과코드(예비조사) -->
+               FN_GET_CODENM('CT012', B.DLTNC_RSLT_CD)  AS "exmnDltncRsltNm",    <!-- 심의회결과명칭(예비조사) -->
+               C.DLTNC_RSLT_CD                          AS "dltncRsltCd",        <!-- 심의회결과코드(본조사) -->
+               FN_GET_CODENM('CT012', C.DLTNC_RSLT_CD)  AS "dltncRsltNm",        <!-- 심의회결과명칭(본조사) -->
+               FN_FMT_STRTODATE(A.APLY_YMD,'-')         AS "aplyYmd",            <!-- 신청일자 -->
+               FN_FMT_STRTODATE(A.RCPT_YMD,'-')         AS "rcptYmd",            <!-- 접수일자 -->
+               FN_FMT_STRTODATE(C.GIVE_YMD,'-')         AS "giveYmd",            <!-- 지급일자 -->
+               FN_FMT_STRTODATE(C.GIVE_DCSN_YMD,'-')    AS "giveDcsnYmd",        <!-- 지급결정일자 -->
+               C.GIVE_AMT                               AS "giveAmt",            <!-- 지급금액 -->
+               C.RTROACT_AMT                            AS "rtroactAmt",         <!-- 소급금액 -->
+               C.LGCY_RCOGN_AMT                         AS "lgcyRcognAmt",       <!-- 기존인정금액 -->
+               C.DPCN_AMT                               AS "dpcnAmt",            <!-- 중복금액 -->
+               C.RCOGN_AMT                              AS "rcognAmt",           <!-- 인정금액 -->
+               C.RDM_AMT                                AS "rdmAmt",             <!-- 환수금액 -->
+               C.RTRVL_NEED_AMT                         AS "rtrvlNeedAmt",       <!-- 회수필요금액 -->
+               C.GIVE_AMT                               AS "mcpAmt",             <!-- 의료비지급금액 -->
+               <!-- 2022.11.14 ntarget : GIVE_AMT 변경 -->
+               <!-- 
+		      (SELECT SUM(RCPER_LVLH_ALLWNC_AMT)
+		         FROM TB_RCPER_LVLH_MNG  O,
+		              TB_RCPER_LVLH_DTLS P
+		        WHERE O.BIZ_AREA_CD   = C.BIZ_AREA_CD
+		          AND O.BIZ_ODER      = C.BIZ_ODER
+		          AND O.EXMN_ODER     = C.EXMN_ODER
+		          AND O.APLY_NO       = C.APLY_NO
+		          AND P.BIZ_AREA_CD   = C.BIZ_AREA_CD
+		          AND P.BIZ_ODER      = C.BIZ_ODER
+		          AND P.EXMN_ODER     = C.EXMN_ODER
+		          AND P.APLY_NO       = C.APLY_NO
+		          AND O.GIVE_YR       = P.GIVE_YR
+		          AND P.GIVE_YN       = 'Y')            AS "rcperLvlhAllwncAmt",  --><!-- 요양생활수당금액 -->
+              (SELECT SUM(GIVE_AMT)
+                 FROM TB_RCPER_LVLH_DTLS P
+                WHERE P.BIZ_AREA_CD   = C.BIZ_AREA_CD
+                  AND P.BIZ_ODER      = C.BIZ_ODER
+                  AND P.EXMN_ODER     = C.EXMN_ODER
+                  AND P.APLY_NO       = C.APLY_NO
+                  AND P.GIVE_YN       = 'Y' )                 AS "rcperLvlhAllwncAmt", <!-- 요양생활수당금액 -->
+               C.FNRL_CST_AMT                                 AS "fnrlCstAmt",         <!-- 장례비금액 -->
+               C.BRVFM_RWRD_AMT                               AS "brvfmRwrdAmt",       <!-- 유족보상금액 -->
+               A.RGTR_NO                                      AS "rgtrNo",
+               TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		       TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+               A.MDFR_NO                                      AS "mdfrNo",
+               TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		       TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate",
+               C.EXMN_ODER                                    AS "exmnOder",           <!-- [2022.12.12 추가] 본조사 조사차수 -->
+               B.BIZ_ODER                                     AS "prptBizOder",        <!-- [2022.12.13 추가] 예비조사 사업차수 -->
+               B.EXMN_ODER                                    AS "prptExmnOder",       <!-- [2022.12.13 추가] 예비조사 조사차수 -->
+               C.LAST_DMGE_GRD_CD                             AS "lastDmgeGrdCd",      <!-- [2022.12.13 추가] 요양생활수당 - 피해등급 -->
+               C.GIVE_BGNG_YM                                 AS "giveBgngYm",         <!-- [2022.12.13 추가] 요양생활수당 - 지급시작 -->
+               C.GIVE_END_YM                                  AS "giveEndYm",          <!-- [2022.12.13 추가] 요양생활수당 - 지급종료 -->
+               SUBSTR(C.GIVE_DCSN_YMD,1,6)                    AS "giveDcsnYm",         <!-- [2022.12.13 추가] 요양생활수당 - 지급결정 -->
+               (SELECT MIN(R1.GIVE_YR || R1.GIVE_MM)
+                  FROM TB_RCPER_LVLH_DTLS R1
+                 WHERE R1.BIZ_AREA_CD = C.BIZ_AREA_CD
+                   AND R1.BIZ_ODER    = C.BIZ_ODER
+                   AND R1.EXMN_ODER   = C.EXMN_ODER
+                   AND R1.APLY_NO     = C.APLY_NO
+               )                                              AS "giveStrtYm",         <!-- [2022.12.13 추가] 요양생활수당 - 지급시작연월 -->
+               (SELECT COUNT(*)
+                  FROM TB_RCPER_LVLH_DTLS R2
+                 WHERE R2.BIZ_AREA_CD = C.BIZ_AREA_CD
+                   AND R2.BIZ_ODER    = C.BIZ_ODER
+                   AND R2.EXMN_ODER   = C.EXMN_ODER
+                   AND R2.APLY_NO     = C.APLY_NO
+               )                                              AS "givePeriodMm"        <!-- [2022.12.13 추가] 요양생활수당 - 지급기간(개월수) -->
+          FROM TB_RELIEF      A
+         INNER JOIN
+               TB_IDNTFC      D
+            ON A.SUFRER_NO  = D.SUFRER_NO
+         INNER JOIN
+               VW_RELIEF_STUS E
+            ON A.APLY_NO    = E.APLY_NO
+    LEFT OUTER JOIN
+               TB_PRPT_EXMN   B
+            ON A.APLY_NO    = B.APLY_NO            
+    LEFT OUTER JOIN
+               TB_MNSVY       C
+            ON A.APLY_NO    = C.APLY_NO
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               D.IDNTFC_ID     DESC
+              ,A.PRGRE_STUS_CD ASC
+              ,A.APLY_YMD      DESC
+              ,A.APLY_NO       DESC
+    </select>
+    <!-- 구제급여 종합현황 카운트조회 -->
+    <select id="listReliefTotalCount" resultType="int" parameterType="business.com.relief.service.ReliefVO">
+        SELECT COUNT(1) 
+          FROM TB_RELIEF      A
+         INNER JOIN
+               TB_IDNTFC      D
+            ON A.SUFRER_NO  = D.SUFRER_NO
+         INNER JOIN
+               VW_RELIEF_STUS E
+            ON A.APLY_NO    = E.APLY_NO
+    LEFT OUTER JOIN
+               TB_PRPT_EXMN   B
+            ON A.APLY_NO    = B.APLY_NO             
+    LEFT OUTER JOIN
+               TB_MNSVY       C
+            ON A.APLY_NO    = C.APLY_NO
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 2022.12.16 구제급여 종합현황 상세조회 -->
+    <select id="viewReliefTotal" resultType="java.util.HashMap" parameterType="business.com.relief.service.ReliefVO">
+        SELECT A.APLY_NO                                AS "aplyNo",
+               <!-- 신청정보 -->
+               A.APLY_SE_CD                             AS "aplySeCd",
+               FN_GET_CODENM('CT010', A.APLY_SE_CD)     AS "aplySeNm",
+               A.APLY_KND_CD                            AS "aplyKndCd",
+               FN_MRG_CODENM('CT011', A.APLY_KND_CD)    AS "aplyKndNm",
+               A.APLY_RESN                              AS "aplyResn",
+               A.BIZ_AREA_CD                            AS "bizAreaCd",
+               A.ETC_DMGE_AREA                          AS "etcDmgeArea",
+               CASE WHEN A.BIZ_AREA_CD = 'ETC' OR A.BIZ_AREA_CD IS NULL
+                    THEN A.ETC_DMGE_AREA
+                    ELSE (SELECT BIZ_AREA
+                            FROM TB_BIZ_MNG
+                           WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+                             AND USE_YN      = 'Y')
+               END                                      AS "bizAreaNm",
+			   A.BANK_NM                                AS "bankCd",            <!-- 지급은행코드 -->
+               FN_GET_CODENM('CT035', A.BANK_NM)        AS "bankNm",            <!-- 지급은행명 -->
+               A.DPSTR_NM                               AS "dpstrNm",           <!-- 예금주명 -->
+               SCP.DEC_B64('KEY1',A.ACTNO)              AS "actno",             <!-- 지급계좌 -->
+               <!-- 피해자정보 -->
+               D.IDNTFC_ID                              AS "idntfcId",
+               D.SUFRER_NO                              AS "sufrerNo",
+               D.SUFRER_NM                              AS "sufrerNm",
+               FN_FMT_DATA('NM', D.SUFRER_NM)           AS "sufrerNmMask",
+               D.SUFRER_BRDT                            AS "sufrerBrdt",
+               SCP.DEC_B64('KEY1',D.SUFRER_RRNO)        AS "sufrerRrno",
+               D.SUFRER_SXDST                           AS "sufrerSxdst",
+               D.SUFRER_ZIP                             AS "sufrerZip",
+               D.SUFRER_ADDR                            AS "sufrerAddr",
+               D.SUFRER_DADDR                           AS "sufrerDaddr",
+               '['||D.SUFRER_ZIP||'] '
+               || D.SUFRER_ADDR 
+               || NVL(D.SUFRER_DADDR,'')                AS "sufrerAddrAll",
+               D.SUFRER_EML_ADDR                        AS "sufrerEmlAddr",
+               D.SUFRER_TELNO                           AS "sufrerTelno",
+               D.SUFRER_MBTEL_NO                        AS "sufrerMbtelNo",
+               D.SUFRER_AGE                             AS "sufrerAge",
+               FN_GET_CODENM('CT030', D.SUFRER_SXDST)   AS "sufrerSxdstNm",
+               <!-- 신청자정보 -->
+               A.APLCNT_NO                              AS "aplcntNo",
+               A.APLCNT_NM                              AS "aplcntNm",
+               FN_FMT_DATA('NM', A.APLCNT_NM)           AS "aplcntNmMask",
+               FN_FMT_STRTODATE(A.APLCNT_BRDT,'-')      AS "aplcntBrdt",
+               SCP.DEC_B64('KEY1',A.APLCNT_RRNO)        AS "aplcntRrno",
+               A.APLCNT_TELNO                           AS "aplcntTelno",
+               A.APLCNT_MBTEL_NO                        AS "aplcntMbtelNo",
+               A.APLCNT_EML_ADDR                        AS "aplcntEmlAddr",
+               A.APLCNT_ZIP                             AS "aplcntZip",
+               A.APLCNT_ADDR                            AS "aplcntAddr",
+               A.APLCNT_DADDR                           AS "aplcntDaddr",
+               '['||A.APLCNT_ZIP||'] '
+               || A.APLCNT_ADDR 
+               || NVL(A.APLCNT_DADDR,'')                AS "aplcntAddrAll",
+               A.SUFRER_REL_CD                          AS "sufrerRelCd",
+               FN_GET_CODENM('CT013', A.SUFRER_REL_CD)  AS "sufrerRelNm",
+               A.DTH_YN                                 AS "dthYn",
+               FN_FMT_STRTODATE(A.DTH_YMD ,'-')         AS "dthYmd",             <!-- 2022.12.16 사망일자 -->
+               <!-- 기타정보 -->
+               A.DMGE_RCOGN_YN                         AS "dmgeRcognYn",         <!-- 피해인정여부 -->
+               FN_FMT_STRTODATE(A.DMGE_OCRN_YMD,'-')   AS "dmgeOcrnYmd",         <!-- 피해발생일자 -->
+               A.DMGE_OCRN_PLCE                        AS "dmgeOcrnPlce",        <!-- 피해발생장소 -->
+               A.DMGE_CAUSE_CN                         AS "dmgeCauseCn",         <!-- 피해원인내용 -->
+               A.DMGE_OCRN_PROC_CN                     AS "dmgeOcrnProcCn",      <!-- 피해발생경과내용 -->
+               A.DMGE_CN                               AS "dmgeCn",              <!-- 피해내용 -->
+               A.DMGE_AMT                              AS "dmgeAmt",             <!-- 피해금액 -->
+               A.PRIORD_BRVFM_NM                       AS "priordBrvfmNm",       <!-- [사용확인필요] 선순위유족명 -->
+               A.PRIORD_BRVFM_REL_CD                   AS "priordBrvfmRelCd",    <!-- [사용확인필요] 선순위유족관계코드 -->
+               FN_GET_CODENM('CT013', 
+                             A.PRIORD_BRVFM_REL_CD)    AS "priordBrvfmRelNm",    <!-- [사용확인필요] 선순위유족관계코드명 -->
+               A.ASGNR_NM                              AS "asgnrNm",             <!-- [사용확인필요] 양도인명 -->
+               A.ASGNR_REL_CD                          AS "asgnrRelCd",          <!-- [사용확인필요] 양도인관계코드 -->
+               FN_GET_CODENM('CT013', A.ASGNR_REL_CD)  AS "asgnrRelNm",          <!-- [사용확인필요] 양도인관계코드명 -->
+               A.ABSTRCT_ZIP                           AS "abstrctZip",          <!-- [사용확인필요] 초본우편번호 -->
+               A.ABSTRCT_ADDR                          AS "abstrctAddr",         <!-- [사용확인필요] 초본주소 -->
+               A.ABSTRCT_DADDR                         AS "abstrctDaddr",        <!-- [사용확인필요] 초본상세주소 -->
+               A.FRST_APLY_YN                          AS "frstAplyYn",          <!-- [사용확인필요] 최초신청여부 -->
+               A.FRST_APLY_NO                          AS "frstAplyNo",          <!-- [사용확인필요] 최초신청번호 -->
+               <!-- 진행정보 -->
+               C.BIZ_ODER                               AS "bizOder",            <!-- 본조사 사업차수 -->
+              (SELECT BIZ_ODER_NM
+                 FROM TB_BIZ_ODER
+                WHERE BIZ_AREA_CD = C.BIZ_AREA_CD
+                  AND BIZ_ODER    = C.BIZ_ODER
+                  AND BIZ_USE_YN  = 'Y')                AS "bizOderNm",          <!-- [2022.12.16 추가] 본조사 사업차수명 -->
+               C.EXMN_ODER                              AS "exmnOder",           <!-- [2022.12.12 추가] 본조사 조사차수 -->
+               B.BIZ_ODER                               AS "prptBizOder",        <!-- [2022.12.13 추가] 예비조사 사업차수 -->
+              (SELECT BIZ_ODER_NM
+                 FROM TB_BIZ_ODER
+                WHERE BIZ_AREA_CD = B.BIZ_AREA_CD
+                  AND BIZ_ODER    = B.BIZ_ODER
+                  AND BIZ_USE_YN  = 'Y')                AS "prptBizOderNm",      <!-- [2022.12.16 추가] 예비조사 사업차수명 -->
+               B.EXMN_ODER                              AS "prptExmnOder",       <!-- [2022.12.13 추가] 예비조사 조사차수 -->
+               A.MNGR_REG_YN                            AS "mngrRegYn",          <!-- 2022.12.16 관리자 대행신청여부 -->
+               CASE WHEN A.MNGR_REG_YN = 'Y' 
+                    THEN (SELECT USER_NM 
+                            FROM TB_USER 
+                           WHERE USER_NO = A.RGTR_NO)
+                    ELSE NULL
+               END                                      AS "mngrNm",             <!-- 2022.12.16 대행신청 관리자명 -->
+               E.LAST_STUS_CD                           AS "prgreStusCd",
+               FN_GET_CODENM('CT042', E.LAST_STUS_CD)   AS "prgreStusNm",
+               B.DLTNC_RSLT_CD                          AS "exmnDltncRsltCd",    <!-- 심의회결과코드(예비조사) -->
+               FN_GET_CODENM('CT012', B.DLTNC_RSLT_CD)  AS "exmnDltncRsltNm",    <!-- 심의회결과명칭(예비조사) -->
+               C.DLTNC_RSLT_CD                          AS "dltncRsltCd",        <!-- 심의회결과코드(본조사) -->
+               FN_GET_CODENM('CT012', C.DLTNC_RSLT_CD)  AS "dltncRsltNm",        <!-- 심의회결과명칭(본조사) -->
+               FN_FMT_STRTODATE(A.APLY_YMD,'-')         AS "aplyYmd",            <!-- 신청일자 -->
+               FN_FMT_STRTODATE(A.RCPT_YMD,'-')         AS "rcptYmd",            <!-- 접수일자 -->
+               FN_FMT_STRTODATE(C.GIVE_YMD,'-')         AS "giveYmd",            <!-- 지급일자 -->
+               FN_FMT_STRTODATE(C.GIVE_DCSN_YMD,'-')    AS "giveDcsnYmd",        <!-- 지급결정일자 -->
+               C.GIVE_AMT                               AS "giveAmt",            <!-- 지급금액 -->
+               C.RTROACT_AMT                            AS "rtroactAmt",         <!-- 소급금액 -->
+               C.LGCY_RCOGN_AMT                         AS "lgcyRcognAmt",       <!-- 기존인정금액 -->
+               C.DPCN_AMT                               AS "dpcnAmt",            <!-- 중복금액 -->
+               C.RCOGN_AMT                              AS "rcognAmt",           <!-- 인정금액 -->
+               C.RDM_AMT                                AS "rdmAmt",             <!-- 환수금액 -->
+               C.RTRVL_NEED_AMT                         AS "rtrvlNeedAmt",       <!-- 회수필요금액 -->
+               C.GIVE_AMT                               AS "mcpAmt",             <!-- 의료비지급금액 -->
+               C.FNRL_CST_AMT                           AS "fnrlCstAmt",         <!-- 장례비금액 -->
+               C.BRVFM_RWRD_AMT                         AS "brvfmRwrdAmt",       <!-- 유족보상금액 -->
+              (SELECT SUM(GIVE_AMT)
+                 FROM TB_RCPER_LVLH_DTLS P
+                WHERE P.BIZ_AREA_CD   = C.BIZ_AREA_CD
+                  AND P.BIZ_ODER      = C.BIZ_ODER
+                  AND P.EXMN_ODER     = C.EXMN_ODER
+                  AND P.APLY_NO       = C.APLY_NO
+                  AND P.GIVE_YN       = 'Y' )           AS "rcperLvlhAllwncAmt", <!-- 요양생활수당금액 -->
+               C.LAST_DMGE_GRD_CD                       AS "lastDmgeGrdCd",      <!-- [2022.12.13 추가] 요양생활수당 - 피해등급 -->
+               C.GIVE_BGNG_YM                           AS "giveBgngYm",         <!-- [2022.12.13 추가] 요양생활수당 - 지급시작 -->
+               C.GIVE_END_YM                            AS "giveEndYm",          <!-- [2022.12.13 추가] 요양생활수당 - 지급종료 -->
+
+               SUBSTR(C.GIVE_DCSN_YMD,1,6)              AS "giveDcsnYm",         <!-- [2022.12.13 추가] 요양생활수당 - 지급결정 -->
+              (SELECT MIN(R1.GIVE_YR || R1.GIVE_MM)
+                 FROM TB_RCPER_LVLH_DTLS R1
+                WHERE R1.BIZ_AREA_CD = C.BIZ_AREA_CD
+                  AND R1.BIZ_ODER    = C.BIZ_ODER
+                  AND R1.EXMN_ODER   = C.EXMN_ODER
+                  AND R1.APLY_NO     = C.APLY_NO
+              )                                         AS "giveStrtYm",         <!-- [2022.12.13 추가] 요양생활수당 - 지급시작연월 -->
+              (SELECT COUNT(*)
+                 FROM TB_RCPER_LVLH_DTLS R2
+                WHERE R2.BIZ_AREA_CD = C.BIZ_AREA_CD
+                  AND R2.BIZ_ODER    = C.BIZ_ODER
+                  AND R2.EXMN_ODER   = C.EXMN_ODER
+                  AND R2.APLY_NO     = C.APLY_NO
+              )                                         AS "givePeriodMm",       <!-- [2022.12.13 추가] 요양생활수당 - 지급기간(개월수) -->
+               B.EXPSR_WHL_CNT                          AS "expsrWhlCnt",        <!-- [2022.12.16 추가] 예비조사 - 노출기간(년) -->
+               B.RCOGN_DISS_HOLD_YN                     AS "rcognDissHoldYn",    <!-- [2022.12.16 추가] 예비조사 - 인정질환보유여부 -->
+               FN_FMT_STRTODATE(B.DLTNC_OPMT_YMD,'-')   AS "exmnDltncOpmtYmd",   <!-- [2022.12.16 추가] 예비조사 - 심의회일자 -->
+               B.DLTNC_RSLT_RESN                        AS "exmnDltncRsltResn",  <!-- [2022.12.16 추가] 예비조사 - 심의회결과의견 -->
+               C.DLTNC_RSLT_RESN                        AS "dltncRsltResn",      <!-- [2022.12.16 추가] 본조사 - 심의회결과의견 -->
+               A.RGTR_NO                                AS "rgtrNo",
+               TO_CHAR(A.REG_YMD,   
+                       'yyyy-mm-dd hh24:mi:ss')         AS "regDttm",
+		       TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')       AS "regDate",
+               A.MDFR_NO                                AS "mdfrNo",
+               TO_CHAR(A.MDFCN_YMD, 
+                       'yyyy-mm-dd hh24:mi:ss')         AS "mdfDttm",
+		       TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')       AS "mdfDate"
+          FROM TB_RELIEF       A
+         INNER JOIN
+               TB_IDNTFC       D
+            ON A.SUFRER_NO   = D.SUFRER_NO
+         INNER JOIN
+               VW_RELIEF_STUS  E
+            ON A.APLY_NO     = E.APLY_NO
+    LEFT OUTER JOIN
+               TB_PRPT_EXMN    B
+            ON A.APLY_NO     = B.APLY_NO            
+    LEFT OUTER JOIN
+               TB_MNSVY        C
+            ON A.APLY_NO     = C.APLY_NO
+         WHERE A.APLY_NO     = #{aplyNo}
+		<if test="@common.util.CommUtils@isEmpty(bizOder)">
+		   AND C.BIZ_AREA_CD IS NULL
+		</if>
+		<if test="@common.util.CommUtils@isNotEmpty(bizOder)">
+		   AND C.BIZ_AREA_CD = #{bizAreaCd} 
+		   AND C.BIZ_ODER    = #{bizOder}
+		   AND C.EXMN_ODER   = #{exmnOder}
+		</if>
+		<if test="@common.util.CommUtils@isEmpty(prptBizOder)">
+		   AND B.BIZ_AREA_CD IS NULL
+		</if>
+		<if test="@common.util.CommUtils@isNotEmpty(prptBizOder)">
+		   AND B.BIZ_AREA_CD = #{bizAreaCd} 
+		   AND B.BIZ_ODER    = #{prptBizOder}
+		   AND B.EXMN_ODER   = #{prptExmnOder}
+		</if>
+    </select>
+
+    <!-- 2022.12.16 종합현황 - 개인기록카드 - 피해구제신청 및 인정현황 -->
+    <select id="listReliefRecogn" resultType="java.util.HashMap" parameterType="string">
+       SELECT ROWNUM                                  AS "aplySn",  <!-- 신청횟수 -->
+              FN_FMT_STRTODATE(A.APLY_YMD,'-')        AS "aplyYmd", <!-- 신청일자 -->
+              A.DMGE_RCOGN_YN                         AS "dmgeRcognYn",     <!-- 예비조사 최종건의 인정여부 -->
+              FN_FMT_STRTODATE(C.DLTNC_OPMT_YMD,'-')  AS "dltncOpmtYmd",    <!-- 예비조사 최종건의 개최일자(인정일) -->
+              C.DLTNC_RSLT_RESN                       AS "dltncRsltResn",   <!-- 예비조사 최종건의 심사결과사유(비고) -->
+              D.LAST_DMGE_GRD_CD                      AS "lastDmgeGrdCd",   <!-- 본조사 최종건의 피해등급 -->
+              (SELECT COUNT(COUNT(SCKWND_CD))
+                 FROM TB_MCP_DTLS
+                WHERE APLY_NO       = A.APLY_NO
+                  AND BIZ_ODER      = C.BIZ_ODER
+                  AND RCOGN_STUS_CD = '01'
+                GROUP BY
+                      SCKWND_CD)                      AS "rcognDissCnt",    <!-- 본조사 최종건의 인정질환종류건수 -->
+              (SELECT BIZ_ODER_NM
+                 FROM TB_BIZ_ODER
+                WHERE BIZ_AREA_CD = C.BIZ_AREA_CD
+                  AND BIZ_ODER    = C.BIZ_ODER)       AS "bizOderNm",       <!-- 본조사 최종건의 사업차수명 -->
+              C.BIZ_ODER                              AS "bizOder"          <!-- 본조사 최종건의 사업차수 -->
+          FROM TB_RELIEF A
+             , TB_IDNTFC B
+             ,(SELECT BIZ_AREA_CD
+                    , BIZ_ODER
+                    , APLY_NO
+                    , DLTNC_RSLT_CD
+                    , DLTNC_OPMT_YMD
+                    , DLTNC_RSLT_RESN
+                 FROM (SELECT P.*
+                            , ROW_NUMBER() OVER(PARTITION BY P.BIZ_AREA_CD, P.BIZ_ODER, I.IDNTFC_ID ORDER BY P.EXMN_ODER DESC) AS RIDX
+                         FROM TB_PRPT_EXMN P
+                            , TB_RELIEF    R
+                            , TB_IDNTFC    I
+                        WHERE P.APLY_NO    = R.APLY_NO
+                          AND R.SUFRER_NO  = I.SUFRER_NO
+                      )
+                WHERE RIDX = 1
+              ) C
+             ,(SELECT BIZ_AREA_CD
+                    , BIZ_ODER
+                    , APLY_NO
+                    , DLTNC_RSLT_CD
+                    , GIVE_DCSN_YMD
+                    , LAST_DMGE_GRD_CD
+                 FROM (SELECT M.*
+                            , ROW_NUMBER() OVER(PARTITION BY M.BIZ_AREA_CD, M.BIZ_ODER, I.IDNTFC_ID ORDER BY M.EXMN_ODER DESC) AS RIDX
+                         FROM TB_MNSVY     M
+                            , TB_RELIEF    R
+                            , TB_IDNTFC    I
+                        WHERE M.APLY_NO    = R.APLY_NO
+                          AND R.SUFRER_NO  = I.SUFRER_NO
+                          AND M.LAST_DMGE_GRD_CD IS NOT NULL
+                      )
+                WHERE RIDX = 1
+              ) D
+        WHERE A.SUFRER_NO = B.SUFRER_NO(+)
+          AND A.APLY_NO   = C.APLY_NO(+)
+          AND A.APLY_NO   = D.APLY_NO(+)
+          AND B.IDNTFC_ID = #{idntfcId}
+        ORDER BY 
+              A.APLY_NO       
+    </select>
+
+    <!-- 2022.12.16 종합현황 - 개인기록카드 - 건강피해 인정현황 -->
+    <select id="listDmgeRecogn" resultType="java.util.HashMap" parameterType="string">
+        SELECT ROWNUM                                 AS "sn",      <!-- 연번 -->
+               A.SCKWND_CD                            AS "sckwndCd",<!-- 질병코드(3단위) -->
+              (SELECT SCKWND_NM
+                 FROM TB_SCKWND_CODE
+                WHERE SCKWND_CD = A.SCKWND_CD
+                  AND USE_YN    = 'Y')                AS "sckwndNm"
+          FROM (SELECT DISTINCT SUBSTR(SCKWND_CD,1,3) AS SCKWND_CD
+                  FROM TB_MCP_DTLS M
+                 WHERE EXISTS (
+                       SELECT 1
+                         FROM TB_RELIEF     R
+                        INNER JOIN
+                              TB_IDNTFC     I
+                           ON R.SUFRER_NO = I.SUFRER_NO
+                        WHERE I.IDNTFC_ID = #{idntfcId}
+                          AND R.APLY_NO   = M.APLY_NO
+                       )
+                   AND RCOGN_STUS_CD = '01' <!-- 인정상태인 질병만 -->
+               ) A 
+         ORDER BY 
+               A.SCKWND_CD ASC
+    </select>
+
+    <!-- 2022.12.16 종합현황 - 개인기록카드 - 건강피해 상세현황 -->
+    <select id="listDmgeDetails" resultType="java.util.HashMap" parameterType="string">
+        SELECT ROWNUM                                  AS "sn",       <!-- 연번 -->
+               A.SCKWND_CD                             AS "sckwndCd", <!-- 질병코드 -->
+               A.SCKWND_NM                             AS "sckwndNm", <!-- 질병명 -->
+               A.SELF_ALOTM                            AS "selfAlotm",<!-- 의료비 -->
+               FN_FMT_STRTODATE(A.RCPER_PSTG_YMD,'-')  AS "rcperYmd", <!-- 첫통원일자 -->
+               A.RCPER_CNT                             AS "rcperCnt"  <!-- 이용건수 -->
+          FROM (SELECT M.SCKWND_CD                     AS SCKWND_CD,
+                       M.SCKWND_NM                     AS SCKWND_NM,
+                       SUM(M.SELF_ALOTM)               AS SELF_ALOTM,
+                       MIN(M.RCPER_PSTG_YMD)           AS RCPER_PSTG_YMD,
+                       COUNT(*)                        AS RCPER_CNT
+                  FROM TB_MCP_DTLS M
+                 WHERE EXISTS (
+                       SELECT 1
+                         FROM TB_RELIEF     R
+                        INNER JOIN
+                              TB_IDNTFC     I
+                           ON R.SUFRER_NO = I.SUFRER_NO
+                        WHERE I.IDNTFC_ID = #{idntfcId}
+                          AND R.APLY_NO   = M.APLY_NO
+                       )
+                   AND RCOGN_STUS_CD = '01' <!-- 인정상태인 질병만 -->
+                 GROUP BY
+                       M.SCKWND_CD,
+                       M.SCKWND_NM
+               ) A 
+         ORDER BY 
+               A.SCKWND_CD ASC
+    </select>
+
+    <!-- 2022.12.16 종합현황 - 개인기록카드 - 건강피해 상세현황 의 조회기간 -->
+    <select id="viewDmgeDetailsReview" resultType="java.util.HashMap" parameterType="string">
+         SELECT FN_FMT_STRTODATE(MIN(RVW_BGNG_YMD),'-') AS "rvwBgngYmd", 
+                FN_FMT_STRTODATE(MAX(RVW_END_YMD ),'-') AS "rvwEndYmd"
+           FROM (SELECT APLY_NO,
+                        RVW_BGNG_YMD, 
+                        RVW_END_YMD,
+                        RANK() OVER (PARTITION BY APLY_NO
+                                         ORDER BY BIZ_ODER  DESC, 
+                                                  EXMN_ODER DESC) AS RANK_NO
+                   FROM TB_MNSVY M
+                  WHERE EXISTS (
+                        SELECT 1
+                          FROM TB_RELIEF R
+                         INNER JOIN
+                               TB_IDNTFC I
+                            ON R.SUFRER_NO = I.SUFRER_NO
+                           AND I.IDNTFC_ID = #{idntfcId}
+                           AND R.APLY_NO   = M.APLY_NO
+                        )
+                ) M
+          WHERE RANK_NO = '1'
+    </select>
+
+    <!-- 2022.12.16 종합현황 - 개인기록카드 - 건강피해 영향범위 및 거주기간
+         : 대구,서천,김포 의 영향범위 데이터를 상세조회 형태로 반환
+     -->
+    <select id="viewDmgeAffcScope" resultType="java.util.HashMap" parameterType="string">
+		SELECT MAX(DECODE(M.BIZ_AREA_CD,'A0001', M.BIZ_AREA_CD))         AS "bizAreaCd1",      <!-- 대구 사업코드 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0002', M.BIZ_AREA_CD))         AS "bizAreaCd2",      <!-- 서천 사업코드 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0003', M.BIZ_AREA_CD))         AS "bizAreaCd3",      <!-- 김포 사업코드 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0001', M.BIZ_AREA))            AS "bizAreaNm1",      <!-- 대구 사업명칭 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0002', M.BIZ_AREA))            AS "bizAreaNm2",      <!-- 서천 사업명칭 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0003', M.BIZ_AREA))            AS "bizAreaNm3",      <!-- 김포 사업명칭 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0001', O.AFFC_SCOPE_CN))       AS "affcScopeCn1",    <!-- 대구 영향범위 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0002', O.AFFC_SCOPE_CN))       AS "affcScopeCn2",    <!-- 서천 영향범위 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0003', O.AFFC_SCOPE_CN))       AS "affcScopeCn3",    <!-- 김포 영향범위 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0001', O.EXPSR_WHL_CN))        AS "expsrWhlCn1",     <!-- 대구 노출기간기준 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0002', O.EXPSR_WHL_CN))        AS "expsrWhlCn2",     <!-- 서천 노출기간기준 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0003', O.EXPSR_WHL_CN))        AS "expsrWhlCn3",     <!-- 김포 노출기간기준 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0001', M.AFFC_SCOPE_RESI_YN))  AS "affcScopeResiYn1",<!-- 대구 영향범위포함여부 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0002', M.AFFC_SCOPE_RESI_YN))  AS "affcScopeResiYn2",<!-- 서천 영향범위포함여부 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0003', M.AFFC_SCOPE_RESI_YN))  AS "affcScopeResiYn3",<!-- 김포 영향범위포함여부 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0001', M.EXPSR_WHL_CNT))       AS "expsrWhlCnt1",    <!-- 대구 노출거주기간 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0002', M.EXPSR_WHL_CNT))       AS "expsrWhlCnt2",    <!-- 서천 노출거주기간 -->
+		       MAX(DECODE(M.BIZ_AREA_CD,'A0003', M.EXPSR_WHL_CNT))       AS "expsrWhlCnt3"     <!-- 김포 노출거주기간 -->
+          FROM (SELECT A.BIZ_AREA_CD, 
+                       A.BIZ_AREA, 
+                       B.AFFC_SCOPE_RESI_YN, 
+                       B.EXPSR_WHL_CNT
+                  FROM TB_BIZ_MNG A
+                  LEFT OUTER JOIN
+                      (SELECT BIZ_AREA_CD, 
+                              AFFC_SCOPE_RESI_YN, 
+                              EXPSR_WHL_CNT
+                         FROM (SELECT P.BIZ_AREA_CD,
+                                      P.AFFC_SCOPE_RESI_YN,
+                                      P.EXPSR_WHL_CNT,
+                                      RANK() OVER (PARTITION BY P.BIZ_AREA_CD
+                                                       ORDER BY P.EXMN_ODER DESC) AS RANK_NO
+                                 FROM TB_PRPT_EXMN P
+                                WHERE P.BIZ_ODER = 2
+                                  AND EXISTS (SELECT 1
+                                                FROM TB_RELIEF R
+                                               INNER JOIN
+                                                     TB_IDNTFC I
+                                                  ON R.SUFRER_NO = I.SUFRER_NO
+                                               WHERE I.IDNTFC_ID = #{idntfcId}
+                                                 AND R.APLY_NO   = P.APLY_NO
+                                      )
+                              )
+                        WHERE RANK_NO = '1'
+                      ) B
+                    ON A.BIZ_AREA_CD = B.BIZ_AREA_CD
+                 WHERE A.BIZ_AREA_CD IN ('A0001','A0002','A0003')
+		       ) M
+		 INNER JOIN
+		       TB_BIZ_ODER O
+		    ON M.BIZ_AREA_CD = O.BIZ_AREA_CD
+		 WHERE O.BIZ_ODER    = 2
+    </select>
+
+    <!-- 2022.12.20 종합현황 - 개인기록카드 - 구제급여 지급현황
+     -->
+    <select id="listReliefGive" resultType="java.util.HashMap" parameterType="string">
+		WITH T_SUMMARY AS (
+			SELECT GIVE_YR                        AS GIVE_YR,
+			       SUM(BRVFM_RWRD_AMT)            AS BRVFM_RWRD_AMT,
+			       SUM(FNRL_CST_AMT)              AS FNRL_CST_AMT,
+			       SUM(MCP_AMT)                   AS MCP_AMT,
+			       SUM(RCP_AMT)                   AS RCP_AMT
+			  FROM (
+					SELECT SUBSTR(GIVE_YMD, 1, 4) AS GIVE_YR,
+					       SUM(BRVFM_RWRD_AMT)    AS BRVFM_RWRD_AMT,
+					       SUM(FNRL_CST_AMT)      AS FNRL_CST_AMT,
+					       SUM(GIVE_AMT)          AS MCP_AMT,
+					       0                      AS RCP_AMT
+					  FROM TB_MNSVY  M
+					 WHERE M.GIVE_YMD IS NOT NULL
+					   AND EXISTS (
+					       SELECT 1
+					         FROM TB_RELIEF R
+					        INNER JOIN
+					              TB_IDNTFC I
+					           ON I.SUFRER_NO = R.SUFRER_NO
+					        WHERE R.APLY_NO   = M.APLY_NO
+					          AND I.IDNTFC_ID = #{idntfcId}
+					       )
+					 GROUP BY
+					       SUBSTR(M.GIVE_YMD, 1, 4)
+					UNION ALL
+					SELECT GIVE_YR,
+					       0                      AS BRVFM_RWRD_AMT,
+					       0                      AS FNRL_CST_AMT,  
+					       0                      AS MCP_AMT,        
+					       SUM(GIVE_AMT)          AS RCP_AMT         
+					  FROM TB_RCPER_LVLH_DTLS L
+					 WHERE EXISTS (
+					       SELECT 1
+					         FROM TB_RELIEF R
+					        INNER JOIN
+					              TB_IDNTFC I
+					           ON I.SUFRER_NO = R.SUFRER_NO
+					        WHERE R.APLY_NO   = L.APLY_NO
+					          AND I.IDNTFC_ID = #{idntfcId}
+					       )
+					 GROUP BY
+					       GIVE_YR
+			       )
+			 GROUP BY
+			       GIVE_YR
+			 ORDER BY
+			       GIVE_YR
+		)
+		SELECT GIVE_YR                      AS "giveYr",
+		       BRVFM_RWRD_AMT               AS "brvfmRwrdAmt",  <!-- 유족보상비 -->
+		       FNRL_CST_AMT                 AS "fnrlCstAmt",    <!-- 장례비 -->
+		       MCP_AMT                      AS "mcpAmt",        <!-- 의료비 -->
+		       RCP_AMT                      AS "rcpAmt"         <!-- 요양생활수당 -->
+		  FROM (
+		        SELECT 'TOTAL'              AS GIVE_YR
+		             , SUM(BRVFM_RWRD_AMT)  AS BRVFM_RWRD_AMT
+		             , SUM(FNRL_CST_AMT)    AS FNRL_CST_AMT
+		             , SUM(MCP_AMT)         AS MCP_AMT
+		             , SUM(RCP_AMT)         AS RCP_AMT
+		          FROM T_SUMMARY
+		        UNION ALL
+		        SELECT GIVE_YR              AS GIVE_YR
+		             , BRVFM_RWRD_AMT       AS BRVFM_RWRD_AMT
+		             , FNRL_CST_AMT         AS FNRL_CST_AMT
+		             , MCP_AMT              AS MCP_AMT
+		             , RCP_AMT              AS RCP_AMT
+		          FROM T_SUMMARY
+		         ORDER BY
+		               GIVE_YR
+		     )
+    </select>
+    
+    <!-- 2022.12.20 종합현황 - 개인기록카드 - 민원응대이력
+         TODO. 다음 프로젝트 고도화에 개발할 영역임
+     -->
+    <select id="listCmplHst" resultType="java.util.HashMap" parameterType="string">
+		SELECT NULL AS "sn",
+		       NULL AS "cmplYmd", 
+		       NULL AS "cmplRel", 
+		       NULL AS "cmplCn" 
+		  FROM DUAL
+    </select>
+
+    <!-- 2022.12.20 종합현황 - 개인기록카드 - 피해등급 평가질환 목록
+     -->
+    <select id="listDmgeGrdMattr" resultType="java.util.HashMap" parameterType="string">
+		SELECT A.DISS_KND_CD                         AS "dissKndCd",
+		       FN_GET_CODENM('CT047', A.DISS_KND_CD) AS "dissKndNm",
+		       A.SVRTY_SCRE                          AS "svrtyScre",
+		       M.LAST_DMGE_GRD_CD                    AS "lastDmgeGrdCd",
+		       M.LAST_DMGE_SCRE                      AS "lastDmgeScre"
+		  FROM TB_MNSVY M
+		     ,(SELECT BIZ_AREA_CD
+		            , BIZ_ODER
+		            , EXMN_ODER
+		            , APLY_NO
+		            , DISS_KND_CD
+		            , SVRTY_SCRE
+		         FROM (SELECT L.*
+		                    , DENSE_RANK() OVER(ORDER BY L.EXMN_ODER DESC) AS RIDX
+		                 FROM TB_MNSVY          M
+		                    , TB_RCPER_LVLH_GRD L
+		                    , TB_RELIEF         R
+		                    , TB_IDNTFC         I
+		                WHERE M.APLY_NO     = L.APLY_NO
+		                  AND M.EXMN_ODER   = L.EXMN_ODER
+		                  AND L.APLY_NO     = R.APLY_NO
+		                  AND R.SUFRER_NO   = I.SUFRER_NO
+		                  AND M.LAST_DMGE_GRD_CD IS NOT NULL
+		                  AND I.IDNTFC_ID   = #{idntfcId}
+		              )
+		        WHERE RIDX = 1
+		      ) A
+		 WHERE M.APLY_NO(+)   = A.APLY_NO
+		   AND M.EXMN_ODER(+) = A.EXMN_ODER
+	     ORDER BY
+	           A.DISS_KND_CD
+    </select>
+
+</mapper>

@@ -1,0 +1,35 @@
+<!-- 주민등록번호 인증 -->
+<div id="popupResident" class="layerPop form type4">
+    <div class="layerWrap">
+        <!-- 레이어내용 -->
+        <div class="layerPop-inner">
+        	<form id="popupResidentForm" name="popupResidentForm" method="post" onsubmit="return false;">
+			<div class="inputGroup">
+				<p>이름</p>
+				<div class="inputWrap">
+					<input id="popUserNm" name="userNm" type="text" placeholder="이름을 입력하세요." />
+				</div>
+			</div>
+			<div class="inputGroup">
+				<p>식별 아이디</p>
+				<div class="inputWrap">
+					<input id="popIdentId" name="identId" type="text" placeholder="식별 아이디를 입력하세요." />
+				</div>
+			</div>
+			<div class="inputGroup">
+				<p>주민등록번호</p>
+				<div class="inputWrap two">
+					<input id="popUserRrno1" name="userRrno1" type="text" />
+					<span class="mark">-</span>
+					<input id="popUserRrno2" name="userRrno2" type="text" />
+				</div>
+			</div>
+			</form>
+			<div class="btnWrap">
+				<a href="javascript:void(0);" id="btnResidentConfirm">확인</a>
+				<a href="javascript:void(0);" data-dismiss="modal">취소</a>
+			</div>
+		</div>
+    </div>
+</div>
+

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AccessLog">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        AND A.USER_NO = B.USER_NO(+)    
+        AND A.SYS_SE_CD <![CDATA[ <> ]]> 'COM'
+        <if test="@common.util.CommUtils@isNotEmpty(srchStDt)">
+            AND A.CNTN_DT <![CDATA[ >= ]]> TO_TIMESTAMP(#{srchStDt}||'00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchEnDt)">
+            AND A.CNTN_DT <![CDATA[ <= ]]> TO_TIMESTAMP(#{srchEnDt}||'23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchText)">
+            AND(A.PROG_URL  LIKE '%'||#{srchText}||'%'
+             OR A.USER_NO   LIKE '%'||#{srchText}||'%'
+             OR B.USER_NM   LIKE '%'||#{srchText}||'%'
+             OR A.SYS_SE_CD LIKE '%'||#{srchText}||'%'
+             OR A.IP_ADDR   LIKE '%'||#{srchText}||'%'
+             OR A.SRVR_NM   LIKE '%'||#{srchText}||'%')
+        </if>
+    </sql>
+
+    <!-- 프로그램접속이력 목록조회 -->
+    <select id="listAccessLog" resultType="java.util.HashMap" parameterType="business.sys.log.service.LogVO">
+        SELECT A.SN                   AS "sn",
+               A.PROG_URL             AS "progUrl",
+               A.USER_NO              AS "userNo",
+               B.USER_NM              AS "userNm",
+               A.CNTN_SE_CD           AS "cntnSeCd",
+               TO_CHAR(A.CNTN_DT,'YYYY-MM-DD HH24:MI:SS') AS "cntnDt",
+               A.CNTN_YR              AS "cntnYr",
+               A.CNTN_MM              AS "cntnMm",
+               A.CNTN_DD              AS "cntnDd",
+               A.IP_ADDR              AS "ipAddr",
+               A.SRVR_NM              AS "srvrNm",
+               A.SYS_SE_CD            AS "sysCd",
+               FN_GET_CODENM('CT003', A.SYS_SE_CD)    AS "sysNm"
+          FROM SYS_CNTN_HST A
+             , TB_USER B
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY A.SN DESC
+    </select>
+    <select id="listAccessLogCount" resultType="int" parameterType="business.sys.log.service.LogVO">
+        SELECT COUNT(1) 
+          FROM SYS_CNTN_HST A
+             , TB_USER B
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 프로그램접속이력 삭제 -->
+    <delete id="deltAccessLog" parameterType="business.sys.log.service.LogVO">
+        DELETE 
+          FROM SYS_CNTN_HST 
+         WHERE SN = #{sn}
+    </delete> 
+
+</mapper>

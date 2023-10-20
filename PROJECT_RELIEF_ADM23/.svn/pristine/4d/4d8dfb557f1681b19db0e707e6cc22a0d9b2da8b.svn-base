@@ -1,0 +1,45 @@
+<!-- 휴대전화 인증 -->
+<div id="popupPhone" class="layerPop form type4">
+    <div class="layerWrap">
+        <!-- 레이어내용 -->
+        <div class="layerPop-inner">
+        	<form id="popupPhoneForm" name="popupPhoneForm" method="post" onsubmit="return false;">
+				<div class="inputGroup">
+					<p>이름</p>
+					<div class="inputWrap">
+						<input id="popUserNm" name="userNm" type="text" placeholder="이름을 입력하세요." />
+					</div>
+				</div>
+				<div class="inputGroup">
+					<p>생년월일</p>
+					<div class="inputWrap birth radioBtn">
+						<input id="popBrdt" name="brdt" type="text" placeholder="생년월일 8자리를 입력하세요." />
+						<input id="popSxdstM" name="sxdst" value="M" type="radio" checked />
+						<label for="popSxdstM">남</label>
+						<input id="popSxdstF" name="sxdst" value="F" type="radio" />
+						<label for="popSxdstF">여</label>
+					</div>
+				</div>
+				<div class="inputGroup">
+					<p>휴대전화번호 (-제외 숫자만 입력)</p>
+					<div class="inputWrap call">
+						<input id="popMbtelNo" name="mbtelNo" type="text" placeholder="휴대전화번호" />
+						<button id="btnSmsCertify">인증요청</button>
+					</div>
+				</div>
+				<div class="inputGroup">
+					<div class="inputWrap">
+						<p>인증번호 입력</p>
+						<input id="popSmsNo" name="smsNo" type="text" placeholder="전송된 인증번호를 입력하세요." />
+						<input id="popCertYn" name="certYn" type="hidden" value="N" />
+					</div>
+				</div>
+        	</form>
+			<div class="btnWrap">
+				<a href="javascript:void(0);" id="btnPhoneConfirm">확인</a>
+				<a href="javascript:void(0);" data-dismiss="modal">취소</a>
+			</div>
+		</div>
+    </div>
+</div>
+

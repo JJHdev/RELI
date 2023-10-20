@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BioCmitDmge">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+    
+        <if test="@common.util.CommUtils@isNotEmpty(srchCmitSeCd)">
+            AND A.CMIT_SE_CD = #{srchCmitSeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchBizAreaCd)">
+            AND A.BIZ_AREA_CD = #{srchBizAreaCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchCmitOder)">
+            AND A.CMIT_ODER LIKE '%' || #{srchCmitOder} || '%'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchOpmtStdt)">
+            AND (FN_FMT_STRTODATE(#{srchOpmtStdt},'') BETWEEN A.OPMT_BGNG_YMD AND A.OPMT_END_YMD
+             OR  FN_FMT_STRTODATE(#{srchOpmtStdt},'') <![CDATA[ <= ]]> A.OPMT_BGNG_YMD)
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchOpmtEndt)">
+            AND (FN_FMT_STRTODATE(#{srchOpmtEndt},'') BETWEEN A.OPMT_BGNG_YMD AND A.OPMT_END_YMD
+             OR  FN_FMT_STRTODATE(#{srchOpmtEndt},'') <![CDATA[ >= ]]> A.OPMT_END_YMD)
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.CMIT_MNG_NO                                 AS "cmitMngNo",
+        A.BIZ_AREA_CD                                 AS "bizAreaCd",
+       (SELECT BIZ_AREA
+          FROM TB_BIZ_MNG
+         WHERE BIZ_AREA_CD = A.BIZ_AREA_CD
+           AND USE_YN      = 'Y')                     AS "bizAreaNm",
+        A.DMGE_SE_CD                                  AS "dmgeSeCd",
+        FN_GET_CODENM('CT044', A.DMGE_SE_CD)          AS "dmgeSeNm",
+        A.CMIT_SE_CD                                  AS "cmitSeCd",
+        FN_GET_CODENM('CT204', A.CMIT_SE_CD)          AS "cmitSeNm",
+        A.EXMN_SE_CD                                  AS "exmnSeCd",
+        A.CMIT_ODER                                   AS "cmitOder",
+        A.CMIT_NM                                     AS "cmitNm",
+        FN_FMT_STRTODATE(A.OPMT_BGNG_YMD,'-')         AS "opmtBgngYmd",
+        FN_FMT_STRTODATE(A.OPMT_END_YMD ,'-')         AS "opmtEndYmd",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate",
+	   (SELECT COUNT(*)
+	      FROM TB_BIO_CMIT_MNG
+	     WHERE CMIT_MNG_NO = A.CMIT_MNG_NO)           AS "mfcmmCnt"
+    </sql>
+
+    <!-- 위원회피해조사 목록조회 -->
+    <select id="listBioCmitDmge" resultType="java.util.HashMap" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_CMIT_DMGE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.CMIT_MNG_NO
+    </select>
+    <select id="listBioCmitDmgeCount" resultType="int" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT COUNT(1) 
+          FROM TB_BIO_CMIT_DMGE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 위원회피해조사 상세조회 -->
+    <select id="viewBioCmitDmge" resultType="business.bio.cmit.service.BioCmitMngVO" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_CMIT_DMGE A
+         WHERE CMIT_MNG_NO = #{cmitMngNo}
+    </select>
+
+    <!-- 위원회피해조사 등록 -->
+    <insert id="regiBioCmitDmge" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        <selectKey keyProperty="cmitMngNo" resultType="string" order="BEFORE">
+			SELECT SEQ_BIO_CMIT_MNG.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT 
+          INTO TB_BIO_CMIT_DMGE 
+             ( CMIT_MNG_NO,
+               BIZ_AREA_CD,
+               DMGE_SE_CD,
+               CMIT_SE_CD,
+               EXMN_SE_CD,
+               CMIT_ODER,
+               CMIT_NM,
+               OPMT_BGNG_YMD,
+               OPMT_END_YMD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{cmitMngNo},
+               #{bizAreaCd},
+               #{dmgeSeCd},
+               #{cmitSeCd},
+               #{exmnSeCd},
+               #{cmitOder},
+               #{cmitNm},
+               FN_FMT_STRTODATE(#{opmtBgngYmd},''),
+               FN_FMT_STRTODATE(#{opmtEndYmd },''),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 위원회피해조사 수정 -->
+    <update id="updtBioCmitDmge" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        UPDATE TB_BIO_CMIT_DMGE 
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(bizAreaCd           )"> BIZ_AREA_CD          = #{bizAreaCd           },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(dmgeSeCd            )"> DMGE_SE_CD           = #{dmgeSeCd            },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(cmitSeCd            )"> CMIT_SE_CD           = #{cmitSeCd            },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(exmnSeCd            )"> EXMN_SE_CD           = #{exmnSeCd            },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(cmitOder            )"> CMIT_ODER            = #{cmitOder            },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(cmitNm              )"> CMIT_NM              = #{cmitNm              },</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(opmtBgngYmd         )"> OPMT_BGNG_YMD        = FN_FMT_STRTODATE(#{opmtBgngYmd},''),</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(opmtEndYmd          )"> OPMT_END_YMD         = FN_FMT_STRTODATE(#{opmtEndYmd },''),</if>
+               MDFCN_YMD   = SYSDATE
+         WHERE CMIT_MNG_NO = #{cmitMngNo}
+    </update>
+
+    <!-- 위원회피해조사 삭제 -->
+    <delete id="deltBioCmitDmge" parameterType="business.bio.cmit.service.BioCmitMngVO">
+        DELETE 
+          FROM TB_BIO_CMIT_DMGE 
+         WHERE CMIT_MNG_NO = #{cmitMngNo}
+    </delete> 
+
+</mapper>

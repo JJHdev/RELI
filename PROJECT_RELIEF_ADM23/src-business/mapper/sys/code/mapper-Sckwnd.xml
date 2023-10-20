@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Sckwnd">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+         <if test="@common.util.CommUtils@isNotEmpty(id)">
+           AND A.UP_SCKWND_CD = #{id}
+         </if>
+         <if test="@common.util.CommUtils@isNotEmpty(upSckwndCd)">
+           AND A.UP_SCKWND_CD = #{upSckwndCd}
+         </if>
+         <if test="@common.util.CommUtils@isNotEmpty(srchType)">
+           AND A.UP_SCKWND_CD = #{srchType}
+         </if>
+         <if test="@common.util.CommUtils@isNotEmpty(srchUseYn)">
+           AND A.USE_YN = #{srchUseYn}
+         </if>
+         <if test="@common.util.CommUtils@isNotEmpty(srchText)">
+           AND(A.SCKWND_CD        LIKE '%' || #{srchText} || '%'
+            OR A.SCKWND_NM        LIKE '%' || #{srchText} || '%'
+            OR A.DISS_CL_CD       LIKE '%' || #{srchText} || '%'
+            OR A.RCOGN_DISS_SE_CD LIKE '%' || #{srchText} || '%'
+            OR A.ETC_CN           LIKE '%' || #{srchText} || '%'
+              )
+         </if>
+    </sql>
+    <sql id="Sql-Column">
+         A.SCKWND_CD                                    AS "id",
+         A.SCKWND_CD                                    AS "sckwndCd",
+         A.UP_SCKWND_CD                                 AS "upSckwndCd",
+         A.SCKWND_NM                                    AS "sckwndNm",
+         A.DISS_CL_CD                                   AS "dissClCd",
+         FN_GET_CODENM('CT026', A.DISS_CL_CD)           AS "dissClNm",
+         A.RCOGN_DISS_SE_CD                             AS "rcognDissSeCd",
+         FN_GET_CODENM('CT018', A.RCOGN_DISS_SE_CD)     AS "rcognDissSeNm",
+         A.ETC_CN                                       AS "etcCn",
+         A.CD_ORDR                                      AS "cdOrdr",
+         A.USE_YN                                       AS "useYn",
+         A.RGTR_NO                                      AS "rgtrNo",
+         TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+         TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+         A.MDFR_NO                                      AS "mdfrNo",
+         TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+         TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate",
+         (SELECT SCKWND_NM
+            FROM TB_SCKWND_CODE
+           WHERE SCKWND_CD     = A.UP_SCKWND_CD)        AS "upSckwndNm",
+         (SELECT CASE WHEN COUNT(*) > 0 
+                      THEN 'closed'
+                      ELSE 'open'
+                 END
+            FROM TB_SCKWND_CODE
+           WHERE UP_SCKWND_CD = A.SCKWND_CD)            AS "state"
+    </sql>
+
+    <!-- 상병코드관리 목록조회 -->
+    <select id="listSckwnd" resultType="java.util.HashMap" parameterType="business.sys.code.service.SckwndVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_SCKWND_CODE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.SCKWND_CD, 
+               A.CD_ORDR
+    </select>
+    <select id="listSckwndCount" resultType="int" parameterType="business.sys.code.service.SckwndVO">
+        SELECT COUNT(1) 
+          FROM TB_SCKWND_CODE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 상병코드관리 계층형목록조회 -->
+    <select id="listSckwndTree" resultType="java.util.HashMap" parameterType="business.sys.code.service.SckwndVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_SCKWND_CODE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+       CONNECT BY PRIOR A.SCKWND_CD = A.UP_SCKWND_CD
+         START WITH A.UP_SCKWND_CD  = 'NONE'
+         ORDER SIBLINGS BY A.SCKWND_CD, A.CD_ORDR
+    </select>
+
+    <!-- 상병코드관리 상세조회 -->
+    <select id="viewSckwnd" resultType="business.sys.code.service.SckwndVO" parameterType="business.sys.code.service.SckwndVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_SCKWND_CODE A
+         WHERE SCKWND_CD    = #{sckwndCd}
+           AND UP_SCKWND_CD = #{upSckwndCd}
+    </select>
+
+    <!-- 상병코드 중복확인(코드) -->
+    <select id="confSckwnd" parameterType="business.sys.code.service.SckwndVO" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_SCKWND_CODE
+         WHERE SCKWND_CD     = #{sckwndCd}
+        <if test="@common.util.CommUtils@isNotEmpty(upSckwndCd) ">
+           AND UP_SCKWND_CD  = #{upSckwndCd}
+        </if>
+    </select>
+
+    <!-- 상병코드 중복확인(상위코드) -->
+    <select id="confUpperSckwnd" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_SCKWND_CODE
+         WHERE UP_SCKWND_CD = #{sckwndCd}
+    </select>
+
+    <!-- 상병코드 중복확인(하위코드) -->
+    <select id="confLowerSckwnd" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_SCKWND_CODE
+         WHERE UP_SCKWND_CD = #{sckwndCd}
+    </select>
+
+    <!-- 상병코드관리 등록 -->
+    <insert id="regiSckwnd" parameterType="business.sys.code.service.SckwndVO">
+        INSERT 
+          INTO TB_SCKWND_CODE 
+             ( SCKWND_CD,
+               UP_SCKWND_CD,
+               SCKWND_NM,
+               DISS_CL_CD,
+               RCOGN_DISS_SE_CD,
+               ETC_CN,
+               CD_ORDR,
+               USE_YN,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{sckwndCd},
+               NVL(#{upSckwndCd}, 'NONE'),
+               #{sckwndNm},
+               #{dissClCd},
+               #{rcognDissSeCd},
+               #{etcCn},
+               NVL(#{cdOrdr}, (
+                   SELECT NVL(MAX(CD_ORDR), 0) + 1
+                     FROM TB_SCKWND_CODE
+                    WHERE UP_SCKWND_CD = NVL(#{upSckwndCd}, 'NONE')
+               )),
+               NVL(#{useYn}, 'Y'),
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 상병코드관리 수정 -->
+    <update id="updtSckwnd" parameterType="business.sys.code.service.SckwndVO">
+        UPDATE TB_SCKWND_CODE 
+           SET SCKWND_NM            = #{sckwndNm},
+               DISS_CL_CD           = #{dissClCd},
+               RCOGN_DISS_SE_CD     = #{rcognDissSeCd},
+               ETC_CN               = #{etcCn},
+               CD_ORDR              = NVL(#{cdOrdr}, (
+                                          SELECT NVL(MAX(CD_ORDR), 0) + 1
+                                            FROM TB_SCKWND_CODE
+                                           WHERE UP_SCKWND_CD = NVL(#{upSckwndCd}, 'NONE')
+                                      )),
+               USE_YN               = NVL(#{useYn}, 'Y'),
+               MDFR_NO              = #{gsUserNo},
+               MDFCN_YMD            = SYSDATE
+         WHERE UP_SCKWND_CD         = #{orgUpSckwndCd}
+           AND SCKWND_CD            = #{sckwndCd}
+    </update>
+
+    <!-- 상병코드관리 삭제 -->
+    <delete id="deltSckwnd" parameterType="business.sys.code.service.SckwndVO">
+        DELETE 
+          FROM TB_SCKWND_CODE 
+         WHERE SCKWND_CD    = #{sckwndCd}
+           AND UP_SCKWND_CD = NVL(#{upSckwndCd}, 'NONE')
+    </delete> 
+
+</mapper>

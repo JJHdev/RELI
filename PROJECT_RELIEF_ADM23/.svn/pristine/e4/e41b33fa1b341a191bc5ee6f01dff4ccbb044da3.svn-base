@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SurveyQstn">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where-Mng">
+        <if test="@common.util.CommUtils@isNotEmpty(qstnnMngNo)">
+            AND A.QSTNN_MNG_NO = #{qstnnMngNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(qstnnCn)">
+            AND A.QSTNN_CN = #{qstnnCn}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(qstnnBgngYmd)">
+            AND A.QSTNN_BGNG_YMD = #{qstnnBgngYmd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(qstnnEndYmd)">
+            AND A.QSTNN_END_YMD = #{qstnnEndYmd}
+        </if>
+    </sql>
+    <sql id="Sql-Column-Mng">
+        A.QSTNN_MNG_NO                                AS "qstnnMngNo",
+        A.QSTNN_CN                                    AS "qstnnCn",
+        FN_FMT_STRTODATE(A.QSTNN_BGNG_YMD, '-')       AS "qstnnBgngYmd",
+        FN_FMT_STRTODATE(A.QSTNN_END_YMD,  '-')       AS "qstnnEndYmd",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 설문관리 목록조회 -->
+    <select id="listQstnMng" resultType="business.com.survey.service.SurveyVO" parameterType="business.com.survey.service.SurveyVO">
+        SELECT <include refid="Sql-Column-Mng"/>
+          FROM TB_QSTNN_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where-Mng"/>
+         ORDER BY 
+               A.QSTNN_MNG_NO
+    </select>
+    <select id="listQstnMngCount" resultType="int" parameterType="business.com.survey.service.SurveyVO">
+        SELECT COUNT(1) 
+          FROM TB_QSTNN_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where-Mng"/>
+    </select>
+
+    <!-- 설문관리 상세조회 -->
+    <select id="viewQstnMng" resultType="business.com.survey.service.SurveyVO" parameterType="business.com.survey.service.SurveyVO">
+        SELECT <include refid="Sql-Column-Mng"/>
+          FROM TB_QSTNN_MNG A
+         WHERE QSTNN_MNG_NO = #{qstnnMngNo}
+    </select>
+
+    <!-- 설문관리 등록 -->
+    <insert id="regiQstnMng" parameterType="business.com.survey.service.SurveyVO">
+        INSERT 
+          INTO TB_QSTNN_MNG 
+             ( QSTNN_MNG_NO,
+               QSTNN_CN,
+               QSTNN_BGNG_YMD,
+               QSTNN_END_YMD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{qstnnMngNo},
+               #{qstnnCn},
+               #{qstnnBgngYmd},
+               #{qstnnEndYmd},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 설문관리 수정 -->
+    <update id="updtQstnMng" parameterType="business.com.survey.service.SurveyVO">
+        UPDATE TB_QSTNN_MNG 
+           SET MDFR_NO      = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(qstnnCn     )"> QSTNN_CN       = #{qstnnCn},</if>
+		<if test="@common.util.CommUtils@isNotEmpty(qstnnBgngYmd)"> QSTNN_BGNG_YMD = FN_FMT_STRTODATE(#{qstnnBgngYmd},''),</if>
+		<if test="@common.util.CommUtils@isNotEmpty(qstnnEndYmd )"> QSTNN_END_YMD  = FN_FMT_STRTODATE(#{qstnnEndYmd },''),</if>  
+               MDFCN_YMD    = SYSDATE  
+         WHERE QSTNN_MNG_NO = #{qstnnMngNo}
+    </update>
+
+    <!-- 설문관리 삭제 -->
+    <delete id="deltQstnMng" parameterType="business.com.survey.service.SurveyVO">
+        DELETE 
+          FROM TB_QSTNN_MNG 
+         WHERE QSTNN_MNG_NO = #{qstnnMngNo}
+    </delete> 
+
+    <sql id="Sql-Where-Item">
+        <if test="@common.util.CommUtils@isNotEmpty(qstnnMngNo)">
+            AND A.QSTNN_MNG_NO = #{qstnnMngNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(qesitmNo)">
+            AND A.QESITM_NO = #{qesitmNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(itemNo)">
+            AND A.ITEM_NO = #{itemNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(qesitmCn)">
+            AND A.QESITM_CN = #{qesitmCn}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(qestnTy)">
+            AND A.QESTN_TY = #{qestnTy}
+        </if>
+    </sql>
+    <sql id="Sql-Column-Item">
+        A.QSTNN_MNG_NO                                AS "qstnnMngNo",
+        A.QESITM_NO                                   AS "qesitmNo",
+        A.ITEM_NO                                     AS "itemNo",
+        A.QESITM_CN                                   AS "qesitmCn",
+        A.QESTN_TY                                    AS "qestnTy",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 설문문항관리 목록조회 -->
+    <select id="listQstnItem" resultType="business.com.survey.service.SurveyVO" parameterType="business.com.survey.service.SurveyVO">
+        SELECT <include refid="Sql-Column-Item"/>
+          FROM TB_QESITM_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where-Item"/>
+         ORDER BY 
+               A.QSTNN_MNG_NO,
+               A.QESITM_NO,
+               A.ITEM_NO
+    </select>
+    <select id="listQstnItemCount" resultType="int" parameterType="business.com.survey.service.SurveyVO">
+        SELECT COUNT(1) 
+          FROM TB_QESITM_MNG A
+         WHERE 1 = 1
+               <include refid="Sql-Where-Item"/>
+    </select>
+
+    <!-- 설문문항관리 상세조회 -->
+    <select id="viewQstnItem" resultType="business.com.survey.service.SurveyVO" parameterType="business.com.survey.service.SurveyVO">
+        SELECT <include refid="Sql-Column-Item"/>
+          FROM TB_QESITM_MNG A
+         WHERE QSTNN_MNG_NO = #{qstnnMngNo}
+           AND QESITM_NO    = #{qesitmNo}
+           AND ITEM_NO      = #{itemNo}
+    </select>
+
+    <!-- 설문문항관리 등록 -->
+    <insert id="regiQstnItem" parameterType="business.com.survey.service.SurveyVO">
+        INSERT 
+          INTO TB_QESITM_MNG 
+             ( QSTNN_MNG_NO,
+               QESITM_NO,
+               ITEM_NO,
+               QESITM_CN,
+               QESTN_TY,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{qstnnMngNo},
+               #{qesitmNo},
+               #{itemNo},
+               #{qesitmCn},
+               #{qestnTy},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 설문문항관리 수정 -->
+    <update id="updtQstnItem" parameterType="business.com.survey.service.SurveyVO">
+        UPDATE TB_QESITM_MNG 
+           SET MDFR_NO      = #{gsUserNo},
+               QESITM_CN    = #{qesitmCn},
+               QESTN_TY     = #{qestnTy},
+               MDFCN_YMD    = SYSDATE
+         WHERE QSTNN_MNG_NO = #{qstnnMngNo}
+           AND QESITM_NO    = #{qesitmNo}
+           AND ITEM_NO      = #{itemNo}
+    </update>
+
+    <!-- 설문문항관리 삭제 -->
+    <delete id="deltQstnItem" parameterType="business.com.survey.service.SurveyVO">
+        DELETE 
+          FROM TB_QESITM_MNG 
+         WHERE QSTNN_MNG_NO = #{qstnnMngNo}
+           AND QESITM_NO    = #{qesitmNo}
+           AND ITEM_NO      = #{itemNo}
+    </delete> 
+
+</mapper>

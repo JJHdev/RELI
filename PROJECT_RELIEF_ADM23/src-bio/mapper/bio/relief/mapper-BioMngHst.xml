@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BioMngHst">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="@common.util.CommUtils@isNotEmpty(sn)">
+            AND A.SN = #{sn}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(aplyNo)">
+            AND A.APLY_NO = #{aplyNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(dtySeCd)">
+            AND A.DTY_SE_CD = #{dtySeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(hstSeCd)">
+            AND A.HST_SE_CD = #{hstSeCd}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(rgtrNo)">
+            AND A.RGTR_NO = #{rgtrNo}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(hstCn)">
+            AND A.HST_CN LIKE '%' || #{hstCn} || '%'
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+        A.SN                                           AS "sn",
+        A.APLY_NO                                      AS "aplyNo",
+        A.DTY_SE_CD                                    AS "dtySeCd",
+        FN_GET_CODENM('CT004',A.DTY_SE_CD)             AS "dtySeNm",
+        A.HST_SE_CD                                    AS "hstSeCd",
+        FN_GET_CODENM('CT016',A.HST_SE_CD)             AS "hstSeNm",
+        A.HST_CN                                       AS "hstCn",
+        A.PARTCLR_MATTR_CN                             AS "partclrMattrCn",
+        A.RGTR_NO                                      AS "rgtrNo",
+       (SELECT USER_NM
+          FROM TB_USER
+         WHERE USER_NO = A.RGTR_NO)                    AS "rgtrNm",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        A.MDFR_NO                                      AS "mdfrNo",
+       (SELECT USER_NM
+          FROM TB_USER
+         WHERE USER_NO = A.MDFR_NO)                    AS "mdfrNm",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate",
+        A.REL_KEY_NO                                   AS "relKeyNo",
+        <!-- 2022.12.07 제출서류추가 이력인 경우 파일명 표시 -->
+        CASE WHEN HST_SE_CD = 'H4' 
+             THEN (SELECT FILE_NM
+                     FROM TB_BIO_APLY_FILE
+                    WHERE SN = A.REL_KEY_NO)
+             ELSE FN_GET_CODENM('CT016',A.HST_SE_CD)
+        END                                            AS "relKeyNm"
+    </sql>
+
+    <!-- 관리이력정보 목록조회 -->
+    <select id="listBioMngHst" resultType="java.util.HashMap" parameterType="business.bio.relief.service.BioMngHstVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_MNG_HST A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+         ORDER BY 
+               A.SN DESC
+    </select>
+    <select id="listBioMngHstCount" resultType="int" parameterType="business.bio.relief.service.BioMngHstVO">
+        SELECT COUNT(1) 
+          FROM TB_BIO_MNG_HST A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+    </select>
+
+    <!-- 관리이력정보 상세조회 -->
+    <select id="viewBioMngHst" resultType="business.bio.relief.service.BioMngHstVO" parameterType="string">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_BIO_MNG_HST A
+         WHERE SN = #{sn}
+    </select>
+
+    <!-- 관리이력정보 등록 -->
+    <insert id="regiBioMngHst" parameterType="business.bio.relief.service.BioMngHstVO">
+        INSERT 
+          INTO TB_BIO_MNG_HST 
+             ( SN,
+               APLY_NO,
+               DTY_SE_CD,
+               HST_SE_CD,
+               HST_CN,
+               PARTCLR_MATTR_CN,
+               REL_KEY_NO,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( SEQ_BIO_MNG_HST.NEXTVAL,
+               #{aplyNo},
+               #{dtySeCd},
+               #{hstSeCd},
+               #{hstCn},
+               #{partclrMattrCn},
+               #{relKeyNo},
+               #{gsUserNo},
+               SYSDATE
+             )
+    </insert>
+
+    <!-- 관리이력정보 수정 -->
+    <update id="updtBioMngHst" parameterType="business.bio.relief.service.BioMngHstVO">
+        UPDATE TB_BIO_MNG_HST 
+           SET MDFR_NO = #{gsUserNo},
+		 <if test="@common.util.CommUtils@isNotEmpty(aplyNo)"        >APLY_NO         = #{aplyNo},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(dtySeCd)"       >DTY_SE_CD       = #{dtySeCd},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(hstSeCd)"       >HST_SE_CD       = #{hstSeCd},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(hstCn)"         >HST_CN          = #{hstCn},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(partclrMattrCn)">PARTCLR_MATTR_CN = #{partclrMattrCn},</if>
+         <if test="@common.util.CommUtils@isNotEmpty(relKeyNo)"      >REL_KEY_NO       = #{relKeyNo},</if>
+               MDFCN_YMD = SYSDATE  
+         WHERE SN = #{sn}
+    </update>
+
+    <!-- 관리이력정보 삭제 -->
+    <delete id="deltBioMngHst" parameterType="string">
+        DELETE 
+          FROM TB_BIO_MNG_HST 
+         WHERE SN = #{sn}
+    </delete> 
+
+</mapper>

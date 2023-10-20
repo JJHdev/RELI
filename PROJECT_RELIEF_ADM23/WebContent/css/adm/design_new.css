@@ -1,0 +1,190 @@
+@charset "utf-8";
+
+/* 2022-11 스타일 추가 */
+/* ******************** 기본 셋팅 ******************** */
+:root {
+
+  --main:#2379e3;
+}
+
+/* 페이징 */
+.pagenation {}
+.pagenation.type1 {}
+.pagenation.type1 .pageWrap ul.pc li {padding:0 2px;}
+.pagenation.type1 .pageWrap ul.pc li a {font-size:13px; width:30px; height:30px; line-height:30px;}
+
+
+/* ************************* GIS분석 ************************* */
+.tableWrap {}
+/* .tableWrap td a {display:block;} */
+.tableWrap td a img {width:16px; height:100%; object-fit:contain;}
+
+
+.menu-list {}
+
+
+.gis {font-size:14px;}
+.gis-wrap {display:flex; height:calc(100vh - 293px); position:relative;}
+
+.gis-left{width: calc(100% - 1200px);}
+.gis-menu {width:360px; background:#fff;}
+.gis-menu h3 {padding:10px 0; background:#1E7BA9; color:#fff; font-size:16px; text-align:center;}
+.gis-search {}
+.gis-search-form {padding:10px; background:#fff;}
+.gis-result {}
+.gis-result table {}
+.gis-result .tableWrap table thead tr th {font-size:13px;}
+.gis-result .tableWrap table tr>* {padding:7px 14px;}
+
+.gis-map {width: calc(100% - 360px);; position:relative;}
+
+#map {height: calc(100% - 180px);}
+
+.gis-map-layer {display:none;width:100%; position:absolute; bottom:0; right:0;}
+.gis-map-layer.on {display:block; z-index: 100}
+/* .gis-map-layer-wrap {padding:10px;} */
+
+.gis-map-layerBtn {color:#fff; font-size:16px; padding:50px; display:block;}
+
+/*4번쩨는 gis icon*/ 
+.gis-result .datagrid-body td:nth-child(4){
+/* 	background-image: url("/images/gis/i-gis.svg"); */
+/* 	background-position: center; */
+/* 	background-repeat: no-repeat; */
+/* 	cursor: pointer; */
+}
+
+
+/*4번쩨는 gis icon*/ 
+.gis-map-layer-wrap .datagrid-row td:nth-child(5){
+/* 	background-image: url("/images/gis/i-gis.svg"); */
+/* 	background-position: center; */
+/* 	background-repeat: no-repeat; */
+/* 	cursor: pointer; */
+}
+/* ************************* // END GIS분석 ************************* */
+
+.ol-popup {
+	position: absolute;
+	background-color: #fff;
+	box-shadow: 0 0 10px rgba(0,0,0,.2);;
+	padding: 15px;
+	border-radius: 10px;
+	border: 1px solid #000;
+	bottom: 12px;
+	left: -50px;
+	min-width: 300px;
+		
+}
+
+.ol-popup-header {
+	font-size: 18px;
+	color: #1E7BA9;	
+}
+
+.victim {
+	font-weight: 600;
+}
+
+.abstrAddr {
+	font-weight: 600;
+}
+
+.popupBorder {
+	font-weight: 600;
+}
+
+.popupHr {
+	margin-top: 0px;
+	margin-bottom: 10px;
+}
+
+
+.ol-popup:after, .ol-popup:before {
+  top: 100%;
+  border: solid transparent;
+  content: " ";
+  height: 0;
+  width: 0;
+  position: absolute;
+  pointer-events: none;
+}
+.ol-popup:after {
+  border-top-color: white;
+  border-width: 10px;
+  left: 48px;
+  margin-left: -10px;
+}
+.ol-popup:before {
+  border-top-color: #cccccc;
+  border-width: 11px;
+  left: 48px;
+  margin-left: -11px;
+}
+.ol-popup-closer {
+  text-decoration: none;
+  position: absolute;
+  top: 2px;
+  right: 8px;
+}
+.ol-popup-closer:after {
+  content: "✖";
+}
+
+.ol-zoom-in {display:none !important;}
+.ol-zoom-out {display:none !important;}
+.ol-attribution.ol-unselectable.ol-control.ol-collapsed{display:none;}
+
+.ol-tooltip-static { background-color: #ffcc33; color: #000; border: 1px solid white; }
+.ol-tooltip-static:before { border-top-color: #ffcc33; border-top: 6px solid rgba(0, 0, 0, 0.5); border-right: 6px solid transparent; border-left: 6px solid transparent; content: ""; position: absolute; bottom: -6px; margin-left: -7px; left: 50%; }
+.ol-tooltip { position: relative; background: rgba(0, 0, 0, 1); border-radius: 4px; color: white; padding: 4px 8px; opacity: 0.7; white-space: no-wrap; font-size: 12px; cursor: default; user-select: none; }
+.ol-tooltip.ol-tooltip-static > div { padding: 7px 15px; border-radius: 18px; border: 1px solid #e5e5e5; font-size: 12px; line-height: 16px; color: #eee; letter-spacing: -.3px; text-align: center; }
+
+
+
+
+.side { position:absolute; right:10px; top:40px; z-index:9}
+.side ul {}
+.side ul li {position:relative;}
+.side ul li span {
+	display:none; font-size:12px;width:60px; line-height:40px; border-radius:5px; color:#fff; background:#666;
+	position:absolute; right:120%; top:0; text-align:center;
+}
+.side ul li span:after {content:''; display:block; width:8px; height:8px; position:absolute; right:-4px; top:50%; transform:translateY(-50%) rotate(45deg); background:#666;}
+.side ul li:hover span {display:block;}
+.side ul li a {margin-bottom:2px; display:block; width:40px; height:40px; background:#fff center no-repeat; border:1px solid #e5e5e5; border-radius:5px; box-shadow:0 0 5px rgba(0,0,0,.1);}
+.side ul li.view a {background-image:url(../../images/gis/i-3d.svg);}
+.side ul li.view.on a {background-image:url(../../images/gis/i-3d-on.svg); background-color:var(--main);}
+.side ul li.base a {background-image:url(../../images/gis/i-layer-on.svg);}
+.side ul li.base.on a {background-image:url(../../images/gis/i-layer.svg); background-color: var(--main);}
+.side ul li.render a {background-image:url(../../images/gis/i-refresh-on.svg);}
+.side ul li.render.on a {background-image:url(../../images/gis/i-refresh.svg); background-color: var(--main);}
+
+.side ul li.search > a {background-image:url(../../images/gis/i-magnifier.svg);}
+.side ul li.search.on > a {background-image:url(../../images/gis/i-magnifier-on.svg); background-color: var(--main);}
+.side ul li.search .search-bar {display: none; font-size:12px; width:200px; height: fit-content; line-height:40px; border-radius:5px; color:#fff; background:#fff center no-repeat; position:absolute; right:120%; top:0; text-align:center; border:1px solid #e5e5e5; box-shadow: 0 0 5px rgba(0, 0, 0, .1); transition: 1s all;}
+.side ul li.search.on .search-bar {display: block !important; align-content: center;}
+.side ul li.search .search-bar a { position: absolute; height: 35px; line-height: 35px; top: 3px; right: 3px; }
+.side ul li.search .search-bar .title { height: 30%; font-family: 'NanumSquareRound'; font-size: 16px; color: #333 !important; }
+.side ul li.search .search-bar .content { position: relative; }
+.side ul li.search.on .search-bar .title { }
+.side ul li.search.on .search-bar .content { }
+.side ul li.search .search-bar .content > input[type='text'] { width: 100%; background: transparent; border: 0; font-family: inherit; padding-left: 5px; }
+.side ul li.search .search-bar .content > input[type='text']:focus { border: 0; outline: none !important; }
+.side ul li.search.on .search-bar .content > input[type='text'] { }
+.side ul li.reset a {background-image:url(../../images/gis/i-reset.png);}
+.side ul li.ruler a {background-image:url(../../images/gis/i-ruler.svg); margin-top:20px; }
+.side ul li.radar a {background-image:url(../../images/gis/i-radar.svg);}
+.side ul li.crop a {background-image:url(../../images/gis/i-crop.svg);}
+.side ul li.save a {background-image:url(../../images/gis/i-save.svg);}
+.side ul li.plus a {background-image:url(../../images/gis/i-plus.svg); margin-top:20px; }
+.side ul li.minus a {background-image:url(../../images/gis/i-minus.svg);}
+.side ul li.location a {background-image:url(../../images/gis/i-location.svg); margin-top:20px;}
+
+
+
+
+
+
+
+

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="Dtl">
+
+	<sql id="Sql-Column">
+        A.SN                                 	AS "sn",
+        A.INCDNT_MNG_NO                         AS "incdntMngNo",
+        FN_FMT_STRTODATE(A.DUDT_YMD,'-')        AS "dudtYmd",
+        A.DUDT_TM                               AS "dudtTm",
+        A.DUDT_SE_CD                            AS "dudtSeCd",
+      	FN_GET_CODENM (
+						'CT008', 
+						A.DUDT_SE_CD
+					)                           AS "dudtSeNm",
+        A.DUDT_PLCE                             AS "dudtPlce",
+        A.RSLT_CN                               AS "rsltCn",
+        FN_GET_CODENM (
+						'CT024', 
+						A.RSLT_CN
+					) AS "rsltNm",
+        A.RGTR_NO                               AS "rgtrNo",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')      AS "regDate",
+        A.MDFR_NO                               AS "mdfrNo",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')      AS "mdfDate"
+    </sql>
+
+	<select id ="regiDtlList" parameterType= "business.com.support.service.LwstVO">
+		INSERT
+			INTO TB_LWST_INCDNT_DTLS
+		(	SN	,
+			INCDNT_MNG_NO,
+			DUDT_YMD,
+			DUDT_TM,
+			DUDT_SE_CD,
+			DUDT_PLCE,
+			RSLT_CN,
+			RGTR_NO,
+			REG_YMD
+		)
+		VALUES
+		(
+			SEQ_LWST_INCDNT_DTLS.NEXTVAL,
+			#{incdntMngNo},
+			FN_FMT_STRTODATE(#{dudtYmd},''),
+			#{dudtTm},
+			#{dudtSeCd},
+			#{dudtPlce},
+			#{rsltCn},
+			#{rgtrNo},
+			TO_CHAR(SYSDATE,'YYYY-MM-DD')
+		)
+	</select>
+	
+    <update id="udtDtlList" parameterType="business.com.support.service.LwstVO">
+        UPDATE TB_LWST_INCDNT_DTLS 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(dudtTm)"  > DUDT_TM    = #{dudtTm},</if>
+  		<if test="@common.util.CommUtils@isNotEmpty(dudtSeCd)"> DUDT_SE_CD = #{dudtSeCd},</if>
+ 	    <if test="@common.util.CommUtils@isNotEmpty(dudtPlce)"> DUDT_PLCE  = #{dudtPlce},</if>
+ 	    <if test="@common.util.CommUtils@isNotEmpty(dudtYmd)" > DUDT_YMD   = FN_FMT_STRTODATE(#{dudtYmd},''),</if>
+ 	    <if test="@common.util.CommUtils@isNotEmpty(rsltCn)"  > RSLT_CN    = #{rsltCn},</if>
+               MDFCN_YMD   = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+         WHERE SN = #{sn}
+    </update>
+    
+    <delete id="delDtlList" parameterType="business.com.support.service.LwstVO">
+        DELETE 
+          FROM TB_LWST_INCDNT_DTLS 
+         WHERE SN = #{sn}
+    </delete> 
+    
+    <delete id="delDtlListByMngNo" parameterType="business.com.support.service.LwstVO">
+        DELETE 
+          FROM TB_LWST_INCDNT_DTLS 
+         WHERE INCDNT_MNG_NO = #{incdntMngNo}
+    </delete> 
+    
+    <select id ="listDtlsList" resultType="java.util.HashMap" parameterType="business.com.support.service.LwstVO">
+    	SELECT <include refid="Sql-Column"/>
+    		FROM TB_LWST_INCDNT_DTLS A
+    	WHERE INCDNT_MNG_NO = #{incdntMngNo}		
+    </select>
+    
+    <select id ="viewDtlsList" resultType="java.util.HashMap" parameterType="business.com.support.service.LwstVO">
+    	SELECT <include refid="Sql-Column"/>
+    		FROM TB_LWST_INCDNT_DTLS A
+    	WHERE SN = #{sn}		
+    </select>
+
+</mapper>

@@ -1,0 +1,40 @@
+@charset "utf-8";
+
+/* 메인페이지 스타일만 정의 */
+.main-tab {padding-bottom:30px;}
+.main-tab ul {}
+/* 2021.11.06 상태가 7개에서 4개로 줄어들어 공간조정처리  ntarget : 5 / -11.0px */
+.main-tab ul li {float:left; padding:25px 0; width:calc((100% - 180px)/5 - 13.0px);/*width:calc((100% - 360px)/7 - 0.1px);*/ background:#fff; border-radius:10px; text-align:center; border:1px solid #C9E1E8; cursor:pointer;}
+.main-tab ul li+li {margin-left:60px; position:relative;}
+.main-tab ul li+li:before{content:''; display:block; width:30px; height:30px; background:url(../../images/main/i-tabArrow.svg)0 50% no-repeat; position:absolute; left:-45px; top:calc(50% - 15px);} 
+.main-tab ul li i {}
+.main-tab ul li i img {}
+.main-tab ul li p.txt {font-weight:500; color:#26779B;}
+.main-tab ul li p.num {color:#000; font-size:24px; font-weight:600;}
+.main-tab ul li.on {background:#337FA1;}
+.main-tab ul li.on p.txt {color:#fff;}
+.main-tab ul li.on p.num {color:#96D019;}
+
+/* .main-form {padding:0 30px;} */
+
+.mainInner {padding:10px;}
+.mainInner .main-tab {}
+.mainInner .main-tab ul {overflow:hidden; width:630px;}
+.mainInner .main-tab ul li {padding:13px 0; width:85px; box-shadow:none;}
+.mainInner .main-tab ul li i {padding-bottom:2px; display:block;}
+.mainInner .main-tab ul li+li {margin-left:24px !important;}
+.mainInner .main-tab ul li+li:before {width:12px;  background-size:12px; left:-19px;}
+.mainInner .main-tab ul li.off {background:#D9EEF4; color:#82B9C9;}
+.mainInner .main-tab ul li p.txt {line-height:1.2; font-size:13px;}
+
+/* 2021.11.06 상태가 7개에서 4개로 줄어들어 공간조정처리 */
+.mainInner .main-tab ul {text-align:center; }
+.mainInner .main-tab ul li {display:inline-block; float:none; }
+
+
+.mainDetail .main-tab {}
+.mainDetail .main-tab ul {text-align:center; font-size:0;}
+.mainDetail .main-tab ul li {display:inline-block; font-size:20px; float:none; width:150px; font-weight:600px; border:2px solid #1E7BA9;}
+.mainDetail .main-tab ul li i img {height:20px;}
+.mainDetail .main-tab ul li p.txt {line-height:1.2; margin-top:8px;}
+.mainDetail .main-tab ul li.off {background:#D9EEF4; color:#82B9C9; opacity:.6; border-color:#C9E1E8}

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Role">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Where">
+        <if test="gsRoleId != 'ROLE_AUTH_SYS'">
+            AND A.ROLE_ID <![CDATA[<>]]> 'ROLE_AUTH_SYS'
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchNotId)">
+            AND A.ROLE_ID <![CDATA[<>]]> #{srchNotId}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchUpId)">
+            AND A.UP_ROLE_ID = #{srchUpId}
+        </if>
+        <if test="@common.util.CommUtils@isNotEmpty(srchText)">
+            AND(A.ROLE_ID LIKE '%' || #{srchText} || '%'
+             OR A.ROLE_NM LIKE '%' || #{srchText} || '%') 
+        </if>
+    </sql>
+    <sql id="Sql-Column">
+		ROLE_ID              AS "roleId",
+        ROLE_NM              AS "roleNm",
+        UP_ROLE_ID           AS "upRoleId",
+       (SELECT ROLE_NM
+          FROM SYS_ROLE
+         WHERE ROLE_ID = A.ROLE_ID
+        )                    AS "upRoleNm",
+        SYS_SE_CD            AS "sysCd",
+        RGTR_NO              AS "rgtrNo",
+        TO_CHAR(REG_YMD,   'yyyy-mm-dd hh24:mi:ss')  AS "regDttm",
+        TO_CHAR(REG_YMD,   'yyyy-mm-dd')             AS "regDate",
+        MDFR_NO              AS "mdfrNo",
+        TO_CHAR(MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss')  AS "mdfDttm",
+        TO_CHAR(MDFCN_YMD, 'yyyy-mm-dd')             AS "mdfDate"
+    </sql>
+
+    <!-- 역할관리 목록조회 -->
+    <select id="listRole" resultType="java.util.HashMap" parameterType="business.sys.role.service.RoleVO">
+        SELECT ROLE_ID              AS "code",
+               ROLE_NM              AS "text",
+               <include refid="Sql-Column"/>
+          FROM SYS_ROLE A
+         WHERE 1 = 1
+               <include refid="Sql-Where"/>
+       CONNECT BY PRIOR A.ROLE_ID    = A.UP_ROLE_ID
+         START WITH     A.UP_ROLE_ID = 'NONE'
+        ORDER SIBLINGS BY A.ROLE_ID
+    </select>
+
+    <!-- 역할관리 상세조회 -->
+    <select id="viewRole" resultType="business.sys.role.service.RoleVO" parameterType="business.sys.role.service.RoleVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM SYS_ROLE A
+         WHERE ROLE_ID = #{roleId}
+    </select>
+
+    <!-- 역할관리 등록 -->
+    <insert id="regiRole" parameterType="business.sys.role.service.RoleVO">
+        INSERT 
+          INTO SYS_ROLE 
+             ( ROLE_ID,
+               UP_ROLE_ID,
+               ROLE_NM,
+               SYS_SE_CD,
+               RGTR_NO,
+               REG_YMD
+             )
+        VALUES
+             ( #{roleId},
+               #{upRoleId},
+               #{roleNm},
+               #{sysCd},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 역할관리 수정 -->
+    <update id="updtRole" parameterType="business.sys.role.service.RoleVO">
+        UPDATE SYS_ROLE 
+           SET UP_ROLE_ID           = #{upRoleId},
+               ROLE_NM              = #{roleNm},
+               SYS_SE_CD            = #{sysCd},
+               MDFR_NO              = #{gsUserNo},
+               MDFCN_YMD            = SYSDATE  
+         WHERE ROLE_ID              = #{roleId}
+    </update>
+
+    <!-- 역할관리 삭제 -->
+    <delete id="deltRole" parameterType="business.sys.role.service.RoleVO">
+        DELETE 
+          FROM SYS_ROLE 
+         WHERE ROLE_ID = #{roleId}
+    </delete> 
+
+    <!-- 역할 중복확인(하위코드) -->
+    <select id="confLowerRole" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+          FROM SYS_ROLE
+         WHERE UP_ROLE_ID = #{roleId}
+    </select>
+
+</mapper>
