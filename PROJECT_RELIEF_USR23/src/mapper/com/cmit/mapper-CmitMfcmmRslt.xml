@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CmitMfcmmRslt">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+
+    <sql id="Sql-Column">
+        A.CMIT_MNG_NO                                 AS "cmitMngNo",
+        A.AGND_NO                                     AS "agndNo",
+        A.TENURE_NO                                   AS "tenureNo",
+        A.WRT_SE_CD                                   AS "wrtSeCd",
+        A.DLBR_CN                                     AS "dlbrCn",
+        A.DECSN_MATTR_CD                              AS "decsnMattrCd",
+        A.DECSN_MATTR_RESN                            AS "decsnMattrResn",
+        A.DECSN_ODR_CN                                AS "decsnOdrCn",
+        A.DECSN_ODR_RESN                              AS "decsnOdrResn",
+        A.DECSN_MAIN_CN                               AS "decsnMainCn",
+        A.SIGN_AGRE_YN                                AS "signAgreYn",
+        A.PRGRE_STUS_CD                               AS "decsnStusCd",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 위원회위원평가결과 목록조회 -->
+    <select id="listCmitMfcmmRslt" resultType="java.util.HashMap" parameterType="business.com.cmit.service.CmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_CMIT_MFCMM_RSLT A
+         WHERE A.CMIT_MNG_NO = #{cmitMngNo}
+         ORDER BY 
+               A.CMIT_MNG_NO,
+               A.AGND_NO,
+               A.TENURE_NO
+    </select>
+    <select id="listCmitMfcmmRsltCount" resultType="int" parameterType="business.com.cmit.service.CmitMngVO">
+        SELECT COUNT(1) 
+          FROM TB_CMIT_MFCMM_RSLT A
+         WHERE A.CMIT_MNG_NO = #{cmitMngNo}
+    </select>
+
+    <!-- 위원회위원평가결과 상세조회 -->
+    <select id="viewCmitMfcmmRslt" resultType="business.com.cmit.service.CmitMngVO" parameterType="business.com.cmit.service.CmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_CMIT_MFCMM_RSLT A
+         WHERE CMIT_MNG_NO = #{cmitMngNo}
+           AND AGND_NO     = #{agndNo}
+           AND TENURE_NO   = #{tenureNo}
+    </select>
+
+    <!-- 위원회위원평가결과 등록 -->
+    <insert id="regiCmitMfcmmRslt" parameterType="business.com.cmit.service.CmitMngVO">
+        INSERT 
+          INTO TB_CMIT_MFCMM_RSLT 
+             ( CMIT_MNG_NO,
+               AGND_NO,
+               TENURE_NO,
+               WRT_SE_CD,
+               DLBR_CN,
+               DECSN_MATTR_CD,
+               DECSN_MATTR_RESN,
+               DECSN_ODR_CN,
+               DECSN_ODR_RESN,
+               DECSN_MAIN_CN,
+               SIGN_AGRE_YN,
+               PRGRE_STUS_CD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{cmitMngNo},
+               #{agndNo},
+               #{tenureNo},
+               #{wrtSeCd},
+               #{dlbrCn},
+               #{decsnMattrCd},
+               #{decsnMattrResn},
+               #{decsnOdrCn},
+               #{decsnOdrResn},
+               #{decsnMainCn},
+               #{signAgreYn},
+               #{decsnStusCd},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 위원회위원평가결과 수정 -->
+    <update id="updtCmitMfcmmRslt" parameterType="business.com.cmit.service.CmitMngVO">
+        UPDATE TB_CMIT_MFCMM_RSLT 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(wrtSeCd             )"> WRT_SE_CD            = #{wrtSeCd             },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(dlbrCn              )"> DLBR_CN              = #{dlbrCn              },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(decsnMattrCd        )"> DECSN_MATTR_CD       = #{decsnMattrCd        },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(decsnMattrResn      )"> DECSN_MATTR_RESN     = #{decsnMattrResn      },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(decsnOdrCn          )"> DECSN_ODR_CN         = #{decsnOdrCn          },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(decsnOdrResn        )"> DECSN_ODR_RESN       = #{decsnOdrResn        },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(decsnMainCn         )"> DECSN_MAIN_CN        = #{decsnMainCn         },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(signAgreYn          )"> SIGN_AGRE_YN         = #{signAgreYn          },</if>
+		<if test="@common.util.CommUtils@isNotEmpty(decsnStusCd         )"> PRGRE_STUS_CD        = #{decsnStusCd         },</if>  
+               MDFCN_YMD   = SYSDATE 
+         WHERE CMIT_MNG_NO = #{cmitMngNo}
+           AND AGND_NO     = #{agndNo}
+           AND TENURE_NO   = #{tenureNo}
+    </update>
+
+    <!-- 위원회위원평가결과 삭제 -->
+    <delete id="deltCmitMfcmmRslt" parameterType="business.com.cmit.service.CmitMngVO">
+        DELETE 
+          FROM TB_CMIT_MFCMM_RSLT 
+         WHERE CMIT_MNG_NO = #{cmitMngNo}
+           AND AGND_NO     = #{agndNo}
+           AND TENURE_NO   = #{tenureNo}
+    </delete> 
+
+</mapper>

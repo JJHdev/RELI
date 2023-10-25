@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CmitDmgeFile">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Column">
+        A.SN                                          AS "sn",
+        A.CMIT_MNG_NO                                 AS "cmitMngNo",
+        A.AGND_NO                                     AS "agndNo",
+        A.FILE_PATH                                   AS "filePath",
+        A.STRG_FILE_NM                                AS "strgFileNm",
+        A.FILE_NM                                     AS "fileNm",
+        A.FILE_SZ                                     AS "fileSz",
+        A.DOWN_CNT                                    AS "downCnt",
+        A.DEL_YN                                      AS "delYn",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 위원회 첨부파일 목록조회 -->
+    <select id="listCmitDmgeFile" resultType="java.util.HashMap" parameterType="business.com.cmit.service.CmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_CMIT_DMGE_FILE A
+         WHERE A.CMIT_MNG_NO = #{cmitMngNo}
+         ORDER BY 
+               A.SN
+    </select>
+    <select id="listCmitDmgeFileCount" resultType="int" parameterType="business.com.cmit.service.CmitMngVO">
+        SELECT COUNT(1) 
+          FROM TB_CMIT_DMGE_FILE A
+         WHERE A.CMIT_MNG_NO = #{cmitMngNo}
+    </select>
+
+    <!-- 위원회 첨부파일 상세조회 -->
+    <select id="viewCmitDmgeFile" resultType="business.com.cmit.service.CmitMngVO" parameterType="business.com.cmit.service.CmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_CMIT_DMGE_FILE A
+         WHERE SN = #{sn}
+    </select>
+
+    <!-- 위원회 첨부파일 등록 -->
+    <insert id="regiCmitDmgeFile" parameterType="business.com.cmit.service.CmitMngVO">
+        INSERT 
+          INTO TB_CMIT_DMGE_FILE 
+             ( SN,
+               CMIT_MNG_NO,
+               AGND_NO,
+               FILE_PATH,
+               STRG_FILE_NM,
+               FILE_NM,
+               FILE_SZ,
+               DOWN_CNT,
+               DEL_YN,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{sn},
+               #{cmitMngNo},
+               #{agndNo},
+               #{filePath},
+               #{strgFileNm},
+               #{fileNm},
+               #{fileSz},
+               #{downCnt},
+               #{delYn},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 위원회 첨부파일 수정 -->
+    <update id="updtCmitDmgeFile" parameterType="business.com.cmit.service.CmitMngVO">
+        UPDATE TB_CMIT_DMGE_FILE 
+           SET MDFR_NO   = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(cmitMngNo           )"> CMIT_MNG_NO          = #{cmitMngNo           },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(agndNo              )"> AGND_NO              = #{agndNo              },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(filePath            )"> FILE_PATH            = #{filePath            },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(strgFileNm          )"> STRG_FILE_NM         = #{strgFileNm          },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(fileNm              )"> FILE_NM              = #{fileNm              },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(fileSz              )"> FILE_SZ              = #{fileSz              },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(downCnt             )"> DOWN_CNT             = #{downCnt             },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(delYn               )"> DEL_YN               = #{delYn               },</if>  
+               MDFCN_YMD = SYSDATE
+         WHERE SN        = #{sn}
+    </update>
+
+    <!-- 위원회 첨부파일 삭제 -->
+    <delete id="deltCmitDmgeFile" parameterType="business.com.cmit.service.CmitMngVO">
+        DELETE 
+          FROM TB_CMIT_DMGE_FILE 
+         WHERE SN = #{sn}
+    </delete> 
+
+</mapper>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CmitMfcmmErnr">
+
+    <!-- ======================== -->
+    <!--  공통 sql                -->
+    <!-- ======================== -->
+    <sql id="Sql-Column">
+        A.CMIT_MNG_NO                                 AS "cmitMngNo",
+        A.AGND_NO                                     AS "agndNo",
+        A.TENURE_NO                                   AS "tenureNo",
+        A.ERNR_NM                                     AS "ernrNm",
+        A.ERNR_OGDP_NM                                AS "ernrOgdpNm",
+        A.ERNR_RRNO                                   AS "ernrRrno",
+        A.ERNR_ADDR                                   AS "ernrAddr",
+        A.BANK_NM                                     AS "bankNm",
+        A.DPSTR_NM                                    AS "dpstrNm",
+        A.ACTNO                                       AS "actno",
+        A.INDV_INFO_CLCT_AGRE_YN                      AS "indvInfoClctAgreYn",
+        A.WTHTX_AGRE_YN                               AS "wthtxAgreYn",
+        A.BTRPS_GIVE_YN                               AS "btrpsGiveYn",
+        A.INCOME_SE_CD                                AS "incomeSeCd",
+        A.RGTR_NO                                     AS "rgtrNo",
+        TO_CHAR(A.REG_YMD,   'yyyy-mm-dd hh24:mi:ss') AS "regDttm",
+		TO_CHAR(A.REG_YMD,   'yyyy-mm-dd')            AS "regDate",
+        A.MDFR_NO                                     AS "mdfrNo",
+        TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd hh24:mi:ss') AS "mdfDttm",
+		TO_CHAR(A.MDFCN_YMD, 'yyyy-mm-dd')            AS "mdfDate"
+    </sql>
+
+    <!-- 위원회위원수당 목록조회 -->
+    <select id="listCmitMfcmmErnr" resultType="java.util.HashMap" parameterType="business.com.cmit.service.CmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_CMIT_MFCMM_ERNR A
+         WHERE A.CMIT_MNG_NO = #{cmitMngNo}
+         ORDER BY 
+               A.CMIT_MNG_NO,
+               A.AGND_NO,
+               A.TENURE_NO
+    </select>
+    <select id="listCmitMfcmmErnrCount" resultType="int" parameterType="business.com.cmit.service.CmitMngVO">
+        SELECT COUNT(1) 
+          FROM TB_CMIT_MFCMM_ERNR A
+         WHERE A.CMIT_MNG_NO = #{cmitMngNo}
+    </select>
+
+    <!-- 위원회위원수당 상세조회 -->
+    <select id="viewCmitMfcmmErnr" resultType="business.com.cmit.service.CmitMngVO" parameterType="business.com.cmit.service.CmitMngVO">
+        SELECT <include refid="Sql-Column"/>
+          FROM TB_CMIT_MFCMM_ERNR A
+         WHERE CMIT_MNG_NO = #{cmitMngNo}
+           AND AGND_NO     = #{agndNo}
+           AND TENURE_NO   = #{tenureNo}
+    </select>
+
+    <!-- 위원회위원수당 등록 -->
+    <insert id="regiCmitMfcmmErnr" parameterType="business.com.cmit.service.CmitMngVO">
+        INSERT 
+          INTO TB_CMIT_MFCMM_ERNR 
+             ( CMIT_MNG_NO,
+               AGND_NO,
+               TENURE_NO,
+               ERNR_NM,
+               ERNR_OGDP_NM,
+               ERNR_RRNO,
+               ERNR_ADDR,
+               BANK_NM,
+               DPSTR_NM,
+               ACTNO,
+               INDV_INFO_CLCT_AGRE_YN,
+               WTHTX_AGRE_YN,
+               BTRPS_GIVE_YN,
+               INCOME_SE_CD,
+               RGTR_NO,
+               REG_YMD  
+             )
+        VALUES
+             ( #{cmitMngNo},
+               #{agndNo},
+               #{tenureNo},
+               #{ernrNm},
+               #{ernrOgdpNm},
+               #{ernrRrno},
+               #{ernrAddr},
+               #{bankNm},
+               #{dpstrNm},
+               #{actno},
+               #{indvInfoClctAgreYn},
+               #{wthtxAgreYn},
+               #{btrpsGiveYn},
+               #{incomeSeCd},
+               #{gsUserNo},
+               SYSDATE  
+             )
+    </insert>
+
+    <!-- 위원회위원수당 수정 -->
+    <update id="updtCmitMfcmmErnr" parameterType="business.com.cmit.service.CmitMngVO">
+        UPDATE TB_CMIT_MFCMM_ERNR 
+           SET MDFR_NO     = #{gsUserNo},
+		<if test="@common.util.CommUtils@isNotEmpty(ernrNm              )"> ERNR_NM              = #{ernrNm              },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(ernrOgdpNm          )"> ERNR_OGDP_NM         = #{ernrOgdpNm          },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(ernrRrno            )"> ERNR_RRNO            = #{ernrRrno            },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(ernrAddr            )"> ERNR_ADDR            = #{ernrAddr            },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(bankNm              )"> BANK_NM              = #{bankNm              },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(dpstrNm             )"> DPSTR_NM             = #{dpstrNm             },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(actno               )"> ACTNO                = #{actno               },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(indvInfoClctAgreYn  )"> INDV_INFO_CLCT_AGRE_YN = #{indvInfoClctAgreYn  },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(wthtxAgreYn         )"> WTHTX_AGRE_YN        = #{wthtxAgreYn         },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(btrpsGiveYn         )"> BTRPS_GIVE_YN        = #{btrpsGiveYn         },</if>
+  <if test="@common.util.CommUtils@isNotEmpty(incomeSeCd          )"> INCOME_SE_CD         = #{incomeSeCd          },</if>  
+               MDFCN_YMD   = SYSDATE 
+         WHERE CMIT_MNG_NO = #{cmitMngNo}
+           AND AGND_NO     = #{agndNo}
+           AND TENURE_NO   = #{tenureNo}
+    </update>
+
+    <!-- 위원회위원수당 삭제 -->
+    <delete id="deltCmitMfcmmErnr" parameterType="business.com.cmit.service.CmitMngVO">
+        DELETE 
+          FROM TB_CMIT_MFCMM_ERNR 
+         WHERE CMIT_MNG_NO = #{cmitMngNo}
+           AND AGND_NO     = #{agndNo}
+           AND TENURE_NO   = #{tenureNo}
+    </delete> 
+
+</mapper>
